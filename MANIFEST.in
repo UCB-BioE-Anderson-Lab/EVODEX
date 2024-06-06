@@ -1,3 +1,5 @@
 include README.md
+include LICENSE
 include setup.py
 recursive-include evodex *.py
+recursive-include evodex/data *.csv
