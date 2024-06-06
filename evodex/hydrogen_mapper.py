@@ -1,6 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 from rdkit.Chem.Draw import rdMolDraw2D
+import copy
 
 def validate_and_modify_smiles(smiles: str) -> str:
     """
