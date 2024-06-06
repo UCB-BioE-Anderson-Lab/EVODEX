@@ -5,14 +5,16 @@ setup(
     version='0.1',
     packages=find_packages(include=['evodex', 'evodex.*']),
     install_requires=[
-        'rdkit',  # List your package dependencies here
+        'rdkit-pypi',
         'pandas',
         'numpy',
     ],
-    include_package_data=True,  # Include additional files specified in MANIFEST.in
+    include_package_data=True,
     author='J. Christopher Anderson',
     author_email='jcanderson@berkeley.edu',
     description='A project to process enzymatic reactions',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
     url='https://github.com/jcaucb/evodex',
     classifiers=[
         'Programming Language :: Python :: 3',
