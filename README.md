@@ -1,2 +1,2 @@
 # EVODEX
-Enzymatic Validation Operator Differentiation and Extraction
+A project to process enzymatic reactions.
