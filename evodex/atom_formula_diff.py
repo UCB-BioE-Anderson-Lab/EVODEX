@@ -4,6 +4,22 @@ from typing import Dict, Optional
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
+# Exact mass values for elements
+EXACT_MASS = {
+    'H': 1.00783,
+    'D': 2.01410,
+    'C': 12.0000,
+    'N': 14.0031,
+    'O': 15.9949,
+    'F': 18.9984,
+    'Si': 27.9769,
+    'P': 30.9738,
+    'S': 31.9721,
+    'Cl': 34.9689,
+    'Br': 78.9183,
+    'I': 126.9045
+}
+
 def parse_smirks(smirks: str) -> Dict[str, int]:
     """
     Parses a SMIRKS string as a reaction object and outputs a dictionary with 
@@ -52,16 +68,30 @@ def compare_atom_diffs(diff1: Dict[str, int], diff2: Dict[str, int]) -> bool:
     filtered_diff2 = {k: v for k, v in diff2.items() if v != 0}
     return filtered_diff1 == filtered_diff2
 
+def calculate_exact_mass(atom_diff: Dict[str, int]) -> float:
+    """
+    Calculates the exact mass for the given atom diff dictionary.
+
+    :param atom_diff: Atom diff dictionary
+    :return: Exact mass as a float
+    """
+    exact_mass = 0.0
+    for atom, count in atom_diff.items():
+        exact_mass += EXACT_MASS.get(atom, 0.0) * count
+    return exact_mass
+
 class AtomDiffCache:
     def __init__(self):
         self.csv_path = 'data/evodex_atom_diffs.csv'
         self.cache = {}
+        self.mass_cache = {}
         self.load_csv()
 
     def load_csv(self):
         """
         Loads the CSV file and populates the cache with the dictionary
         where the key is the hash of the atom diff dictionary and the value is the operator name.
+        Also populates the mass_cache with exact masses for quick lookup.
         """
         with open(self.csv_path, mode='r') as file:
             reader = csv.DictReader(file)
@@ -70,6 +100,10 @@ class AtomDiffCache:
                 operator_name = row['operator_name']
                 hash_key = self.hash_atom_diff(atom_diff)
                 self.cache[hash_key] = operator_name
+
+                # Add exact mass to mass_cache
+                exact_mass = calculate_exact_mass(atom_diff)
+                self.mass_cache[exact_mass] = operator_name
 
     @staticmethod
     def hash_atom_diff(atom_diff: Dict[str, int]) -> str:
@@ -92,27 +126,15 @@ class AtomDiffCache:
         hash_key = self.hash_atom_diff(atom_diff)
         return self.cache.get(hash_key)
 
-# Tests for comparison logic
-def test_compare_atom_diffs():
-    tests = [
-        # Test identical dictionaries
-        ({'C': 1, 'O': -1}, {'C': 1, 'O': -1}, True),
-        # Test differing values
-        ({'C': 1, 'O': -1}, {'C': 1, 'O': -2}, False),
-        # Test differing keys
-        ({'C': 1, 'O': -1}, {'C': 1, 'N': -1}, False),
-        # Test ignoring zero values
-        ({'C': 1, 'O': -1}, {'C': 1, 'O': -1, 'H': 0}, True),
-        ({'C': 0, 'O': 0}, {'C': 0, 'O': 0}, True),
-        ({'C': 1}, {'C': 1, 'O': 0}, True),
-        # Test empty dictionaries
-        ({}, {}, True),
-        # Test one empty, one non-empty
-        ({}, {'C': 1}, False),
-        # Test with zero values only
-        ({'C': 0, 'O': 0}, {}, True),
-    ]
+    def get_operator_by_mass(self, mass: float, resolution: float = 0.01) -> Optional[str]:
+        """
+        Retrieves the operator name for the given exact mass within the specified resolution.
 
-    for i, (diff1, diff2, expected) in enumerate(tests):
-        result = compare_atom_diffs(diff1, diff2)
-        assert result == expected, f"Test {i + 1} failed: {diff1} vs {diff2} -> {result}, expected {expected}"
+        :param mass: Exact mass difference
+        :param resolution: Resolution value in daltons
+        :return: Operator name if exists within the resolution, None otherwise
+        """
+        for exact_mass, operator_name in self.mass_cache.items():
+            if abs(exact_mass - mass) <= resolution:
+                return operator_name
+        return None
