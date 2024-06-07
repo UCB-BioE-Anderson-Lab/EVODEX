@@ -1,0 +1,7 @@
+atom_diff,operator_name
+"{'C': 1, 'O': -1}","EVODEX-A1"
+"{'C': 2, 'H': -2}","EVODEX-A2"
+"{'O': 1, 'H': -1}","EVODEX-A3"
+"{'N': 1, 'H': -3}","EVODEX-A4"
+"{'O': -1, 'H': 2}","EVODEX-A5"
+"{'C': -1, 'O': 1}","EVODEX-A6"
