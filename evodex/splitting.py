@@ -1,6 +1,5 @@
 from rdkit import Chem
-from rdkit.Chem import AllChem, Draw
-from rdkit.Chem.Draw import rdMolDraw2D
+from rdkit.Chem import AllChem
 from itertools import combinations
 
 def reaction_hash(rxn: AllChem.ChemicalReaction) -> tuple:
@@ -8,20 +7,32 @@ def reaction_hash(rxn: AllChem.ChemicalReaction) -> tuple:
     product_inchis = set(Chem.MolToInchi(mol) for mol in rxn.GetProducts())
     return (frozenset(substrate_inchis), frozenset(product_inchis))
 
+def sanitize_molecule(mol):
+    Chem.rdDepictor.Compute2DCoords(mol)
+    try:
+        Chem.SanitizeMol(mol)
+    except Chem.AtomKekulizeException:
+        print(f"Kekulization failed for molecule: {Chem.MolToSmiles(mol)}")
+        Chem.Kekulize(mol, clearAromaticFlags=True)
+        Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_KEKULIZE)
+
 def split_reaction(smirks: str) -> list[str]:
     # Load the input SMIRKS as a reaction object
     rxn = AllChem.ReactionFromSmarts(smirks)
     
     # Standardize aromaticity and calculate reaction centers
     for mol in rxn.GetReactants():
-        Chem.SanitizeMol(mol)
+        sanitize_molecule(mol)
     for mol in rxn.GetProducts():
-        Chem.SanitizeMol(mol)
+        sanitize_molecule(mol)
     
     # Get the reactants and products as lists
     reactants = [Chem.MolToSmiles(mol) for mol in rxn.GetReactants()]
     products = [Chem.MolToSmiles(mol) for mol in rxn.GetProducts()]
-    
+
+    print("reactants:",reactants)
+    print("products:",products)
+
     # Construct new reaction objects combinatorially
     reaction_splits = []
     for i in range(1, len(reactants) + 1):
@@ -31,6 +42,8 @@ def split_reaction(smirks: str) -> list[str]:
                     reactant_smiles = '.'.join(reactant_combo)
                     product_smiles = '.'.join(product_combo)
                     reaction_splits.append(f"{reactant_smiles}>>{product_smiles}")
+
+    print("reaction_splits:",len(reaction_splits))
 
     # Prune out reactions with no matching atom maps
     pruned_reactions = []
@@ -59,6 +72,8 @@ def split_reaction(smirks: str) -> list[str]:
                 pruned_reactions.append(rxn)
         except Exception as e:
             print(f"Failed to process reaction: {reaction}, Error: {e}")
+
+    print("pruned_reactions:",len(pruned_reactions))
 
     # Process pruned reactions to clean up atom maps
     cleaned_reactions = []
