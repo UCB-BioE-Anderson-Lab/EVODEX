@@ -186,8 +186,8 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         Chem.rdDepictor.Compute2DCoords(product)
         Chem.SanitizeMol(product)
 
-    post_stereo_smirks = rdChemReactions.ReactionToSmarts(reaction)
-    ic(post_stereo_smirks)
+    # post_stereo_smirks = rdChemReactions.ReactionToSmarts(reaction)
+    # ic(post_stereo_smirks)
 
     # ==================================================================
     #                       LABEL AND COLLECT ATOMS SETS
@@ -196,7 +196,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
     # ---------------------- POPULATE CENTER ATOMS ---------------------
     # Identify indices of reacting mapped atoms
     reacting_atoms = reaction.GetReactingAtoms(mappedAtomsOnly=True)
-    ic(reacting_atoms)
+    # ic(reacting_atoms)
 
     # Identify the atom maps of the reacting mapped atoms
     center_atom_maps = set()
@@ -207,7 +207,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
             atom_map = atom.GetAtomMapNum()
             center_atom_maps.add(atom_map)
 
-    ic(center_atom_maps)
+    # ic(center_atom_maps)
 
     # Create a tuple of lists of sets called center_atom_indices
     center_atom_indices = ([], [])
@@ -222,7 +222,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         product = reaction.GetProductTemplate(i)
         center_atom_indices[1].append(_extract_center_atom_indices(product, center_atom_maps))
 
-    ic(center_atom_indices)
+    # ic(center_atom_indices)
 
     # ---------------------- POPULATE SIGMA-BONDED ATOMS ---------------------
     # Create a tuple of lists of sets called sigma_atom_indices
@@ -238,7 +238,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         product = reaction.GetProductTemplate(i)
         sigma_atom_indices[1].append(_process_sigma_molecule(product, center_atom_maps))
 
-    ic(sigma_atom_indices)
+    # ic(sigma_atom_indices)
 
     # Augment sigma_atom_indices with conjugated atoms on the other side of the reaction
     sigma_atom_maps = set()
@@ -261,7 +261,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
             if atom_map != 0:
                 sigma_atom_maps.add(atom_map)
 
-    ic(sigma_atom_maps)
+    # ic(sigma_atom_maps)
 
     # Process reactants and products to augment sigma_atom_indices
     for i in range(reaction.GetNumReactantTemplates()):
@@ -273,14 +273,14 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         sigma_atom_indices[1][i] = _augment_sigma_indices(product, sigma_atom_maps, sigma_atom_indices[1][i])
 
     # Display the final augmented sigma_atom_indices
-    ic(sigma_atom_indices)
+    # ic(sigma_atom_indices)
 
     # ---------------------- POPULATE PI-BONDED ATOMS ---------------------
     # Grow the pi shell until it no longer changes
     pi_atom_indices = _grow_pi_shell(reaction, center_atom_indices)
 
     # Display the pi_atom_indices
-    ic(pi_atom_indices)
+    # ic(pi_atom_indices)
 
     # Gather all the atom maps on both sides of the reaction using pi_atom_indices
     pi_atom_maps = set()
@@ -303,7 +303,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
             if atom_map != 0:
                 pi_atom_maps.add(atom_map)
 
-    ic(pi_atom_maps)
+    # ic(pi_atom_maps)
 
     # Process reactants and products to augment pi_atom_indices
     for i in range(reaction.GetNumReactantTemplates()):
@@ -315,7 +315,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         pi_atom_indices[1][i] = _augment_pi_indices(product, pi_atom_maps, pi_atom_indices[1][i])
 
     # Display the final augmented pi_atom_indices
-    ic(pi_atom_indices)
+    # ic(pi_atom_indices)
 
     # ---------------------- POPULATE UNMAPPED ATOMS ---------------------
     # Initialize unmapped_hydrogen_indices and unmapped_heavy_indices with the same structure as pi_atom_indices
@@ -337,8 +337,8 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         unmapped_heavy_indices[1].append(heavy_indices)
 
     # Display the final unmapped_hydrogen_indices and unmapped_heavy_indices
-    ic(unmapped_hydrogen_indices)
-    ic(unmapped_heavy_indices)
+    # ic(unmapped_hydrogen_indices)
+    # ic(unmapped_heavy_indices)
 
     # ---------------------- POPULATE STATIC HYDROGENS ---------------------
     # Initialize static_hydrogen_indices with the same structure as other indices lists
@@ -357,7 +357,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         static_hydrogen_indices[1].append(static_hydrogens)
 
     # Display the final static_hydrogen_indices
-    ic(static_hydrogen_indices)
+    # ic(static_hydrogen_indices)
 
     # ==================================================================
     #                       EXTRACT THE OPERATOR
