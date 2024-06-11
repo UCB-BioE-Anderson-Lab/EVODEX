@@ -3,7 +3,7 @@ from rdkit.Chem import AllChem, Draw
 from rdkit.Chem.Draw import rdMolDraw2D
 import copy
 
-def validate_and_modify_smiles(smiles: str) -> str:
+def map_hydrogens(smiles: str) -> str:
     """
     This function takes a SMILES string representing a chemical reaction,
     validates and modifies it by adding explicit hydrogens, and ensures that

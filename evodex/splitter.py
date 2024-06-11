@@ -3,12 +3,12 @@ from rdkit.Chem import AllChem, Draw
 from rdkit.Chem.Draw import rdMolDraw2D
 from itertools import combinations
 
-def get_reaction_hash(rxn: AllChem.ChemicalReaction) -> tuple:
+def reaction_hash(rxn: AllChem.ChemicalReaction) -> tuple:
     substrate_inchis = set(Chem.MolToInchi(mol) for mol in rxn.GetReactants())
     product_inchis = set(Chem.MolToInchi(mol) for mol in rxn.GetProducts())
     return (frozenset(substrate_inchis), frozenset(product_inchis))
 
-def reaction_splitter(smirks: str) -> list[str]:
+def split_reaction(smirks: str) -> list[str]:
     # Load the input SMIRKS as a reaction object
     rxn = AllChem.ReactionFromSmarts(smirks)
     
@@ -109,7 +109,7 @@ def reaction_splitter(smirks: str) -> list[str]:
     unique_reactions = set()
     final_reactions = []
     for rxn in cleaned_reactions:
-        rxn_hash = get_reaction_hash(rxn)
+        rxn_hash = reaction_hash(rxn)
         if rxn_hash not in unique_reactions:
             unique_reactions.add(rxn_hash)
             final_reactions.append(AllChem.ReactionToSmarts(rxn))

@@ -20,11 +20,11 @@ EXACT_MASS = {
     'I': 126.9045
 }
 
-def parse_smirks(smirks: str) -> Dict[str, int]:
+def calculate_formula_diff(smirks: str) -> Dict[str, int]:
     """
-    Parses a SMIRKS string as a reaction object and outputs a dictionary with 
-    atom type and integer diff of product count - substrate count for each atom type,
-    excluding zero differences.
+    Calculates the atom type difference for a SMIRKS string as a reaction object
+    and outputs a dictionary with atom type and integer diff of product count - substrate count 
+    for each atom type, excluding zero differences.
 
     :param smirks: SMIRKS string
     :return: Dictionary with atom type and integer diff
@@ -55,7 +55,7 @@ def parse_smirks(smirks: str) -> Dict[str, int]:
 
     return atom_diff
 
-def compare_atom_diffs(diff1: Dict[str, int], diff2: Dict[str, int]) -> bool:
+def _compare_atom_diffs(diff1: Dict[str, int], diff2: Dict[str, int]) -> bool:
     """
     Compares two atom type diff dictionaries to determine if they are the same,
     ignoring zero values.
@@ -85,9 +85,9 @@ class AtomDiffCache:
         self.csv_path = 'data/evodex_atom_diffs.csv'
         self.cache = {}
         self.mass_cache = {}
-        self.load_csv()
+        self._load_csv()
 
-    def load_csv(self):
+    def _load_csv(self):
         """
         Loads the CSV file and populates the cache with the dictionary
         where the key is the hash of the atom diff dictionary and the value is the operator name.
@@ -98,7 +98,7 @@ class AtomDiffCache:
             for row in reader:
                 atom_diff = eval(row['atom_diff'])
                 operator_name = row['operator_name']
-                hash_key = self.hash_atom_diff(atom_diff)
+                hash_key = self._hash_atom_diff(atom_diff)
                 self.cache[hash_key] = operator_name
 
                 # Add exact mass to mass_cache
@@ -106,7 +106,7 @@ class AtomDiffCache:
                 self.mass_cache[exact_mass] = operator_name
 
     @staticmethod
-    def hash_atom_diff(atom_diff: Dict[str, int]) -> str:
+    def _hash_atom_diff(atom_diff: Dict[str, int]) -> str:
         """
         Hashes the atom diff dictionary to create a unique key.
 
@@ -123,7 +123,7 @@ class AtomDiffCache:
         :param atom_diff: Atom diff dictionary
         :return: Operator name if exists, None otherwise
         """
-        hash_key = self.hash_atom_diff(atom_diff)
+        hash_key = self._hash_atom_diff(atom_diff)
         return self.cache.get(hash_key)
 
     def get_operator_by_mass(self, mass: float, resolution: float = 0.01) -> Optional[str]:
