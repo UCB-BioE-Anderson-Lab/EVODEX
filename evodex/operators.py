@@ -174,20 +174,6 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
 
     # Do some cleanup and internal calculation
     reaction.Initialize()
-    # Iterate through reactants and add to the first list in the tuple
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        Chem.rdDepictor.Compute2DCoords(reactant)
-        Chem.SanitizeMol(reactant)
-
-    # Iterate through products and add to the second list in the tuple
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        Chem.rdDepictor.Compute2DCoords(product)
-        Chem.SanitizeMol(product)
-
-    # post_stereo_smirks = rdChemReactions.ReactionToSmarts(reaction)
-    # ic(post_stereo_smirks)
 
     # ==================================================================
     #                       LABEL AND COLLECT ATOMS SETS

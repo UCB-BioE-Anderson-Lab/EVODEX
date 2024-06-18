@@ -1,7 +1,6 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 from rdkit.Chem.Draw import rdMolDraw2D
-import copy
 
 def map_hydrogens(smiles: str) -> str:
     """
@@ -23,6 +22,7 @@ def map_hydrogens(smiles: str) -> str:
     # Read the reaction SMILES and convert to a mol object
     try:
         raw_rxn = AllChem.ReactionFromSmarts(smiles, useSmiles=True)  # as smiles
+        # raw_rxn.calcImplicitValence()
         # print("Reaction successfully parsed.")
     except Exception as e:
         raise ValueError(f"Invalid reaction SMILES: {smiles}") from e
@@ -30,12 +30,16 @@ def map_hydrogens(smiles: str) -> str:
     # Add explicit hydrogens to all reactants and products
     new_reactants = []
     for reactant in raw_rxn.GetReactants():
-        reactant_with_h = Chem.AddHs(reactant)
+        reactant.UpdatePropertyCache(strict=False)
+        mh=Chem.AddHs(reactant, addCoords=True)
+        reactant_with_h = Chem.AddHs(mh)
         new_reactants.append(reactant_with_h)
 
     new_products = []
     for product in raw_rxn.GetProducts():
-        product_with_h = Chem.AddHs(product)
+        product.UpdatePropertyCache(strict=False)
+        mh=Chem.AddHs(product, addCoords=True)
+        product_with_h = Chem.AddHs(mh)
         new_products.append(product_with_h)
 
     # Create a new reaction with added hydrogens
@@ -44,6 +48,9 @@ def map_hydrogens(smiles: str) -> str:
         reaction.AddReactantTemplate(reactant)
     for product in new_products:
         reaction.AddProductTemplate(product)
+
+    # Do some prep of the object
+    # reaction.calcImplicitValence()
 
     # Make a duplicate of the original for output
     original_reaction = copy.deepcopy(reaction)
@@ -116,13 +123,18 @@ def map_hydrogens(smiles: str) -> str:
                 atom.SetAtomMapNum(0)
                 # print(f"Reverted reactant hydrogen atom map to 0 for atom index {atom.GetIdx()}")
 
-    # Make a duplicate of the original for output
-    h_mapped_reaction = copy.deepcopy(reaction)
-
-    # Convert mol object back to SMIRKS string
+    # Convert mol object back to SMIRKS string with explicit aromatic bonds
     try:
-        modified_smiles = AllChem.ReactionToSmarts(reaction)
-    except Exception as e:
-        raise ValueError(f"Error converting modified reaction to SMIRKS: {smiles}") from e
+        # Convert the reaction object to a reaction SMARTS string
+        reaction_smarts = AllChem.ReactionToSmarts(reaction)
 
-    return modified_smiles, original_reaction, h_mapped_reaction
+        # Convert each molecule in the reaction to SMILES with explicit aromatic bonds
+        reactant_smiles = [Chem.MolToSmarts(mol, isomericSmiles=True) for mol in reaction.GetReactants()]
+        product_smiles = [Chem.MolToSmarts(mol, isomericSmiles=True) for mol in reaction.GetProducts()]
+
+        # Combine reactants and products into a SMIRKS string
+        modified_smiles = '>>'.join(['.'.join(reactant_smiles), '.'.join(product_smiles)])
+    except Exception as e:
+        raise ValueError(f"Error converting modified reaction to SMIRKS: {reaction_smarts}") from e
+
+    return modified_smiles

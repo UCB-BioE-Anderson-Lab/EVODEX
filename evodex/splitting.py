@@ -13,22 +13,22 @@ def sanitize_molecule(mol):
         Chem.SanitizeMol(mol)
     except Chem.AtomKekulizeException:
         print(f"Kekulization failed for molecule: {Chem.MolToSmiles(mol)}")
-        Chem.Kekulize(mol, clearAromaticFlags=True)
+        Chem.Kekulize(mol)
         Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_KEKULIZE)
 
 def split_reaction(smirks: str) -> list[str]:
     # Load the input SMIRKS as a reaction object
     rxn = AllChem.ReactionFromSmarts(smirks)
-    
+
     # Standardize aromaticity and calculate reaction centers
-    for mol in rxn.GetReactants():
-        sanitize_molecule(mol)
-    for mol in rxn.GetProducts():
-        sanitize_molecule(mol)
-    
+    # for mol in rxn.GetReactants():
+    #     sanitize_molecule(mol)
+    # for mol in rxn.GetProducts():
+    #     sanitize_molecule(mol)
+
     # Get the reactants and products as lists
-    reactants = [Chem.MolToSmiles(mol) for mol in rxn.GetReactants()]
-    products = [Chem.MolToSmiles(mol) for mol in rxn.GetProducts()]
+    reactants = [Chem.MolToSmiles(mol, isomericSmiles=True) for mol in rxn.GetReactants()]
+    products = [Chem.MolToSmiles(mol, isomericSmiles=True) for mol in rxn.GetProducts()]
 
     print("reactants:",reactants)
     print("products:",products)
@@ -57,7 +57,7 @@ def split_reaction(smirks: str) -> list[str]:
                     atom_map_num = atom.GetAtomMapNum()
                     if atom_map_num > 0:
                         substrate_atom_maps.add(atom_map_num)
-            
+
             # Check for matching atom maps in products
             good_reaction = False
             for mol in rxn.GetProducts():
@@ -67,7 +67,7 @@ def split_reaction(smirks: str) -> list[str]:
                         break
                 if good_reaction:
                     break
-            
+
             if good_reaction:
                 pruned_reactions.append(rxn)
         except Exception as e:
@@ -80,14 +80,14 @@ def split_reaction(smirks: str) -> list[str]:
     for rxn in pruned_reactions:
         try:
             substrate_atom_maps = set()
-            
+
             # Collect atom maps from reactants
             for mol in rxn.GetReactants():
                 for atom in mol.GetAtoms():
                     atom_map_num = atom.GetAtomMapNum()
                     if atom_map_num > 0:
                         substrate_atom_maps.add(atom_map_num)
-            
+
             # Adjust atom maps in products
             for mol in rxn.GetProducts():
                 for atom in mol.GetAtoms():
@@ -97,18 +97,18 @@ def split_reaction(smirks: str) -> list[str]:
                             atom.SetAtomMapNum(0)
                         else:
                             substrate_atom_maps.remove(atom_map_num)
-            
+
             # Adjust atom maps in reactants
             for mol in rxn.GetReactants():
                 for atom in mol.GetAtoms():
                     atom_map_num = atom.GetAtomMapNum()
                     if atom_map_num in substrate_atom_maps:
                         atom.SetAtomMapNum(0)
-            
+
             # Remove unmapped molecules
             reactants = [mol for mol in rxn.GetReactants() if any(atom.GetAtomMapNum() > 0 for atom in mol.GetAtoms())]
             products = [mol for mol in rxn.GetProducts() if any(atom.GetAtomMapNum() > 0 for atom in mol.GetAtoms())]
-            
+
             if reactants and products:
                 cleaned_rxn = AllChem.ChemicalReaction()
                 for mol in reactants:
