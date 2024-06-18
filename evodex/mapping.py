@@ -1,6 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 from rdkit.Chem.Draw import rdMolDraw2D
+import copy
 
 def map_hydrogens(smiles: str) -> str:
     """
@@ -48,9 +49,6 @@ def map_hydrogens(smiles: str) -> str:
         reaction.AddReactantTemplate(reactant)
     for product in new_products:
         reaction.AddProductTemplate(product)
-
-    # Do some prep of the object
-    # reaction.calcImplicitValence()
 
     # Make a duplicate of the original for output
     original_reaction = copy.deepcopy(reaction)
