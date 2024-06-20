@@ -1,10 +1,13 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from itertools import combinations
+import logging
 
-def split_reaction(smirks: str) -> list[str]:
-    # Split the SMIRKS string into substrates and products
-    substrates, products = smirks.split('>>')
+logging.basicConfig(level=logging.INFO)
+
+def split_reaction(smiles: str) -> list[str]:
+    # Split the SMILES string into substrates and products
+    substrates, products = smiles.split('>>')
     substrate_list = substrates.split('.')
     product_list = products.split('.')
 
@@ -20,13 +23,6 @@ def split_reaction(smirks: str) -> list[str]:
                 for product_combo in combinations(product_indices, j):
                     all_partials.add((frozenset(reactant_combo), frozenset(product_combo)))
 
-    # print("all_partials:")
-    # for partial in all_partials:
-    #     reactants, products = partial
-    #     reactants_str = ','.join(map(str, sorted(reactants)))
-    #     products_str = ','.join(map(str, sorted(products)))
-    #     print(f"({reactants_str})>>({products_str})")
-
     # Prune out reactions with no matching atom maps
     pruned_reactions = set()
     for partial in all_partials:
@@ -36,7 +32,7 @@ def split_reaction(smirks: str) -> list[str]:
         reaction_smiles = f"{reactant_smiles}>>{product_smiles}"
         
         try:
-            rxn = AllChem.ReactionFromSmarts(reaction_smiles)
+            rxn = AllChem.ReactionFromSmarts(reaction_smiles, useSmiles=True)
             substrate_atom_maps = set()
             # Collect atom maps from reactants
             for mol in rxn.GetReactants():
@@ -58,15 +54,8 @@ def split_reaction(smirks: str) -> list[str]:
             if good_reaction:
                 pruned_reactions.add((frozenset(reactant_indices), frozenset(product_indices)))
         except Exception as e:
-            print(f"Failed to process reaction: {reaction_smiles}, Error: {e}")
+            logging.error(f"Failed to process reaction: {reaction_smiles}, Error: {e}")
 
-    # print("pruned_reactions:")
-    # for partial in pruned_reactions:
-    #     reactants, products = partial
-    #     reactants_str = ','.join(map(str, sorted(reactants)))
-    #     products_str = ','.join(map(str, sorted(products)))
-    #     print(f"({reactants_str})>>({products_str})")
-    
     # Process pruned reactions to clean up atom maps
     cleaned_smiles = []
     for partial in pruned_reactions:
@@ -76,7 +65,7 @@ def split_reaction(smirks: str) -> list[str]:
         reaction_smiles = f"{reactant_smiles}>>{product_smiles}"
         
         try:
-            rxn = AllChem.ReactionFromSmarts(reaction_smiles)
+            rxn = AllChem.ReactionFromSmarts(reaction_smiles, useSmiles=True)
             substrate_atom_maps = set()
 
             # Collect atom maps from reactants
@@ -117,10 +106,6 @@ def split_reaction(smirks: str) -> list[str]:
                     cleaned_rxn.AddProductTemplate(mol)
                 cleaned_smiles.append(AllChem.ReactionToSmarts(cleaned_rxn))
         except Exception as e:
-            print(f"Failed to clean reaction: {reaction_smiles}, Error: {e}")
-
-    # print("cleaned_smiles:")
-    # for smiles in cleaned_smiles:
-    #     print(smiles)
+            logging.error(f"Failed to clean reaction: {reaction_smiles}, Error: {e}")
 
     return cleaned_smiles
