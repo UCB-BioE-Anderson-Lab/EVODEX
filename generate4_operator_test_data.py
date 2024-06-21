@@ -1,5 +1,5 @@
 import csv
-from evodex.splitting import split_reaction
+from evodex.decofactor import remove_cofactors
 
 def load_reactions(input_csv: str) -> list[dict]:
     reactions = []
@@ -8,10 +8,6 @@ def load_reactions(input_csv: str) -> list[dict]:
         for row in reader:
             reactions.append({'id': row['id'], 'atom_mapped': row['atom_mapped']})
     return reactions
-
-def pick_smallest_partial(reaction_smiles: list[str]) -> str:
-    smallest_partial = min(reaction_smiles, key=lambda x: len(x.split('>>')[0].split('.')))
-    return smallest_partial
 
 def generate_partial_reactions(input_csv: str, output_csv: str):
     reactions = load_reactions(input_csv)
@@ -22,12 +18,13 @@ def generate_partial_reactions(input_csv: str, output_csv: str):
         for reaction in reactions:
             reaction_id = reaction['id']
             reaction_smiles = reaction['atom_mapped']
-            partial_reactions = split_reaction(reaction_smiles)
-            if partial_reactions:
-                smallest_partial = pick_smallest_partial(partial_reactions)
-                writer.writerow([reaction_id, smallest_partial])
-            else:
-                print(f"No partial reactions generated for reaction ID {reaction_id}")
+            try:
+                partial_reaction = remove_cofactors(reaction_smiles)
+                writer.writerow([reaction_id, partial_reaction])
+            except ValueError as e:
+                print(f"No partial reactions generated for reaction ID {reaction_id}: {e}")
+            except Exception as e:
+                print(f"Error processing reaction ID {reaction_id}: {e}")
 
 if __name__ == "__main__":
     input_csv = 'tests/data/splitting_test_data.csv'
