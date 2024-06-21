@@ -16,15 +16,16 @@ def generate_astatine_data(input_file: str, output_file: str):
     """
     with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
-        fieldnames = reader.fieldnames + ['astatine_mapped']
+        fieldnames = ['id', 'astatine_mapped']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
 
         writer.writeheader()
         for row in reader:
-            hydrogen_smiles = row['rxn']
+            reaction_id = row['id']
+            hydrogen_smiles = row[reader.fieldnames[-1]]  # Last field
             astatine_smiles = hydrogen_to_astatine(hydrogen_smiles)
-            row['astatine_mapped'] = astatine_smiles
-            writer.writerow(row)
+            new_row = {'id': reaction_id, 'astatine_mapped': astatine_smiles}
+            writer.writerow(new_row)
 
 if __name__ == "__main__":
     input_file = 'tests/data/astatine_test_data.csv'

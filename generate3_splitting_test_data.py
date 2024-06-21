@@ -16,18 +16,19 @@ def generate_mapped_data(input_file: str, output_file: str):
     """
     with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
-        fieldnames = reader.fieldnames + ['atom_mapped']
+        fieldnames = ['id', 'atom_mapped']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
 
         writer.writeheader()
         for row in reader:
-            astatine_smiles = row['astatine_mapped']
+            reaction_id = row['id']
+            astatine_smiles = row[reader.fieldnames[-1]]  # Last field
             try:
                 atom_mapped_smiles = map_atoms(astatine_smiles)
-                row['atom_mapped'] = atom_mapped_smiles
+                row = {'id': reaction_id, 'atom_mapped': atom_mapped_smiles}
             except ValueError as e:
-                print(f"Error processing reaction {astatine_smiles}: {e}")
-                row['atom_mapped'] = 'ERROR'
+                print(f"Error processing reaction {reaction_id}: {e}")
+                row = {'id': reaction_id, 'atom_mapped': 'ERROR'}
             writer.writerow(row)
 
 if __name__ == "__main__":

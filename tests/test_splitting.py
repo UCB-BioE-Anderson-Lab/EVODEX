@@ -10,7 +10,7 @@ def load_reactions_with_astatine():
     with open('tests/data/splitting_test_data.csv', 'r') as file:
         reader = csv.DictReader(file)
         for row in reader:
-            reactions.append(row['astatine_mapped'])
+            reactions.append(row['atom_mapped'])
     return reactions
 
 def test_split_reaction(load_reactions_with_astatine):

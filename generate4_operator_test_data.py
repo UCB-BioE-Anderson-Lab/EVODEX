@@ -6,7 +6,7 @@ def load_reactions(input_csv: str) -> list[dict]:
     with open(input_csv, 'r') as file:
         reader = csv.DictReader(file)
         for row in reader:
-            reactions.append(row)
+            reactions.append({'id': row['id'], 'atom_mapped': row['atom_mapped']})
     return reactions
 
 def pick_smallest_partial(reaction_smiles: list[str]) -> str:
