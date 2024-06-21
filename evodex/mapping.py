@@ -27,6 +27,23 @@ def map_atoms(smiles: str) -> str:
     new_reactants = list(raw_rxn.GetReactants())
     new_products = list(raw_rxn.GetProducts())
 
+    # Calculate InChI for all reactants and products
+    reactant_inchis = [Chem.MolToInchi(mol) for mol in new_reactants]
+    product_inchis = [Chem.MolToInchi(mol) for mol in new_products]
+
+    # Remove identical InChI pairs from reactants and products
+    to_remove_reactants = []
+    to_remove_products = []
+    for i, reactant_inchi in enumerate(reactant_inchis):
+        for j, product_inchi in enumerate(product_inchis):
+            if reactant_inchi == product_inchi:
+                to_remove_reactants.append(i)
+                to_remove_products.append(j)
+                break
+
+    new_reactants = [mol for i, mol in enumerate(new_reactants) if i not in to_remove_reactants]
+    new_products = [mol for j, mol in enumerate(new_products) if j not in to_remove_products]
+
     reaction = AllChem.ChemicalReaction()
     for reactant in new_reactants:
         reaction.AddReactantTemplate(reactant)

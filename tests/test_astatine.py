@@ -16,7 +16,7 @@ def get_carbon_count(smiles: str):
 @pytest.fixture(scope="module")
 def load_reactions_with_hydrogen():
     reactions = []
-    with open('tests/data/test_reactions_with_hydrogen.csv', 'r') as file:
+    with open('tests/data/astatine_test_data.csv', 'r') as file:
         reader = csv.DictReader(file)
         for row in reader:
             reactions.append(row['rxn'])

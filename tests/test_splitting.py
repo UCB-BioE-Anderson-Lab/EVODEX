@@ -7,7 +7,7 @@ from evodex.splitting import split_reaction
 @pytest.fixture(scope="module")
 def load_reactions_with_astatine():
     reactions = []
-    with open('tests/data/test_reactions_with_astatine.csv', 'r') as file:
+    with open('tests/data/splitting_test_data.csv', 'r') as file:
         reader = csv.DictReader(file)
         for row in reader:
             reactions.append(row['astatine_mapped'])

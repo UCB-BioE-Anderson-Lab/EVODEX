@@ -31,7 +31,7 @@ def generate_mapped_data(input_file: str, output_file: str):
             writer.writerow(row)
 
 if __name__ == "__main__":
-    input_file = 'tests/data/test_reactions_with_astatine.csv'
-    output_file = 'tests/data/test_reactions_with_atom_maps.csv'
+    input_file = 'tests/data/mapping_test_data.csv'
+    output_file = 'tests/data/splitting_test_data.csv'
     generate_mapped_data(input_file, output_file)
     print(f"Atom-mapped test data generated and saved to {output_file}")
