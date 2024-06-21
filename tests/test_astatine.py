@@ -7,7 +7,7 @@ import os
 
 # This deals with path issues
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from evodex.astatine import hydrogen_to_astatine, astatine_to_hydrogen
+from evodex.astatine import hydrogen_to_astatine_reaction, astatine_to_hydrogen_reaction
 
 def get_carbon_count(smiles: str):
     mol = Chem.MolFromSmiles(smiles)
@@ -27,10 +27,10 @@ def test_hydrogen_to_astatine_conversion(load_reactions_with_hydrogen):
         mapped_smiles = reaction_smiles
             
         # Convert hydrogen to astatine
-        astatine_smiles = hydrogen_to_astatine(mapped_smiles)
+        astatine_smiles = hydrogen_to_astatine_reaction(mapped_smiles)
             
         # Convert astatine back to hydrogen
-        reconstituted_smiles = astatine_to_hydrogen(astatine_smiles)
+        reconstituted_smiles = astatine_to_hydrogen_reaction(astatine_smiles)
             
         # Check carbon counts in reactants and products
         reaction_orig = AllChem.ReactionFromSmarts(mapped_smiles, useSmiles=True)

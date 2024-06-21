@@ -1,7 +1,7 @@
 import csv
 import os
 import sys
-from evodex.astatine import hydrogen_to_astatine
+from evodex.astatine import hydrogen_to_astatine_reaction
 
 # This deals with path issues
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -23,7 +23,7 @@ def generate_astatine_data(input_file: str, output_file: str):
         for row in reader:
             reaction_id = row['id']
             hydrogen_smiles = row[reader.fieldnames[-1]]  # Last field
-            astatine_smiles = hydrogen_to_astatine(hydrogen_smiles)
+            astatine_smiles = hydrogen_to_astatine_reaction(hydrogen_smiles)
             new_row = {'id': reaction_id, 'astatine_mapped': astatine_smiles}
             writer.writerow(new_row)
 
