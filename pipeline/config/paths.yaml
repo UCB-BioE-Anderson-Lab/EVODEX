@@ -1,0 +1,7 @@
+raw_data: "data/raw/raw_reactions.csv"
+filtered_data: "data/processed/filtered_reactions.csv"
+astatine_data: "data/processed/astatine_reactions.csv"
+mapped_data: "data/processed/atom_mapped_reactions.csv"
+partial_reactions: "data/processed/partial_reactions.csv"
+operator_data: "data/processed/operators.csv"
+final_mf_data: "data/processed/formula_mass_data.csv"
