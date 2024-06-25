@@ -1,7 +1,6 @@
 import rdkit
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
-from rdkit.Chem.Draw import IPythonConsole
 from rdkit.Chem import rdChemReactions
 
 # Function to check if an atom is sp3 hybridized
