@@ -12,10 +12,10 @@ _native_metabolites = None
 def _load_native_metabolites() -> Set[str]:
     global _native_metabolites
     if _native_metabolites is not None:
-        print("Native metabolites already loaded.")
+        # print("Native metabolites already loaded.")
         return _native_metabolites
 
-    print("----> loading native metabolites from file")
+    # print("----> loading native metabolites from file")
     script_dir = os.path.dirname(__file__)
     ubiquitous_metabolites_file = os.path.join(script_dir, 'data', 'ubiquitous_metabolites.txt')
     backup_file = os.path.join(script_dir, 'data', 'ubiquitous_metabolites_backup.txt')
@@ -23,7 +23,7 @@ def _load_native_metabolites() -> Set[str]:
     
     try:
         with open(ubiquitous_metabolites_file, 'r') as file:
-            print("reading ubiquitous metabolites")
+            # print("reading ubiquitous metabolites")
             reader = csv.DictReader(file, delimiter='\t')
             
             with open(backup_file, 'w', newline='') as backup:
@@ -32,7 +32,7 @@ def _load_native_metabolites() -> Set[str]:
                 
                 for row in reader:
                     name = row['name'].strip().strip('"')
-                    print("processing: ", name)
+                    # print("processing: ", name)
                     inchi_str = row['inchi'].strip().strip('"')
                     mol = inchi.MolFromInchi(inchi_str)
                     
@@ -40,7 +40,7 @@ def _load_native_metabolites() -> Set[str]:
                         try:
                             smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
                             custom_hash = get_molecule_hash(smiles)
-                            print("hash:", custom_hash)
+                            # print("hash:", custom_hash)
                             _native_metabolites.add(custom_hash)
                             backup_writer.writerow([name, inchi_str, custom_hash])
                         except Exception as e:
@@ -82,10 +82,10 @@ def _clean_up_atom_maps(rxn: AllChem.ChemicalReaction):
         raise RuntimeError(f"Failed to clean up atom maps: {e}")
 
 def remove_cofactors(smiles: str) -> str:
-    print("remove cofactors invoked")
+    # print("remove cofactors invoked")
     try:
         native_metabolites = _load_native_metabolites()
-        print("post loading metabolites")
+        # print("post loading metabolites")
 
         # Load the input SMILES as a reaction object
         rxn = AllChem.ReactionFromSmarts(smiles, useSmiles=True)
@@ -96,18 +96,16 @@ def remove_cofactors(smiles: str) -> str:
         non_cofactor_reactants = []
         non_cofactor_products = []
 
-        print("----> hashing reactants and products")
+        # print("----> hashing reactants and products")
         for mol in rxn.GetReactants():
             try:
                 smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
                 custom_hash = get_molecule_hash(smiles)
-                print("\ntesting reactant hash: ", custom_hash)
+                # print("\ntesting reactant hash: ", custom_hash)
                 if custom_hash and custom_hash not in native_metabolites:
                     retained_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                    print("Retained smiles:", retained_smiles)
-                    non_cofactor_reactants.append(retained_smiles)   
-                else:
-                    print("Cofactor found:", custom_hash)         
+                    # print("Retained smiles:", retained_smiles)
+                    non_cofactor_reactants.append(retained_smiles)       
             except Exception as e:
                 raise RuntimeError(f"Failed to process reactant: {e}")
 
@@ -115,10 +113,10 @@ def remove_cofactors(smiles: str) -> str:
             try:
                 smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
                 custom_hash = get_molecule_hash(smiles)
-                print("\ntesting product hash: ", custom_hash)
+                # print("\ntesting product hash: ", custom_hash)
                 if custom_hash and custom_hash not in native_metabolites:
                     retained_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                    print("Retained smiles:", retained_smiles)
+                    # print("Retained smiles:", retained_smiles)
                     non_cofactor_products.append(retained_smiles)
             except Exception as e:
                 raise RuntimeError(f"Failed to process product: {e}")
@@ -149,14 +147,3 @@ def remove_cofactors(smiles: str) -> str:
         return modified_smiles
     except Exception as e:
         raise RuntimeError(f"Failed to remove cofactors from SMILES: {smiles}, Error: {e}")
-
-# Test function
-if __name__ == "__main__":
-    print("Starting test...")
-    # Add test cases to check the functionality
-    test_smiles = "CCO>>CC=O"  # Example SMILES
-    try:
-        result = remove_cofactors(test_smiles)
-        print("Result:", result)
-    except Exception as e:
-        print("Error:", e)
