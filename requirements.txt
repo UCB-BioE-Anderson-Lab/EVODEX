@@ -1,4 +1,10 @@
+# Included in pypi distribution
 numpy<2
 rdkit-pypi
+
+# Development dependencies
 pytest
 pyyaml
+epam.indigo
+jinja2
+pandas

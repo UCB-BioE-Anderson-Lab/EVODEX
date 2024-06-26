@@ -52,3 +52,21 @@
 #         print(f"SMILES: {smiles}\nHash: {hash_str}\n")
 #     except Exception as e:
 #         print(f"Error generating hash for {smiles}: {e}\n")
+
+import pandas as pd
+
+csv_files = [
+    'data/processed/EVODEX-E_reaction_operators.csv',
+    'data/processed/EVODEX-C_reaction_operators.csv',
+    'data/processed/EVODEX-N_reaction_operators.csv',
+    'data/processed/EVODEX-Em_reaction_operators.csv',
+    'data/processed/EVODEX-Cm_reaction_operators.csv',
+    'data/processed/EVODEX-Nm_reaction_operators.csv',
+]
+
+for file in csv_files:
+    try:
+        df = pd.read_csv(file)
+        print(f"Headers in {file}: {df.columns.tolist()}")
+    except Exception as e:
+        print(f"Error reading {file}: {e}")
