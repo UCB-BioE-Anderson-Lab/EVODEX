@@ -76,9 +76,9 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     index_context = {
         'reactions': index_content
     }
-    with open(os.path.join(pages_dir, 'index.html'), 'w') as file:
+    with open(os.path.join(pages_dir, 'curation_index.html'), 'w') as file:
         file.write(index_template.render(index_context))
 
 if __name__ == "__main__":
     paths = load_paths('pipeline/config/paths.yaml')
-    generate_html_pages(paths, paths['data_dir'], paths['images_dir'], paths['pages_dir'], ['P', 'E', 'N', 'C', 'Em', 'Nm', 'Cm'])
+    generate_html_pages(paths, paths['data_dir'], paths['images_dir'], paths['pages_dir'], ['R', 'P', 'E', 'N', 'C', 'Em', 'Nm', 'Cm'])

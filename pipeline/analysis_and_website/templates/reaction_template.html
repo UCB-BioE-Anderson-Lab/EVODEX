@@ -29,6 +29,16 @@
 
         <section>
             <h2>EVODEX</h2>
+            <div>
+                <h3>R</h3>
+                <img src="../images/{{ evodex_id }}-R.svg" alt="EVODEX-R Reaction Rendering">
+                <p>{{ smirks }}</p>
+            </div>
+            <div>
+                <h3>P</h3>
+                <img src="../images/{{ evodex_id }}-P.svg" alt="EVODEX-P Reaction Rendering">
+                <p>{{ smirks }}</p>
+            </div>
             {% for type, details in reaction_details.items() %}
             <div>
                 <h3>{{ type }}</h3>
@@ -48,8 +58,5 @@
             <p>{{ mass }}</p>
         </section>
     </main>
-    <footer>
-        {{ copyright }}
-    </footer>
 </body>
 </html>
