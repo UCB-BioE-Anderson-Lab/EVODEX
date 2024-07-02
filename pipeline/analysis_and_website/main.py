@@ -39,10 +39,10 @@ def create_website(paths):
         'R': {'filename': paths['evodex_r']},
         'P': {'filename': paths['evodex_p']},
         'E': {'filename': paths['evodex_e']},
-        'N': {'filename': paths['evodex_n']},
-        'C': {'filename': paths['evodex_c']},
         'Em': {'filename': paths['evodex_em']},
+        'N': {'filename': paths['evodex_n']},
         'Nm': {'filename': paths['evodex_nm']},
+        'C': {'filename': paths['evodex_c']},
         'Cm': {'filename': paths['evodex_cm']}
     }
 
