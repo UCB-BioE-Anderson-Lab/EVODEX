@@ -18,49 +18,16 @@
     </header>
     <main>
         <section>
-            <h2>SMIRKS</h2>
-            <img src="../images/{{ svg_filename }}" alt="Reaction Rendering">
+            <h2>Original SMIRKS</h2>
             <p>{{ smirks }}</p>
         </section>
+        {% for evodex_type, details in reaction_details.items() %}
         <section>
-            <h2>Reaction Sources</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Rxn Index</th>
-                        <th>Original Reaction Text</th>
-                        <th>Natural</th>
-                        <th>Organism</th>
-                        <th>Protein Refs</th>
-                        <th>Protein DB</th>
-                        <th>EC Number</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for source in sources %}
-                    <tr>
-                        <td>{{ source.rxn_idx }}</td>
-                        <td>{{ source.orig_rxn_text }}</td>
-                        <td>{{ source.natural }}</td>
-                        <td>{{ source.organism }}</td>
-                        <td>{{ source.protein_refs }}</td>
-                        <td>{{ source.protein_db }}</td>
-                        <td>{{ source.ec_num }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+            <h2>{{ evodex_type }} Reaction</h2>
+            <img src="../images/{{ details.svg_filename }}" alt="Reaction Rendering">
+            <p>{{ details.smirks }}</p>
         </section>
-        <section>
-            <h2>Derived Partial Reactions</h2>
-            {% for reaction in partial_reactions %}
-            <div>
-                <h3><a href="../pages/{{ reaction.id }}.html">{{ reaction.id }}</a></h3>
-                <img src="../images/{{ reaction.id }}.svg" alt="{{ reaction.smirks }}">
-                <p>{{ reaction.smirks }}</p>
-            </div>
-            {% endfor %}
-        </section>
+        {% endfor %}
     </main>
     <footer>
         {{ copyright }}

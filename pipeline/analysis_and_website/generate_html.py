@@ -1,54 +1,60 @@
 import os
-from jinja2 import Template
 import pandas as pd
+from jinja2 import Environment, FileSystemLoader
 
-def generate_html_pages(paths, data_dir, images_dir, pages_dir):
-    template_path = os.path.join(paths['template_dir'], 'reaction_template.html')
-    with open(template_path) as template_file:
-        template_content = template_file.read()
+def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
+    os.makedirs(pages_dir, exist_ok=True)
+    env = Environment(loader=FileSystemLoader(paths['template_dir']))
+    template = env.get_template('reaction_template.html')
+    index_template = env.get_template('index_template.html')
 
-    template = Template(template_content)
+    # Load all EVODEX dataframes
+    evodex_dataframes = {}
+    for evodex_type in evodex_types:
+        file_path = os.path.join(data_dir, f"EVODEX-{evodex_type}_reaction_operators.csv")
+        if os.path.exists(file_path):
+            evodex_dataframes[evodex_type] = pd.read_csv(file_path)
 
-    evodex_p_df = pd.read_csv(paths['evodex_p'])
-    r_to_p_map = {}
-    for index, row in evodex_p_df.iterrows():
-        for r_id in eval(row.get('sources', '[]')):  # Use .get to avoid KeyError
-            if r_id not in r_to_p_map:
-                r_to_p_map[r_id] = []
-            r_to_p_map[r_id].append({
-                'id': row['id'],
-                'smirks': row['partial_reaction']
-            })
+    # Create index page content
+    index_content = []
 
-    source_filename = paths['raw_data']
-    evodex_r_df = pd.read_csv(paths['evodex_r'])
-
-    # Debugging statements to print column names and sample row
-    print(f"Columns in {paths['evodex_r']}: {evodex_r_df.columns.tolist()}")
-    print(f"Sample row from {paths['evodex_r']}: {evodex_r_df.iloc[0].to_dict()}")
-
-    source_df = pd.read_csv(source_filename)
-
+    # Process each reaction based on EVODEX-R
+    evodex_r_df = pd.read_csv(os.path.join(data_dir, 'EVODEX-R_full_reactions.csv'))
     for index, row in evodex_r_df.iterrows():
-        try:
-            evodex_id = row['id']
-            smirks = row['mapped_reaction']
-            rxn_ids = eval(row.get('sources', '[]'))  # Use .get to avoid KeyError
+        evodex_id = str(int(row['id']))  # Ensure ID is in string format
+        smirks = row['smirks']
 
-            sources_data = source_df[source_df['rxn_idx'].isin(rxn_ids)]
-            sources = sources_data[['rxn_idx', 'orig_rxn_text', 'natural', 'organism', 'protein_refs', 'protein_db', 'ec_num']].to_dict(orient='records')
-            partial_reactions = r_to_p_map.get(evodex_id, [])
+        reaction_details = {}
+        for evodex_type in evodex_types:
+            df = evodex_dataframes.get(evodex_type)
+            if df is not None:
+                reaction_data = df[df['id'] == int(evodex_id)]  # Ensure matching IDs as integers
+                if not reaction_data.empty:
+                    reaction_details[evodex_type] = {
+                        'smirks': reaction_data.iloc[0]['smirks'],
+                        'svg_filename': f"{evodex_id}-{evodex_type}.svg"  # Correct path
+                    }
 
-            context = {
-                'evodex_id': evodex_id,
-                'svg_filename': f"{evodex_id}.svg",
-                'smirks': smirks,
-                'sources': sources,
-                'partial_reactions': partial_reactions
-            }
+        context = {
+            'evodex_id': evodex_id,
+            'reaction_details': reaction_details,
+            'smirks': smirks  # Add the original smirks to the context
+        }
 
-            html_content = template.render(context)
-            with open(os.path.join(pages_dir, f"{evodex_id}.html"), 'w') as file:
-                file.write(html_content)
-        except KeyError as e:
-            print(f"KeyError: {e} in row: {row.to_dict()}")
+        html_content = template.render(context)
+        page_filename = f"{evodex_id}.html"
+        with open(os.path.join(pages_dir, page_filename), 'w') as file:
+            file.write(html_content)
+
+        index_content.append((evodex_id, page_filename))
+
+    # Generate the index page
+    index_context = {
+        'reactions': index_content
+    }
+    with open(os.path.join(pages_dir, 'index.html'), 'w') as file:
+        file.write(index_template.render(index_context))
+
+if __name__ == "__main__":
+    paths = load_paths('pipeline/config/paths.yaml')
+    generate_html_pages(paths, paths['data_dir'], paths['images_dir'], paths['pages_dir'], ['P', 'F', 'M', 'E', 'Em', 'C', 'Cm', 'N', 'Nm'])

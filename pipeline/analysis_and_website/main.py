@@ -17,11 +17,10 @@ def setup_directories(base_dir):
 
 def move_csv_files(data_dir, paths):
     for key, path in paths.items():
-        if 'processed' in path:
-            csv_file = path.split('/')[-1]
+        if 'EVODEX' in os.path.basename(path):  # Move only EVODEX files
+            csv_file = os.path.basename(path)
             if os.path.exists(path):
                 shutil.move(path, os.path.join(data_dir, csv_file))
-                # Update the path in the paths dictionary to reflect the new location
                 paths[key] = os.path.join(data_dir, csv_file)
                 print(f"Moved: {path} to {os.path.join(data_dir, csv_file)}")
             else:
@@ -33,34 +32,43 @@ def create_website(paths):
     move_csv_files(data_dir, paths)
 
     ro_metadata = {
+        'R': {
+            'filename': paths['evodex_r'],
+            'title': 'Full Reaction'
+        },
+        'P': {
+            'filename': paths['evodex_p'],
+            'title': 'Partial Reaction'
+        },
         'E': {
             'filename': paths['evodex_e'],
             'title': 'Electronic Reaction Operator'
-        },
-        'C': {
-            'filename': paths['evodex_c'],
-            'title': 'Core Reaction Operator'
         },
         'N': {
             'filename': paths['evodex_n'],
             'title': 'Nearest Neighbor Reaction Operator'
         },
+        'C': {
+            'filename': paths['evodex_c'],
+            'title': 'Core Reaction Operator'
+        },
         'Em': {
             'filename': paths['evodex_em'],
             'title': 'Minimal Electronic Reaction Operator'
         },
-        'Cm': {
-            'filename': paths['evodex_cm'],
-            'title': 'Minimal Core Reaction Operator'
-        },
         'Nm': {
             'filename': paths['evodex_nm'],
             'title': 'Minimal Nearest Neighbor Reaction Operator'
+        },
+        'Cm': {
+            'filename': paths['evodex_cm'],
+            'title': 'Minimal Core Reaction Operator'
         }
     }
 
-    generate_all_svgs(ro_metadata, data_dir, images_dir)
-    generate_html_pages(paths, data_dir, images_dir, pages_dir)
+    for evodex_type, metadata in ro_metadata.items():
+        generate_all_svgs(evodex_type, metadata, images_dir)
+        generate_html_pages(paths, data_dir, images_dir, pages_dir, list(ro_metadata.keys()))
 
 def main():
     paths = load_paths('pipeline/config/paths.yaml')
