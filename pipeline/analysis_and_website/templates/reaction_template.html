@@ -4,30 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ evodex_id }} - Reaction</title>
-    <link rel="stylesheet" href="../static/styles.css">
 </head>
 <body>
     <header>
-        <a href="../../index.html">
-            <img src="../images/evodex_logo.png" alt="EVODEX Logo">
-        </a>
         <div>
             <h1>{{ evodex_id }}</h1>
-            <h2>Full Hydrogen-Mapped Reaction</h2>
         </div>
     </header>
     <main>
         <section>
-            <h2>Original SMIRKS</h2>
-            <p>{{ smirks }}</p>
+            <h2>Data Preparation</h2>
+            <h3>Raw Reaction</h3>
+            <img src="../images/{{ raw_svg }}" alt="Raw Reaction Rendering">
+            <p>{{ raw_reaction }}</p>
+            
+            <h3>Filtered Reaction</h3>
+            <img src="../images/{{ filtered_svg }}" alt="Filtered Reaction Rendering">
+            <p>{{ filtered_reaction }}</p>
+            
+            <h3>Astatine Reaction</h3>
+            <img src="../images/{{ astatine_svg }}" alt="Astatine Reaction Rendering">
+            <p>{{ astatine_reaction }}</p>
         </section>
-        {% for evodex_type, details in reaction_details.items() %}
+
         <section>
-            <h2>{{ evodex_type }} Reaction</h2>
-            <img src="../images/{{ details.svg_filename }}" alt="Reaction Rendering">
-            <p>{{ details.smirks }}</p>
+            <h2>EVODEX</h2>
+            {% for type, details in reaction_details.items() %}
+            <div>
+                <h3>{{ type }}</h3>
+                <img src="../images/{{ details.svg_filename }}" alt="Reaction Rendering">
+                <p>{{ details.smirks }}</p>
+            </div>
+            {% endfor %}
         </section>
-        {% endfor %}
+
+        <section>
+            <h2>Unique Formula</h2>
+            <p>{{ formula }}</p>
+        </section>
+
+        <section>
+            <h2>Unique Mass</h2>
+            <p>{{ mass }}</p>
+        </section>
     </main>
     <footer>
         {{ copyright }}
