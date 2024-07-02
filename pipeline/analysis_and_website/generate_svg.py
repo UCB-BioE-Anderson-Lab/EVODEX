@@ -40,6 +40,10 @@ def generate_svg(smirks, filename, images_dir):
         logging.error(f"Error rendering reaction image for {filename}: {e}")
 
 def generate_all_svgs(evodex_type, metadata, images_dir):
+    if evodex_type in ['F', 'M']:
+        logging.info(f"Skipping SVG generation for {evodex_type}")
+        return
+
     full_csv_path = metadata['filename']
     smirks_column = 'smirks'
     try:
@@ -84,9 +88,7 @@ if __name__ == "__main__":
         'C': {'filename': paths['evodex_c']},
         'Em': {'filename': paths['evodex_em']},
         'Nm': {'filename': paths['evodex_nm']},
-        'Cm': {'filename': paths['evodex_cm']},
-        'F': {'filename': paths['evodex_f']},
-        'M': {'filename': paths['evodex_m']}
+        'Cm': {'filename': paths['evodex_cm']}
     }
     
     generate_svgs_for_data_preparation(data_paths, paths['images_dir'])

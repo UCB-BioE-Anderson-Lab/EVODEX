@@ -43,9 +43,7 @@ def create_website(paths):
         'C': {'filename': paths['evodex_c']},
         'Em': {'filename': paths['evodex_em']},
         'Nm': {'filename': paths['evodex_nm']},
-        'Cm': {'filename': paths['evodex_cm']},
-        'F': {'filename': paths['evodex_f']},
-        'M': {'filename': paths['evodex_m']}
+        'Cm': {'filename': paths['evodex_cm']}
     }
 
     data_paths = {
@@ -59,7 +57,7 @@ def create_website(paths):
     for evodex_type, metadata in ro_metadata.items():
         generate_all_svgs(evodex_type, metadata, images_dir)
 
-    generate_html_pages(paths, data_dir, images_dir, pages_dir, list(ro_metadata.keys()))
+    generate_html_pages(paths, data_dir, images_dir, pages_dir, list(ro_metadata.keys()) + ['F', 'M'])
 
 def main():
     paths = load_paths('pipeline/config/paths.yaml')

@@ -61,8 +61,8 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
             'astatine_svg': f"{evodex_id}-astatine.svg",
             'reaction_details': reaction_details,
             'smirks': smirks,  # Add the original smirks to the context
-            'formula': formula_reaction.iloc[0]['smirks'] if not formula_reaction.empty else 'N/A',
-            'mass': mass_reaction.iloc[0]['sources'] if not mass_reaction.empty else 'N/A'
+            'formula': formula_reaction.iloc[0]['formula'] if not formula_reaction.empty else 'N/A',
+            'mass': mass_reaction.iloc[0]['mass'] if not mass_reaction.empty else 'N/A'
         }
 
         html_content = template.render(context)
@@ -82,4 +82,3 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
 if __name__ == "__main__":
     paths = load_paths('pipeline/config/paths.yaml')
     generate_html_pages(paths, paths['data_dir'], paths['images_dir'], paths['pages_dir'], ['P', 'E', 'N', 'C', 'Em', 'Nm', 'Cm'])
-

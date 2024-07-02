@@ -18,15 +18,16 @@ def ensure_directories(paths: dict):
 def write_row(writer, row_data):
     writer.writerow(row_data)
 
-def handle_error(row, e):
-    row['error'] = str(e)
+def handle_error(row, e, fieldnames):
+    error_row = {key: row[key] for key in fieldnames if key in row}
+    error_row['error'] = str(e)
     logging.error(f"Error processing ID {row.get('id', 'Unknown ID')}: {e}")
-    return row
+    return error_row
 
-def process_reaction_data(input_csv, output_csv, process_function):
+def process_reaction_data(input_csv, output_csv, process_function, additional_fields=[]):
     with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
-        fieldnames = reader.fieldnames + ['error'] if 'error' not in reader.fieldnames else reader.fieldnames
+        fieldnames = reader.fieldnames + additional_fields + ['error'] if 'error' not in reader.fieldnames else reader.fieldnames
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         for row in reader:
@@ -37,7 +38,43 @@ def process_reaction_data(input_csv, output_csv, process_function):
                 result = process_function(row)
                 writer.writerow({**row, **result, 'error': ''})
             except Exception as e:
-                writer.writerow(handle_error(row, e))
+                writer.writerow(handle_error(row, e, fieldnames))
+
+def process_formula_data(input_csv, output_csv):
+    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
+        reader = csv.DictReader(infile)
+        fieldnames = ['id', 'formula', 'error']
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in reader:
+            if row.get('error'):
+                writer.writerow(handle_error(row, row.get('error'), fieldnames))  # Propagate rows with existing errors
+                continue
+            try:
+                formula_diff = calculate_formula_diff(row['smirks'])
+                print(f"Formula diff for ID {row['id']}: {formula_diff}")  # Print statement for debugging
+                logging.info(f"Processed formula for ID {row['id']}: {formula_diff}")
+                writer.writerow({'id': row['id'], 'formula': str(formula_diff), 'error': ''})
+            except Exception as e:
+                writer.writerow(handle_error(row, e, fieldnames))
+
+def process_mass_data(input_csv, output_csv):
+    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
+        reader = csv.DictReader(infile)
+        fieldnames = ['id', 'mass', 'error']
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in reader:
+            if row.get('error'):
+                writer.writerow(handle_error(row, row.get('error'), fieldnames))  # Propagate rows with existing errors
+                continue
+            try:
+                formula_diff = calculate_formula_diff(row['smirks'])
+                mass_diff = calculate_exact_mass(formula_diff)
+                logging.info(f"Processed mass for ID {row['id']}: {mass_diff}")
+                writer.writerow({'id': row['id'], 'mass': mass_diff, 'error': ''})
+            except Exception as e:
+                writer.writerow(handle_error(row, e, fieldnames))
 
 def main():
     paths = load_paths('pipeline/config/paths.yaml')
@@ -50,12 +87,7 @@ def main():
     def process_operators(row, params):
         return {'smirks': extract_operator(row['smirks'], **params)}
 
-    def process_formula_mass(row):
-        formula_diff = calculate_formula_diff(row['smirks'])
-        mass_diff = calculate_exact_mass(formula_diff)
-        return {'formula': str(formula_diff), 'mass': mass_diff}
-
-    process_reaction_data(paths['evodex_r'], paths['evodex_p'], process_partial_reactions)
+    process_reaction_data(paths['evodex_r'], paths['evodex_p'], process_partial_reactions, ['smirks'])
     print("Partial reactions processed.")
 
     extract_params_map = {
@@ -110,13 +142,13 @@ def main():
     }
 
     for key, params in extract_params_map.items():
-        process_reaction_data(paths['evodex_p'], paths[key], lambda row: process_operators(row, params))
+        process_reaction_data(paths['evodex_p'], paths[key], lambda row: process_operators(row, params), ['smirks'])
         print(f"Operator data processed and saved to {paths[key]}")
 
-    process_reaction_data(paths['evodex_p'], paths['evodex_f'], process_formula_mass)
+    process_formula_data(paths['evodex_p'], paths['evodex_f'])
     print(f"Formula data processed and saved to {paths['evodex_f']}")
     
-    process_reaction_data(paths['evodex_p'], paths['evodex_m'], process_formula_mass)
+    process_mass_data(paths['evodex_p'], paths['evodex_m'])
     print(f"Mass data processed and saved to {paths['evodex_m']}")
 
 if __name__ == "__main__":
