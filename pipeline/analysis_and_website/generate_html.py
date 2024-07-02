@@ -25,6 +25,19 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     evodex_f_df = pd.read_csv(paths['evodex_f'])
     evodex_m_df = pd.read_csv(paths['evodex_m'])
 
+    # Function to get reaction data and handle missing columns
+    def get_reaction_data(df, column_name, idx_column_name='id'):
+        if idx_column_name not in df.columns:
+            return 'N/A'
+        reaction_data = df[df[idx_column_name] == int(evodex_id)]
+        if not reaction_data.empty:
+            error_data = reaction_data.iloc[0].get('error', '')
+            if pd.notna(error_data) and error_data != '':
+                return error_data
+            data_value = reaction_data.iloc[0].get(column_name, 'N/A')
+            return data_value if pd.notna(data_value) else 'N/A'
+        return 'N/A'
+
     # Create index page content
     index_content = []
 
@@ -37,32 +50,41 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
         for evodex_type in evodex_types:
             df = evodex_dataframes.get(evodex_type)
             if df is not None:
-                reaction_data = df[df['id'] == int(evodex_id)]  # Ensure matching IDs as integers
-                if not reaction_data.empty:
-                    reaction_details[evodex_type] = {
-                        'smirks': reaction_data.iloc[0]['smirks'],
-                        'svg_filename': f"{evodex_id}-{evodex_type}.svg"  # Correct path
-                    }
+                if 'id' in df.columns:
+                    reaction_data = df[df['id'] == int(evodex_id)]  # Ensure matching IDs as integers
+                    if not reaction_data.empty:
+                        smirks_data = reaction_data.iloc[0]['smirks']
+                        error_data = reaction_data.iloc[0].get('error', '')
+                        reaction_details[evodex_type] = {
+                            'smirks': error_data if pd.notna(error_data) and error_data != '' else smirks_data,
+                            'svg_filename': f"{evodex_id}-{evodex_type}.svg" if not (pd.notna(error_data) and error_data != '') else None
+                        }
 
         # Load additional reaction data
-        raw_reaction = raw_reactions_df[raw_reactions_df['rxn_idx'] == int(evodex_id)]
-        filtered_reaction = filtered_reactions_df[filtered_reactions_df['id'] == int(evodex_id)]
-        astatine_reaction = astatine_reactions_df[astatine_reactions_df['id'] == int(evodex_id)]
-        formula_reaction = evodex_f_df[evodex_f_df['id'] == int(evodex_id)]
-        mass_reaction = evodex_m_df[evodex_m_df['id'] == int(evodex_id)]
+        raw_reaction = get_reaction_data(raw_reactions_df, 'mapped', 'rxn_idx')
+        raw_svg = f"{evodex_id}-raw.svg"
+
+        filtered_reaction = get_reaction_data(filtered_reactions_df, 'smirks')
+        filtered_svg = f"{evodex_id}-filtered.svg" if filtered_reaction != 'N/A' else None
+
+        astatine_reaction = get_reaction_data(astatine_reactions_df, 'smirks')
+        astatine_svg = f"{evodex_id}-astatine.svg" if astatine_reaction != 'N/A' else None
+
+        formula_reaction = get_reaction_data(evodex_f_df, 'formula')
+        mass_reaction = get_reaction_data(evodex_m_df, 'mass')
 
         context = {
             'evodex_id': evodex_id,
-            'raw_reaction': raw_reaction.iloc[0]['mapped'] if not raw_reaction.empty else 'N/A',
-            'raw_svg': f"{evodex_id}-raw.svg",
-            'filtered_reaction': filtered_reaction.iloc[0]['smirks'] if not filtered_reaction.empty else 'N/A',
-            'filtered_svg': f"{evodex_id}-filtered.svg",
-            'astatine_reaction': astatine_reaction.iloc[0]['smirks'] if not astatine_reaction.empty else 'N/A',
-            'astatine_svg': f"{evodex_id}-astatine.svg",
+            'raw_reaction': raw_reaction,
+            'raw_svg': raw_svg,
+            'filtered_reaction': filtered_reaction,
+            'filtered_svg': filtered_svg,
+            'astatine_reaction': astatine_reaction,
+            'astatine_svg': astatine_svg,
             'reaction_details': reaction_details,
             'smirks': smirks,  # Add the original smirks to the context
-            'formula': formula_reaction.iloc[0]['formula'] if not formula_reaction.empty else 'N/A',
-            'mass': mass_reaction.iloc[0]['mass'] if not mass_reaction.empty else 'N/A'
+            'formula': formula_reaction,
+            'mass': mass_reaction
         }
 
         html_content = template.render(context)

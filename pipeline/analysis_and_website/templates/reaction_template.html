@@ -19,32 +19,46 @@
             <p>{{ raw_reaction }}</p>
             
             <h3>Filtered Reaction</h3>
-            <img src="../images/{{ filtered_svg }}" alt="Filtered Reaction Rendering">
+            {% if filtered_svg %}
+                <img src="../images/{{ filtered_svg }}" alt="Filtered Reaction Rendering">
+            {% endif %}
             <p>{{ filtered_reaction }}</p>
             
             <h3>Astatine Reaction</h3>
-            <img src="../images/{{ astatine_svg }}" alt="Astatine Reaction Rendering">
+            {% if astatine_svg %}
+                <img src="../images/{{ astatine_svg }}" alt="Astatine Reaction Rendering">
+            {% endif %}
             <p>{{ astatine_reaction }}</p>
         </section>
 
         <section>
             <h2>EVODEX</h2>
+            {% if 'R' in reaction_details %}
             <div>
                 <h3>R</h3>
-                <img src="../images/{{ evodex_id }}-R.svg" alt="EVODEX-R Reaction Rendering">
-                <p>{{ smirks }}</p>
+                {% if reaction_details['R']['svg_filename'] %}
+                    <img src="../images/{{ reaction_details['R']['svg_filename'] }}" alt="EVODEX-R Reaction Rendering">
+                {% endif %}
+                <p>{{ reaction_details['R']['smirks'] }}</p>
             </div>
+            {% endif %}
+            {% if 'P' in reaction_details %}
             <div>
                 <h3>P</h3>
-                <img src="../images/{{ evodex_id }}-P.svg" alt="EVODEX-P Reaction Rendering">
-                <p>{{ smirks }}</p>
+                {% if reaction_details['P']['svg_filename'] %}
+                    <img src="../images/{{ reaction_details['P']['svg_filename'] }}" alt="EVODEX-P Reaction Rendering">
+                {% endif %}
+                <p>{{ reaction_details['P']['smirks'] }}</p>
             </div>
+            {% endif %}
             {% for type, details in reaction_details.items() %}
+            {% if details.svg_filename %}
             <div>
                 <h3>{{ type }}</h3>
                 <img src="../images/{{ details.svg_filename }}" alt="Reaction Rendering">
                 <p>{{ details.smirks }}</p>
             </div>
+            {% endif %}
             {% endfor %}
         </section>
 
