@@ -53,6 +53,10 @@ def calculate_formula_diff(smirks: str) -> Dict[str, int]:
         if diff != 0:
             atom_diff[atom] = diff
 
+    # Switch 'At' to 'H' in the dictionary
+    if 'At' in atom_diff:
+        atom_diff['H'] = atom_diff.pop('At')
+
     return atom_diff
 
 def _compare_atom_diffs(diff1: Dict[str, int], diff2: Dict[str, int]) -> bool:
@@ -64,8 +68,8 @@ def _compare_atom_diffs(diff1: Dict[str, int], diff2: Dict[str, int]) -> bool:
     :param diff2: Second atom type diff dictionary
     :return: True if the dictionaries are the same, False otherwise
     """
-    filtered_diff1 = {k: v for k, v in diff1.items() if v != 0}
-    filtered_diff2 = {k: v for k, v in diff2.items() if v != 0}
+    filtered_diff1 = {k: v for k, v in diff1.items if v != 0}
+    filtered_diff2 = {k: v for k, v in diff2.items if v != 0}
     return filtered_diff1 == filtered_diff2
 
 def calculate_exact_mass(atom_diff: Dict[str, int]) -> float:
