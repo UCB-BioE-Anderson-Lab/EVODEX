@@ -47,27 +47,6 @@ def calculate_inchi(mol: Chem.Mol) -> str:
             return inchi
         raise InchiReadWriteError(f"InChI generation failed for molecule with SMILES: {smiles}. Error: {error_message}")
 
-# def get_molecule_hash(mol: Chem.Mol) -> str:
-#     """
-#     Generates a hash for the given molecule after kekulization and InChI key generation.
-
-#     Parameters:
-#     mol (Chem.Mol): The RDKit molecule object.
-
-#     Returns:
-#     str: The InChI key of the molecule.
-#     """
-#     try:
-#         mol = Chem.Mol(mol)  # Create a copy of the molecule
-#         Chem.SanitizeMol(mol)  # Sanitize the molecule to calculate explicit valence and other properties
-#         Chem.Kekulize(mol, clearAromaticFlags=True)  # Ensure kekulization
-#         inchi_key = Chem.InchiToInchiKey(Chem.MolToInchi(mol))
-#         return inchi_key
-#     except Exception as e:
-#         raise RuntimeError(f"Failed to generate molecule hash: {e}")
-  
-from rdkit import Chem
-
 def _is_sp3(atom):
     """
     Check if an atom is SP3 hybridized (all single bonds).
@@ -111,3 +90,29 @@ def get_molecule_hash(smiles: str) -> str:
     # Generate canonical SMILES from the RWMol
     smiles_canonical = Chem.MolToSmiles(rwmol, canonical=True, allHsExplicit=False)
     return smiles_canonical
+
+def reaction_hash(smirks: str) -> int:
+    try:
+        rxn = AllChem.ReactionFromSmarts(smirks)
+    except Exception as e:
+        raise RuntimeError(f"Failed to load reaction from SMIRKS:\n{smirks}\n{e}")
+
+    def get_hash(mol: Chem.Mol) -> str:
+        try:
+            smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
+            return get_molecule_hash(smiles)
+        except Exception as e:
+            raise RuntimeError(f"Failed to get molecule hash for SMILES:\n{smiles}\n{e}")
+
+    try:
+        substrate_hashes = {get_hash(mol) for mol in rxn.GetReactants()}
+        product_hashes = {get_hash(mol) for mol in rxn.GetProducts()}
+    except Exception as e:
+        raise RuntimeError(f"Failed to generate hashes for substrates or products: {e}")
+
+    try:
+        reaction_hash_value = hash((frozenset(substrate_hashes), frozenset(product_hashes)))
+    except Exception as e:
+        raise RuntimeError(f"Failed to create hash from substrate and product hashes: {e}")
+
+    return reaction_hash_value
