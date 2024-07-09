@@ -1,9 +1,9 @@
 raw_data: "data/raw/raw_reactions.csv"
 filtered_data: "data/processed/filtered_reactions.csv"
 astatine_data: "data/processed/astatine_reactions.csv"
+mapped_data: "data/processed/mapped_reactions.csv"
 
-# These are merged being the same thing, but distinguished in code
-mapped_data: "data/processed/EVODEX-R_full_reactions.csv"
+# Full reactions consolidated
 evodex_r: "data/processed/EVODEX-R_full_reactions.csv"
 
 # The reaction operators
@@ -19,5 +19,9 @@ evodex_nm: "data/processed/EVODEX-Nm_reaction_operators.csv"
 evodex_m: "data/processed/EVODEX-M_unique_masses.csv"
 evodex_f: "data/processed/EVODEX-F_unique_formulas.csv"
 
+# Error logs
+errors_dir: "data/errors/"
+
+# Analysis and website templates and static files
 template_dir: "pipeline/analysis_and_website/templates"
 static_dir: "pipeline/analysis_and_website/static"

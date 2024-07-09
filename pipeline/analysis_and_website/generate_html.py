@@ -29,7 +29,7 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     def get_reaction_data(df, column_name, idx_column_name='id'):
         if idx_column_name not in df.columns:
             return 'N/A'
-        reaction_data = df[df[idx_column_name] == int(evodex_id)]
+        reaction_data = df[df[idx_column_name] == evodex_id]
         if not reaction_data.empty:
             error_data = reaction_data.iloc[0].get('error', '')
             if pd.notna(error_data) and error_data != '':
@@ -43,7 +43,7 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
 
     # Process each reaction based on EVODEX-R
     for index, row in evodex_r_df.iterrows():
-        evodex_id = str(int(row['id']))  # Ensure ID is in string format
+        evodex_id = row['id']  # Treat ID as string
         smirks = row['smirks']
 
         reaction_details = {}
@@ -51,7 +51,7 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
             df = evodex_dataframes.get(evodex_type)
             if df is not None:
                 if 'id' in df.columns:
-                    reaction_data = df[df['id'] == int(evodex_id)]  # Ensure matching IDs as integers
+                    reaction_data = df[df['id'] == evodex_id]  # Match IDs as strings
                     if not reaction_data.empty:
                         smirks_data = reaction_data.iloc[0]['smirks']
                         error_data = reaction_data.iloc[0].get('error', '')
