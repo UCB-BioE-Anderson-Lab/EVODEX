@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ evodex_id }} - Formula Difference</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <header>
+        <a href="../../index.html">
+            <img src="../images/evodex_logo.png" alt="EVODEX Logo">
+        </a>
+        <div>
+            <h1>{{ evodex_id }}</h1>
+            <h2>Formula Difference</h2>
+        </div>
+    </header>
+    <main>
+        <section>
+            <h2>Elemental Balance</h2>
+            <table class="table-formula">
+                {% for atom, count in formula %}
+                <tr><td>{{ atom }}</td><td>{{ count }}</td></tr>
+                {% endfor %}
+            </table>
+        </section>
+        <section>
+            <h2>Source Partial Reactions</h2>
+            {% for source in sources %}
+            <div>
+                <h3><a href="../pages/{{ source.id }}.html">{{ source.id }}</a></h3>
+                <img src="../images/{{ source.id }}.svg" alt="Partial Reaction Rendering">
+                <p>{{ source.smirks }}</p>
+            </div>
+            {% endfor %}
+        </section>
+    </main>
+    <footer>
+        {{ copyright }}
+    </footer>
+</body>
+</html>

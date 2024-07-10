@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVODEX Index</title>
+    <title>Curation Index</title>
     <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
@@ -12,16 +12,16 @@
             <img src="../images/evodex_logo.png" alt="EVODEX Logo">
         </a>
         <div>
-            <h1>EVODEX Index</h1>
-            <h2>Explore the EVODEX Database</h2>
+            <h1>Curation Index</h1>
+            <h2>Curated Reactions</h2>
         </div>
     </header>
     <main>
         <section>
-            <h2>Reactions</h2>
+            <h2>Curated Reactions List</h2>
             <ul>
-                {% for evodex_id, page_filename in reactions %}
-                <li><a href="{{ page_filename }}">{{ evodex_id }}</a></li>
+                {% for item in curated_list %}
+                <li><a href="{{ item.link }}">{{ item.name }}</a></li>
                 {% endfor %}
             </ul>
         </section>

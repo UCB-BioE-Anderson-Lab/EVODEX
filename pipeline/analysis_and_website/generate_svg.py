@@ -30,7 +30,7 @@ def generate_svg(smirks, filename, images_dir):
         renderer.renderToFile(reaction, os.path.join(images_dir, filename))
 
     except Exception as e:
-        pass
+        print(f"Error rendering reaction image: {e}")
 
 def generate_all_svgs(evodex_type, metadata, images_dir):
     if evodex_type in ['F', 'M']:
@@ -38,16 +38,19 @@ def generate_all_svgs(evodex_type, metadata, images_dir):
 
     full_csv_path = metadata['filename']
     smirks_column = 'smirks'
+    
     try:
         with open(full_csv_path, mode='r') as file:
             reader = csv.DictReader(file)
             for row in reader:
                 smirks = row[smirks_column]
                 evodex_id = row['id']
-                svg_filename = f"{evodex_id}-{evodex_type}.svg"
+                svg_filename = f"{evodex_id}.svg"
                 generate_svg(smirks, svg_filename, images_dir)
     except FileNotFoundError:
-        pass
+        print(f"File not found: {full_csv_path}")
+    except KeyError:
+        print(f"Column '{smirks_column}' not found in the file {full_csv_path}")
 
 def generate_svgs_for_data_preparation(data_paths, images_dir):
     for key, csv_path in data_paths.items():
@@ -57,10 +60,12 @@ def generate_svgs_for_data_preparation(data_paths, images_dir):
                 for row in reader:
                     smirks = row['mapped'] if key == 'raw' else row['smirks']
                     evodex_id = row['rxn_idx'] if key == 'raw' else row['id']
-                    svg_filename = f"{evodex_id}-{key}.svg"
+                    svg_filename = f"{evodex_id}.svg"
                     generate_svg(smirks, svg_filename, images_dir)
         except FileNotFoundError:
-            pass
+            print(f"File not found: {csv_path}")
+        except KeyError:
+            print(f"Column not found in the file {csv_path}")
 
 if __name__ == "__main__":
     paths = load_paths('pipeline/config/paths.yaml')

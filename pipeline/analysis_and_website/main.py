@@ -1,39 +1,27 @@
+# main.py
 import os
 import shutil
 from pipeline.config import load_paths
-from pipeline.analysis_and_website.generate_html import generate_html_pages
+from pipeline.analysis_and_website.setup_directories import setup_directories
+from pipeline.analysis_and_website.move_csv_files import move_csv_files
+from pipeline.analysis_and_website.generate_css import generate_css
 from pipeline.analysis_and_website.generate_svg import generate_all_svgs, generate_svgs_for_data_preparation
+from pipeline.analysis_and_website.generate_html import generate_html_pages
 
-def setup_directories(base_dir):
-    images_dir = os.path.join(base_dir, 'images')
-    data_dir = os.path.join(base_dir, 'data')
-    pages_dir = os.path.join(base_dir, 'pages')
-
-    os.makedirs(images_dir, exist_ok=True)
-    os.makedirs(data_dir, exist_ok=True)
-    os.makedirs(pages_dir, exist_ok=True)
-
-    return images_dir, data_dir, pages_dir
-
-def move_csv_files(data_dir, paths):
-    source_dir = os.path.join('data', 'processed')
-    for filename in os.listdir(source_dir):
-        if filename.endswith(".csv"):
-            src_path = os.path.join(source_dir, filename)
-            dest_path = os.path.join(data_dir, filename)
-            shutil.copy(src_path, dest_path)
-            print(f"Copied: {src_path} to {dest_path}")
-
-    # Also copy the raw data file
-    raw_src_path = paths['raw_data']
-    raw_dest_path = os.path.join(data_dir, os.path.basename(raw_src_path))
-    shutil.copy(raw_src_path, raw_dest_path)
-    print(f"Copied: {raw_src_path} to {raw_dest_path}")
+def clean_website_directory(base_dir):
+    if os.path.exists(base_dir):
+        shutil.rmtree(base_dir)
+        print(f"Deleted all contents in {base_dir}")
+    os.makedirs(base_dir)
+    print(f"Created empty directory {base_dir}")
 
 def create_website(paths):
     base_dir = 'website'
-    images_dir, data_dir, pages_dir = setup_directories(base_dir)
+    clean_website_directory(base_dir)
+    logo_path = paths['logo_image']
+    images_dir, data_dir, pages_dir = setup_directories(base_dir, logo_path)
     move_csv_files(data_dir, paths)
+    generate_css(base_dir)
 
     ro_metadata = {
         'R': {'filename': paths['evodex_r']},
