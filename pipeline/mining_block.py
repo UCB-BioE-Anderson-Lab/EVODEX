@@ -159,8 +159,6 @@ def process_split_reactions(input_csv, output_csv, error_csv):
             writer.writerow({'id': new_id, 'smirks': example_smirks, 'sources': sources})
             evodex_id_counter += 1
 
-import csv
-
 def generate_synthesis_subset(input_csv, evodex_p_csv, evodex_e_csv, output_csv, error_csv):
     evodex_p_map = {}
     evodex_e_map = {}
@@ -233,9 +231,6 @@ def main():
     # Process split reactions and consolidate
     process_split_reactions(paths['evodex_r'], paths['evodex_p'], f"{paths['errors_dir']}split_reactions_errors.csv")
 
-    # Generate EVODEX-E subset using decofactor
-    generate_synthesis_subset(paths['evodex_r'], paths['evodex_p'], paths['evodex_e'], paths['evodex_e_synthesis'], f"{paths['errors_dir']}decofactor_errors.csv")
-
     extract_params_map = {
         'evodex_e': {
             'include_stereochemistry': True,
@@ -299,6 +294,9 @@ def main():
 
     # Process mass data based on formula data
     process_mass_data(paths['evodex_f'], paths['evodex_m'], f"{paths['errors_dir']}mass_errors.csv")
+
+    # Generate EVODEX-E subset using decofactor
+    generate_synthesis_subset(paths['evodex_r'], paths['evodex_p'], paths['evodex_e'], paths['evodex_e_synthesis'], f"{paths['errors_dir']}decofactor_errors.csv")
 
 if __name__ == "__main__":
     main()
