@@ -1,15 +1,13 @@
 import csv
 import os
-import logging
+import json
 from collections import defaultdict
 from evodex.decofactor import remove_cofactors
 from evodex.operators import extract_operator
 from evodex.formula import calculate_formula_diff, calculate_exact_mass
+from evodex.splitting import split_reaction
 from evodex.utils import reaction_hash
 from pipeline.config import load_paths
-
-def setup_logging():
-    logging.basicConfig(filename='mining_block.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def ensure_directories(paths: dict):
     for path in paths.values():
@@ -23,7 +21,6 @@ def write_row(writer, row_data):
 def handle_error(row, e, fieldnames, error_file):
     error_row = {key: row[key] for key in fieldnames if key in row}
     error_row['error_message'] = str(e)
-    logging.error(f"Error processing ID {row.get('id', 'Unknown ID')}: {e}")
     with open(error_file, 'a', newline='') as errfile:
         err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
         err_writer.writerow(error_row)
@@ -45,7 +42,6 @@ def process_reaction_data(input_csv, output_csv, error_csv, process_function, ad
                 handle_error(row, e, fieldnames, error_csv)
 
 def consolidate_reactions(input_file, output_file, prefix):
-    """Consolidate similar reactions based on reaction_hash."""
     hash_map = defaultdict(list)
     data_map = defaultdict(lambda: {'smirks': defaultdict(int), 'sources': []})
     
@@ -60,7 +56,7 @@ def consolidate_reactions(input_file, output_file, prefix):
                     data_map[rxn_hash]['smirks'][smirks] += 1
                     data_map[rxn_hash]['sources'].append(row['id'])
             except Exception as e:
-                logging.error(f"Error processing row {row['id']}: {e}")
+                pass
 
     with open(output_file, 'w', newline='') as outfile:
         fieldnames = ['id', 'smirks', 'sources']
@@ -75,11 +71,10 @@ def consolidate_reactions(input_file, output_file, prefix):
             evodex_id_counter += 1
 
 def process_formula_data(input_csv, output_csv, error_csv):
-    """Process and consolidate formula data."""
     hash_map = defaultdict(list)
     data_map = defaultdict(lambda: {'formula': None, 'sources': []})
     
-    with open(input_csv, 'r') as infile:
+    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
         fieldnames = reader.fieldnames
         with open(error_csv, 'w', newline='') as errfile:
@@ -107,7 +102,6 @@ def process_formula_data(input_csv, output_csv, error_csv):
             evodex_id_counter += 1
 
 def process_mass_data(formula_csv, output_csv, error_csv):
-    """Process mass data based on formula data."""
     with open(formula_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
         fieldnames = reader.fieldnames
@@ -128,10 +122,107 @@ def process_mass_data(formula_csv, output_csv, error_csv):
             except Exception as e:
                 handle_error(row, e, fieldnames, error_csv)
 
+def process_split_reactions(input_csv, output_csv, error_csv):
+    hash_to_ids = defaultdict(set)
+    hash_to_example_smirks = {}
+    errors = []
+
+    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
+        reader = csv.DictReader(infile)
+        fieldnames = reader.fieldnames
+        writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
+        writer.writeheader()
+        with open(error_csv, 'w', newline='') as errfile:
+            err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
+            err_writer.writeheader()
+        for row in reader:
+            try:
+                rxn_idx = row['id']
+                smirks = row['smirks']
+                split_reactions = split_reaction(smirks)
+                for reaction in split_reactions:
+                    reaction_hash_value = reaction_hash(reaction)
+                    if reaction_hash_value not in hash_to_ids:
+                        hash_to_ids[reaction_hash_value].add(rxn_idx)
+                        hash_to_example_smirks[reaction_hash_value] = reaction
+                    else:
+                        hash_to_ids[reaction_hash_value].add(rxn_idx)
+            except Exception as e:
+                handle_error(row, e, fieldnames, error_csv)
+                errors.append((row['id'], str(e)))
+
+        evodex_id_counter = 1
+        for reaction_hash_value, id_set in hash_to_ids.items():
+            example_smirks = hash_to_example_smirks[reaction_hash_value]
+            sources = json.dumps(list(id_set))
+            new_id = f'EVODEX-P{evodex_id_counter}'
+            writer.writerow({'id': new_id, 'smirks': example_smirks, 'sources': sources})
+            evodex_id_counter += 1
+
+import csv
+
+def generate_synthesis_subset(input_csv, evodex_p_csv, evodex_e_csv, output_csv, error_csv):
+    evodex_p_map = {}
+    evodex_e_map = {}
+
+    with open(evodex_p_csv, 'r') as p_file, open(evodex_e_csv, 'r') as e_file:
+        p_reader = csv.DictReader(p_file)
+        e_reader = csv.DictReader(e_file)
+
+        # Map reaction hashes to EVODEX-P IDs
+        for row in p_reader:
+            reaction_hash_value = reaction_hash(row['smirks'])
+            evodex_p_map[reaction_hash_value] = row['id']
+
+        # Map EVODEX-P IDs to EVODEX-E IDs using the sources column
+        for row in e_reader:
+            sources = row['sources'].strip("[]").split(',')
+            for source in sources:
+                source = source.strip().strip('"').strip("'")
+                if source in evodex_e_map:
+                    evodex_e_map[source].append(row['id'])
+                else:
+                    evodex_e_map[source] = [row['id']]
+
+    evodex_e_subset = set()
+    evodex_e_sources = {}
+
+    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
+        reader = csv.DictReader(infile)
+        fieldnames = reader.fieldnames
+        writer = csv.DictWriter(outfile, fieldnames=['id', 'sources'])
+        writer.writeheader()
+        with open(error_csv, 'w', newline='') as errfile:
+            err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
+            err_writer.writeheader()
+        for row in reader:
+            try:
+                smirks = row['smirks']
+                partial_reaction = remove_cofactors(smirks)
+                reaction_hash_value = reaction_hash(partial_reaction)
+                print(f"Partial reaction: {partial_reaction}, Hash: {reaction_hash_value}")
+                evodex_p_id = evodex_p_map.get(reaction_hash_value)
+                print(f"EVODEX-P ID: {evodex_p_id}")
+                if evodex_p_id:
+                    evodex_e_ids = evodex_e_map.get(evodex_p_id)
+                    print(f"EVODEX-E IDs: {evodex_e_ids}")
+                    if evodex_e_ids:
+                        for evodex_e_id in evodex_e_ids:
+                            evodex_e_subset.add(evodex_e_id)
+                            if evodex_e_id in evodex_e_sources:
+                                evodex_e_sources[evodex_e_id].add(evodex_p_id)
+                            else:
+                                evodex_e_sources[evodex_e_id] = {evodex_p_id}
+            except Exception as e:
+                handle_error(row, e, reader.fieldnames, error_csv)
+
+        for evodex_e_id in sorted(evodex_e_subset):
+            sources = ','.join(sorted(evodex_e_sources[evodex_e_id]))
+            writer.writerow({'id': evodex_e_id, 'sources': sources})
+
 def main():
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
-    setup_logging()
 
     def process_partial_reactions(row):
         return {'smirks': remove_cofactors(row['smirks'])}
@@ -139,11 +230,11 @@ def main():
     def process_operators(row, params):
         return {'smirks': extract_operator(row['smirks'], **params)}
 
-    # Process partial reactions and consolidate
-    process_reaction_data(paths['evodex_r'], paths['evodex_p'], f"{paths['errors_dir']}partial_reactions_errors.csv", process_partial_reactions, ['smirks'])
-    print("Partial reactions processed.")
-    consolidate_reactions(paths['evodex_p'], paths['evodex_p'], 'EVODEX-P')
-    print("Partial reactions consolidated.")
+    # Process split reactions and consolidate
+    process_split_reactions(paths['evodex_r'], paths['evodex_p'], f"{paths['errors_dir']}split_reactions_errors.csv")
+
+    # Generate EVODEX-E subset using decofactor
+    generate_synthesis_subset(paths['evodex_r'], paths['evodex_p'], paths['evodex_e'], paths['evodex_e_synthesis'], f"{paths['errors_dir']}decofactor_errors.csv")
 
     extract_params_map = {
         'evodex_e': {
@@ -201,17 +292,13 @@ def main():
         prefix = f'EVODEX-{key.split("_")[1].upper()}' if 'cm' not in key and 'em' not in key and 'nm' not in key else f'EVODEX-{key.split("_")[1].capitalize()}'
         error_log = f"{paths['errors_dir']}{key}_errors.csv"
         process_reaction_data(paths['evodex_p'], paths[key], error_log, lambda row: process_operators(row, params), ['smirks'])
-        print(f"Operator data processed and saved to {paths[key]}")
         consolidate_reactions(paths[key], paths[key], prefix)
-        print(f"Operator data consolidated and saved to {paths[key]}")
 
     # Process and consolidate formula data
     process_formula_data(paths['evodex_p'], paths['evodex_f'], f"{paths['errors_dir']}formula_errors.csv")
-    print(f"Formula data processed and saved to {paths['evodex_f']}")
 
     # Process mass data based on formula data
     process_mass_data(paths['evodex_f'], paths['evodex_m'], f"{paths['errors_dir']}mass_errors.csv")
-    print(f"Mass data processed and saved to {paths['evodex_m']}")
 
 if __name__ == "__main__":
     main()

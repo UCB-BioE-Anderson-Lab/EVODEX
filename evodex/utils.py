@@ -1,6 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem.inchi import InchiReadWriteError
+import hashlib
 
 def validate_smiles(smiles: str) -> bool:
     """
@@ -111,8 +112,11 @@ def reaction_hash(smirks: str) -> int:
         raise RuntimeError(f"Failed to generate hashes for substrates or products: {e}")
 
     try:
-        reaction_hash_value = hash((frozenset(substrate_hashes), frozenset(product_hashes)))
+        substrate_hash_str = "".join(sorted(substrate_hashes))
+        product_hash_str = "".join(sorted(product_hashes))
+        combined_hash_str = substrate_hash_str + ">>" + product_hash_str
+        reaction_hash_value = hashlib.sha256(combined_hash_str.encode('utf-8')).hexdigest()
     except Exception as e:
         raise RuntimeError(f"Failed to create hash from substrate and product hashes: {e}")
 
-    return reaction_hash_value
+    return int(reaction_hash_value, 16)

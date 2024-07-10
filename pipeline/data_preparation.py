@@ -1,16 +1,11 @@
 import csv
 import os
-import logging
 from collections import defaultdict
 from evodex.filter import validate_smiles
 from evodex.astatine import hydrogen_to_astatine_reaction
 from evodex.mapping import map_atoms
 from evodex.utils import reaction_hash
 from pipeline.config import load_paths
-
-def setup_logging():
-    """Set up logging configuration."""
-    logging.basicConfig(filename='data_processing.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 def ensure_directories(paths: dict):
     """Ensure that all necessary directories exist."""
@@ -69,20 +64,12 @@ def consolidate_reactions(input_file, output_file):
             try:
                 smirks = row['smirks']
                 if smirks:  # Ensure smirks is not empty
-                    print(f"Processing row {row['id']} with SMIRKS: {smirks}")
                     rxn_hash = reaction_hash(smirks)
-                    print(f"Generated hash: {rxn_hash} for SMIRKS: {smirks}")
                     hash_map[rxn_hash].append(row['id'])
                     data_map[rxn_hash]['smirks'][smirks] += 1
                     data_map[rxn_hash]['sources'].append(row['id'])
-                else:
-                    print(f"Skipping row {row['id']} with empty SMIRKS")
             except Exception as e:
-                logging.error(f"Error processing row {row['id']}: {e}")
-                print(f"Error processing row {row['id']}: {e}")
-
-    print("Final Hash Map:", hash_map)
-    print("Final Data Map:", data_map)
+                pass
 
     with open(output_file, 'w', newline='') as outfile:
         fieldnames = ['id', 'smirks', 'sources']
@@ -97,13 +84,11 @@ def consolidate_reactions(input_file, output_file):
             evodex_id_counter += 1
 
 def main():
-    setup_logging()
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
 
     # Process initial raw data
     process_raw_data(paths['raw_data'], paths['filtered_data'])
-    print(f"Filtered reaction data generated and saved to {paths['filtered_data']}")
 
     # Subsequent processing steps
     process_data(paths['filtered_data'], paths['astatine_data'], lambda row: {
@@ -112,7 +97,6 @@ def main():
         'sources': row['sources'],
         'error': ''
     })
-    print(f"Astatine test data generated and saved to {paths['astatine_data']}")
 
     process_data(paths['astatine_data'], paths['mapped_data'], lambda row: {
         'id': row['id'],
@@ -120,11 +104,9 @@ def main():
         'sources': row['sources'],
         'error': ''
     })
-    print(f"Atom-mapped test data generated and saved to {paths['mapped_data']}")
 
     # Consolidate reactions to generate EVODEX-R data
     consolidate_reactions(paths['mapped_data'], paths['evodex_r'])
-    print(f"EVODEX-R data generated and saved to {paths['evodex_r']}")
 
 if __name__ == "__main__":
     main()

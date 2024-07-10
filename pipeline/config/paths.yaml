@@ -19,6 +19,9 @@ evodex_nm: "data/processed/EVODEX-Nm_reaction_operators.csv"
 evodex_m: "data/processed/EVODEX-M_unique_masses.csv"
 evodex_f: "data/processed/EVODEX-F_unique_formulas.csv"
 
+# Synthesis subset
+evodex_e_synthesis: "data/processed/EVODEX-E_synthesis_subset.csv"
+
 # Error logs
 errors_dir: "data/errors/"
 
