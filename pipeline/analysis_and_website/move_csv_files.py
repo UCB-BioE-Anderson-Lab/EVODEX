@@ -23,8 +23,9 @@ def move_and_convert_csv_files(data_dir, paths):
     error_dir = os.path.join('data', 'errors')
     error_logs = []
 
+    # Move and convert other CSV files
     for filename in os.listdir(source_dir):
-        if filename.endswith(".csv"):
+        if filename.endswith(".csv") and filename != 'EVODEX-E_synthesis_subset.csv':
             src_path = os.path.join(source_dir, filename)
             dest_path = os.path.join(data_dir, filename)
 
@@ -45,6 +46,27 @@ def move_and_convert_csv_files(data_dir, paths):
             df.to_csv(dest_path, index=False)
             print(f"Copied and converted: {src_path} to {dest_path}")
 
+    # Handle EVODEX-E_synthesis_subset.csv
+    synthesis_src_path = os.path.join(source_dir, 'EVODEX-E_synthesis_subset.csv')
+    synthesis_dest_path = os.path.join(data_dir, 'EVODEX-E_synthesis_subset.csv')
+
+    if os.path.exists(synthesis_src_path):
+        synthesis_df = pd.read_csv(synthesis_src_path)
+
+        # Read the already converted and copied EVODEX-E file
+        evodex_e_dest_path = os.path.join(data_dir, os.path.basename(paths['evodex_e']))
+        evodex_e_df = pd.read_csv(evodex_e_dest_path)
+
+        # Create a map for EVODEX-E ID to SMIRKS
+        evodex_e_smirks_map = evodex_e_df.set_index('id')['smirks'].to_dict()
+
+        # Add SMIRKS column to the synthesis subset DataFrame
+        synthesis_df['smirks'] = synthesis_df['id'].map(evodex_e_smirks_map)
+
+        # Save the modified DataFrame to the destination path
+        synthesis_df.to_csv(synthesis_dest_path, index=False)
+        print(f"Copied and converted: {synthesis_src_path} to {synthesis_dest_path}")
+
     raw_src_path = paths['raw_data']
     raw_dest_path = os.path.join(data_dir, os.path.basename(raw_src_path))
     
@@ -54,9 +76,10 @@ def move_and_convert_csv_files(data_dir, paths):
 
     # Save error logs
     if error_logs:
+        os.makedirs(error_dir, exist_ok=True)
         error_log_df = pd.DataFrame(error_logs)
         error_log_df.to_csv(os.path.join(error_dir, 'astatine_conversion_errors.csv'), index=False)
-        print(f"Conversion errors logged to {os.path.join(data_dir, 'astatine_conversion_errors.csv')}")
+        print(f"Conversion errors logged to {os.path.join(error_dir, 'astatine_conversion_errors.csv')}")
 
 if __name__ == "__main__":
     data_dir = 'website/data'

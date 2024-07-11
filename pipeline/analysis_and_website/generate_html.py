@@ -189,6 +189,19 @@ def generate_main_index_page(env, evodex_types, root_dir, ro_metadata):
     }
     generate_html_page(template, 'index.html', context, root_dir)
 
+# Add this function
+def generate_synthesis_subset_page(env, evodex_e_synthesis_df, pages_dir):
+    template = env.get_template('synthesis_subset_template.html')
+    rows = evodex_e_synthesis_df.to_dict(orient='records')
+    for row in rows:
+        row['sources'] = [source.strip() for source in row['sources'].split(',')]
+
+    context = {
+        'data': rows
+    }
+
+    generate_html_page(template, 'synthesis_subset.html', context, pages_dir)
+
 def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     env = Environment(loader=FileSystemLoader(paths['template_dir']))
 
@@ -196,6 +209,7 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     evodex_p_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_p'])))
     evodex_f_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_f'])))
     evodex_m_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_m'])))
+    evodex_e_synthesis_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_e_synthesis'])))  # Add this line
 
     evodex_ro_dfs = {}
     evodex_type_dfs = {}
@@ -236,6 +250,7 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     generate_evodex_ro_pages(env, evodex_ro_dfs, evodex_p_df, ro_metadata, pages_dir)
     generate_type_index_pages(env, evodex_type_dfs, pages_dir)
     generate_main_index_page(env, evodex_types, os.path.abspath(os.path.join(pages_dir, os.pardir, os.pardir)), ro_metadata)
+    generate_synthesis_subset_page(env, evodex_e_synthesis_df, pages_dir)  # Add this line
 
 if __name__ == "__main__":
     paths = {
@@ -250,7 +265,8 @@ if __name__ == "__main__":
         'evodex_c': 'website/data/EVODEX-C_reaction_operators.csv',
         'evodex_em': 'website/data/EVODEX-Em_reaction_operators.csv',
         'evodex_nm': 'website/data/EVODEX-Nm_reaction_operators.csv',
-        'evodex_cm': 'website/data/EVODEX-Cm_reaction_operators.csv'
+        'evodex_cm': 'website/data/EVODEX-Cm_reaction_operators.csv',
+        'evodex_e_synthesis': 'website/data/EVODEX-E_synthesis_subset.csv'  # Add this line
     }
     data_dir = 'website/data'
     images_dir = 'website/images'
