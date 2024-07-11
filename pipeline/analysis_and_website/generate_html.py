@@ -183,6 +183,7 @@ def generate_main_index_page(env, evodex_types, root_dir, ro_metadata):
         'additional_links': [
             {'title': 'Correlating EC Number with EVODEX', 'url': 'website/pages/correlating_ec_number.html'},
             {'title': 'Synthesis Subset of EVODEX-E', 'url': 'website/pages/synthesis_subset.html'},
+            {'title': 'Mass Spectrometry Subset Operators', 'url': 'website/pages/ms_subset.html'},
             {'title': 'Example Google Colab Notebooks', 'url': 'website/pages/example_colab_notebooks.html'}
         ]
     }
