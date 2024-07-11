@@ -3,10 +3,10 @@ import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 from ast import literal_eval
 
-def generate_html_page(template, filename, context, pages_dir):
+def generate_html_page(template, filename, context, output_dir):
     html_content = template.render(context)
-    os.makedirs(pages_dir, exist_ok=True)
-    with open(os.path.join(pages_dir, filename), 'w') as file:
+    os.makedirs(output_dir, exist_ok=True)
+    with open(os.path.join(output_dir, filename), 'w') as file:
         file.write(html_content)
 
 def generate_evodex_r_pages(env, evodex_r_df, source_df, pages_dir):
@@ -159,13 +159,18 @@ def generate_type_index_pages(env, additional_evodex_dfs, pages_dir):
 
         generate_html_page(template, f"EVODEX-{evodex_type}_index.html", context, pages_dir)
 
-def generate_main_index_page(env, evodex_types, pages_dir, ro_metadata):
+def generate_main_index_page(env, evodex_types, root_dir, ro_metadata):
     template = env.get_template('main_index_template.html')
     context = {
         'evodex_types': evodex_types,
-        'ro_metadata': ro_metadata
+        'ro_metadata': ro_metadata,
+        'additional_links': [
+            {'title': 'Correlating EC Number with EVODEX', 'url': 'website/pages/correlating_ec_number.html'},
+            {'title': 'Synthesis Subset of EVODEX-E', 'url': 'website/pages/synthesis_subset.html'},
+            {'title': 'Example Google Colab Notebooks', 'url': 'website/pages/example_colab_notebooks.html'}
+        ]
     }
-    generate_html_page(template, 'index.html', context, pages_dir)
+    generate_html_page(template, 'index.html', context, root_dir)
 
 def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     env = Environment(loader=FileSystemLoader(paths['template_dir']))
@@ -212,7 +217,7 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     generate_evodex_m_pages(env, evodex_m_df, evodex_p_df, pages_dir)
     generate_evodex_ro_pages(env, additional_evodex_dfs, evodex_p_df, pages_dir)
     generate_type_index_pages(env, additional_evodex_dfs, pages_dir)
-    generate_main_index_page(env, evodex_types, pages_dir, ro_metadata)
+    generate_main_index_page(env, evodex_types, os.path.abspath(os.path.join(pages_dir, os.pardir, os.pardir)), ro_metadata)  # Adjust output directory
 
 if __name__ == "__main__":
     paths = {

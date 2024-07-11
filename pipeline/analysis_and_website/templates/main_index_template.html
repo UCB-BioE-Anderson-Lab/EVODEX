@@ -3,38 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Index</title>
-    <link rel="stylesheet" href="../styles.css">
+    <title>EVODEX Main Index</title>
+    <link rel="stylesheet" href="website/styles.css">
 </head>
 <body>
     <header>
         <a href="index.html">
-            <img src="../images/evodex_logo.png" alt="EVODEX Logo">
+            <img src="website/images/evodex_logo.png" alt="EVODEX Logo">
         </a>
         <div>
-            <h1>Main Index</h1>
+            <h1>EVODEX Main Index</h1>
         </div>
     </header>
     <main>
         <section>
-            <h2>EVODEX Types</h2>
+            <h2>All Operators by Type</h2>
             <ul>
                 {% for evodex_type in evodex_types %}
-                <li><a href="pages/EVODEX-{{ evodex_type }}_index.html">EVODEX-{{ evodex_type }}</a></li>
+                <li><a href="website/pages/EVODEX-{{ evodex_type }}_index.html">EVODEX-{{ evodex_type }}</a></li>
                 {% endfor %}
             </ul>
         </section>
         <section>
-            <h2>Reaction Operators</h2>
+            <h2>Additional Resources</h2>
             <ul>
-                {% for evodex_type, metadata in ro_metadata.items() %}
-                <li><a href="pages/EVODEX-{{ evodex_type }}_index.html">{{ metadata.title }}</a></li>
+                {% for link in additional_links %}
+                <li><a href="{{ link.url }}">{{ link.title }}</a></li>
                 {% endfor %}
             </ul>
         </section>
     </main>
     <footer>
-        {{ copyright }}
+        <p>&copy; 2024 EVODEX Project</p>
     </footer>
 </body>
 </html>
