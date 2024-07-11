@@ -37,11 +37,13 @@
                 <p><strong>{{ m_data.value }}</strong></p>
             </div>
             {% for operator_type, operator_data in ro_data.items() %}
+            {% if operator_type != 'F' and operator_type != 'M' %}
             <div>
                 <h3><a href="../pages/{{ operator_data.id }}.html">{{ operator_data.id }} - {{ ro_metadata[operator_type]['title'] }}</a></h3>
                 <img src="../images/{{ operator_data.id }}.svg" alt="{{ ro_metadata[operator_type]['title'] }} SMIRKS">
                 <p>{{ operator_data.value }}</p>
             </div>
+            {% endif %}
             {% endfor %}
         </section>
         <section>

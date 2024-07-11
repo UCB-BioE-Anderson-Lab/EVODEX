@@ -154,7 +154,7 @@ def process_split_reactions(input_csv, output_csv, error_csv):
         evodex_id_counter = 1
         for reaction_hash_value, id_set in hash_to_ids.items():
             example_smirks = hash_to_example_smirks[reaction_hash_value]
-            sources = json.dumps(list(id_set))
+            sources = ','.join(id_set)  # Ensure sources are stored as a comma-separated string
             new_id = f'EVODEX-P{evodex_id_counter}'
             writer.writerow({'id': new_id, 'smirks': example_smirks, 'sources': sources})
             evodex_id_counter += 1
