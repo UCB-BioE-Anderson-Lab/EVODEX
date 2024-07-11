@@ -22,6 +22,9 @@ evodex_f: "data/processed/EVODEX-F_unique_formulas.csv"
 # Synthesis subset
 evodex_e_synthesis: "data/processed/EVODEX-E_synthesis_subset.csv"
 
+# Mass spec subset
+evodex_m_subset: "data/processed/EVODEX-M_mass_spec_subset.csv"
+
 # Error logs
 errors_dir: "data/errors/"
 

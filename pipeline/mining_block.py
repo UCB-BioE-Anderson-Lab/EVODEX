@@ -218,6 +218,48 @@ def generate_synthesis_subset(input_csv, evodex_p_csv, evodex_e_csv, output_csv,
             sources = ','.join(sorted(evodex_e_sources[evodex_e_id]))
             writer.writerow({'id': evodex_e_id, 'sources': sources})
 
+def generate_mass_spec_subset(evodex_p_csv, evodex_m_csv, output_csv, error_csv):
+    valid_evodex_p_ids = set()
+    evodex_p_map = {}
+
+    with open(evodex_p_csv, 'r') as p_file:
+        p_reader = csv.DictReader(p_file)
+        
+        for row in p_reader:
+            substrates = row['smirks'].split('>>')[0].split('.')
+            products = row['smirks'].split('>>')[1].split('.')
+
+            # Check if either substrates or products have a single molecule
+            if len(substrates) == 1 or len(products) == 1:
+                valid_evodex_p_ids.add(row['id'])
+
+    # Create a map from each sources id in evodex-m df (evodex-p values) to the id field (evodex-m)
+    evodex_m_to_p_map = defaultdict(set)
+    evodex_m_to_mass_map = {}
+
+    with open(evodex_m_csv, 'r') as m_file:
+        m_reader = csv.DictReader(m_file)
+        
+        for row in m_reader:
+            sources = row['sources'].split(',')
+            for source in sources:
+                if source in valid_evodex_p_ids:
+                    evodex_m_to_p_map[row['id']].add(source)
+                    evodex_m_to_mass_map[row['id']] = row['mass']
+
+    # Write the output CSV
+    with open(output_csv, 'w', newline='') as outfile:
+        fieldnames = ['id', 'mass', 'sources']
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+        
+        for evodex_m, sources in evodex_m_to_p_map.items():
+            sources_str = ','.join(sources)
+            mass = evodex_m_to_mass_map[evodex_m]
+            writer.writerow({'id': evodex_m, 'mass': mass, 'sources': sources_str})
+
+    print(f"Mass spec subset generated and saved to {output_csv}")
+
 def main():
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
@@ -297,6 +339,9 @@ def main():
 
     # Generate EVODEX-E subset using decofactor
     generate_synthesis_subset(paths['evodex_r'], paths['evodex_p'], paths['evodex_e'], paths['evodex_e_synthesis'], f"{paths['errors_dir']}decofactor_errors.csv")
+
+    # Generate mass spec subset
+    generate_mass_spec_subset(paths['evodex_p'], paths['evodex_m'], paths['evodex_m_subset'], f"{paths['errors_dir']}mass_spec_subset_errors.csv")
 
 if __name__ == "__main__":
     main()
