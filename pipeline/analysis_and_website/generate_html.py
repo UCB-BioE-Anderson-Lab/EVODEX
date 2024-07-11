@@ -16,7 +16,11 @@ def generate_evodex_r_pages(env, evodex_r_df, source_df, pages_dir):
         smirks = row['smirks']
         sources = row['sources'].replace('"', '').split(',')
 
-        sources_data = source_df[source_df['rxn_idx'].astype(str).isin(sources)]
+        # Create a copy of the relevant DataFrame slice
+        sources_data = source_df[source_df['rxn_idx'].astype(str).isin(sources)].copy()
+        sources_data['protein_refs'] = sources_data['protein_refs'].apply(
+            lambda refs: ', '.join(literal_eval(refs)) if isinstance(refs, str) and refs.startswith('[') else refs
+        )
         sources_dict = sources_data[['rxn_idx', 'orig_rxn_text', 'natural', 'organism', 'protein_refs', 'protein_db', 'ec_num']].to_dict(orient='records')
         partial_reactions = r_to_p_map.get(evodex_id, [])
 
@@ -30,7 +34,7 @@ def generate_evodex_r_pages(env, evodex_r_df, source_df, pages_dir):
 
         generate_html_page(template, f"{evodex_id}.html", context, pages_dir)
 
-def generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m_df, ro_metadata, pages_dir):
+def generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m_df, evodex_ro_dfs, ro_metadata, pages_dir):
     template = env.get_template('evodex_p_template.html')
     r_to_smirks = {row['id']: row['smirks'] for index, row in evodex_r_df.iterrows()}
 
@@ -55,6 +59,16 @@ def generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m
                     if p_id not in p_to_m_map:
                         p_to_m_map[p_id] = {'value': value, 'id': row['id']}
 
+    # Populate RO map
+    for evodex_type, df in evodex_ro_dfs.items():
+        for index, row in df.iterrows():
+            sources = row['sources'].replace('"', '').split(',')
+            value = row['smirks']
+            for p_id in sources:
+                if p_id not in p_to_ro_map:
+                    p_to_ro_map[p_id] = {}
+                p_to_ro_map[p_id][evodex_type] = {'value': value, 'id': row['id']}
+
     for index, row in evodex_p_df.iterrows():
         evodex_id = row['id']
         smirks = row.get('smirks', '')
@@ -62,7 +76,7 @@ def generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m
 
         f_data = p_to_f_map.get(evodex_id, {'id': '', 'value': []})
         m_data = p_to_m_map.get(evodex_id, {'id': '', 'value': ''})
-        ro_data = {evodex_type: p_to_ro_map[evodex_id][evodex_type] for evodex_type in ro_metadata if evodex_id in p_to_ro_map and evodex_type in p_to_ro_map[evodex_id]}
+        ro_data = p_to_ro_map.get(evodex_id, {})
 
         full_reactions = {r_id: r_to_smirks.get(r_id, '') for r_id in sources}
 
@@ -215,7 +229,7 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
     source_df = pd.read_csv(paths['raw_data'])
 
     generate_evodex_r_pages(env, evodex_r_df, source_df, pages_dir)
-    generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m_df, ro_metadata, pages_dir)
+    generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m_df, evodex_ro_dfs, ro_metadata, pages_dir)
     generate_evodex_f_pages(env, evodex_f_df, evodex_p_df, pages_dir)
     generate_evodex_m_pages(env, evodex_m_df, evodex_p_df, pages_dir)
     generate_evodex_ro_pages(env, evodex_ro_dfs, evodex_p_df, ro_metadata, pages_dir)

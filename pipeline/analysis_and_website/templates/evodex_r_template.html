@@ -23,7 +23,7 @@
             <p>{{ smirks }}</p>
         </section>
         <section>
-            <h2>Source BRENDA Data</h2>
+            <h2>Source Database Data</h2>
             <table>
                 <thead>
                     <tr>
@@ -37,7 +37,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for source in sources %}
+                    {% for source in sources %}
                     <tr>
                         <td>{{ source.rxn_idx }}</td>
                         <td>{{ source.orig_rxn_text }}</td>
@@ -47,10 +47,10 @@
                         <td>{{ source.protein_db }}</td>
                         <td>{{ source.ec_num }}</td>
                     </tr>
-                {% endfor %}
+                    {% endfor %}
                 </tbody>
             </table>
-        </section>
+        </section>        
         <section>
             <h2>Derived Partial Reactions</h2>
             {% for reaction in partial_reactions %}
