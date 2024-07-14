@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EC Number and EVODEX Hierarchy</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        .node circle {
+            fill: #999;
+        }
+
+        .node text {
+            font: 12px sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #555;
+            stroke-width: 1.5px;
+        }
+
+        .legend {
+            font-size: 12px;
+        }
+
+        .legend rect {
+            fill-opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        const data = __DATA__;
+
+        console.log("Initial Data: ", data);
+
+        // Set up the dimensions and margins of the diagram
+        const margin = {top: 20, right: 120, bottom: 20, left: 120},
+              width = 960 - margin.left - margin.right,
+              height = 800 - margin.top - margin.bottom;
+
+        const radius = Math.min(width, height) / 2;
+
+        // Append SVG and group element
+        const svg = d3.select("body").append("svg")
+                      .attr("width", width + margin.left + margin.right)
+                      .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                      .attr("transform", "translate(" + (width / 2 + margin.left) + "," + (height / 2 + margin.top) + ")");
+
+        const tree = d3.cluster().size([2 * Math.PI, radius - 100]);
+
+        // Create hierarchy from data
+        const root = d3.hierarchy(data, d => d.children);
+        tree(root);
+
+        // Links
+        const link = svg.selectAll(".link")
+                        .data(root.links())
+                        .enter().append("path")
+                          .attr("class", "link")
+                          .attr("d", d3.linkRadial()
+                                      .angle(d => d.x)
+                                      .radius(d => d.y));
+
+        // Nodes
+        const node = svg.selectAll(".node")
+                        .data(root.descendants())
+                        .enter().append("g")
+                          .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
+                          .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
+
+        // Color scale for evodex types
+        const color = d3.scaleOrdinal(d3.schemeCategory10)
+                        .domain(["C", "Cm", "E", "Em", "N", "Nm"]);
+
+        node.append("circle")
+            .attr("r", 4)
+            .style("fill", d => {
+                if (d.data.evodex_types && Object.keys(d.data.evodex_types).length > 0) {
+                    return color(Object.keys(d.data.evodex_types)[0]);
+                } else {
+                    return "#999";
+                }
+            });
+
+        node.append("text")
+            .attr("dy", ".31em")
+            .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
+            .style("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
+            .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
+            .text(d => d.data.name);
+
+        // Add a legend
+        const legend = svg.append("g")
+                          .attr("class", "legend")
+                          .attr("transform", "translate(" + (radius - 10) + "," + (-radius + 10) + ")");
+
+        const evodex_types = ["C", "Cm", "E", "Em", "N", "Nm"];
+        evodex_types.forEach((type, index) => {
+            legend.append("rect")
+                  .attr("x", 0)
+                  .attr("y", index * 20)
+                  .attr("width", 18)
+                  .attr("height", 18)
+                  .style("fill", color(type));
+
+            legend.append("text")
+                  .attr("x", 24)
+                  .attr("y", index * 20 + 9)
+                  .attr("dy", ".35em")
+                  .text(type);
+        });
+
+        console.log("Hierarchy Visualization Complete");
+    </script>
+</body>
+</html>
