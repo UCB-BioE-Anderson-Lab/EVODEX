@@ -30,9 +30,42 @@
 </head>
 <body>
     <script>
-        const data = __DATA__;
+        const data = __DATA__;  // This will be replaced with the actual data during template rendering
 
         console.log("Initial Data: ", data);
+
+        // Transform the data into a hierarchical format expected by D3.js
+        const transformData = (data) => {
+            const root = {
+                name: "root",
+                children: []
+            };
+
+            const addNode = (path, counts) => {
+                let current = root;
+                path.split('.').forEach((segment, i, arr) => {
+                    let node = current.children.find(child => child.name === segment);
+                    if (!node) {
+                        node = { name: segment, children: [] };
+                        current.children.push(node);
+                    }
+                    if (i === arr.length - 1) {
+                        node.evodex_types = counts;
+                    }
+                    current = node;
+                });
+            };
+
+            for (const [key, value] of Object.entries(data)) {
+                if (key !== '') {
+                    addNode(key, value);
+                }
+            }
+
+            return root;
+        };
+
+        const hierarchyData = transformData(data);
 
         // Set up the dimensions and margins of the diagram
         const margin = {top: 20, right: 120, bottom: 20, left: 120},
@@ -51,7 +84,7 @@
         const tree = d3.cluster().size([2 * Math.PI, radius - 100]);
 
         // Create hierarchy from data
-        const root = d3.hierarchy(data, d => d.children);
+        const root = d3.hierarchy(hierarchyData, d => d.children);
         tree(root);
 
         // Links
@@ -72,7 +105,7 @@
 
         // Color scale for evodex types
         const color = d3.scaleOrdinal(d3.schemeCategory10)
-                        .domain(["C", "Cm", "E", "Em", "N", "Nm"]);
+                        .domain(["C", "Cm", "E", "Em", "N", "Nm", "M", "F"]);
 
         node.append("circle")
             .attr("r", 4)
@@ -96,7 +129,7 @@
                           .attr("class", "legend")
                           .attr("transform", "translate(" + (radius - 10) + "," + (-radius + 10) + ")");
 
-        const evodex_types = ["C", "Cm", "E", "Em", "N", "Nm"];
+        const evodex_types = ["C", "Cm", "E", "Em", "N", "Nm", "M", "F"];
         evodex_types.forEach((type, index) => {
             legend.append("rect")
                   .attr("x", 0)
