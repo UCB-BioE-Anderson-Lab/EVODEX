@@ -1,0 +1,3 @@
+id,sources,smirks
+EVODEX-E1,"EVODEX-P29,EVODEX-P3",[H][C@:69]([C:54])([C:67])[O:70][H]>>[C:54][C:69]([C:67])=[O:70]
+EVODEX-E20,"EVODEX-P170,EVODEX-P27",>>[H]O.[H]
