@@ -79,7 +79,7 @@ def _load_evodex_data(filename, key_column=None, value_column=None):
     global evodex_data_cache
     if filename not in evodex_data_cache:
         script_dir = os.path.dirname(__file__)
-        rel_path = os.path.join('..', 'data', filename)
+        rel_path = os.path.join('..', 'evodex/data', filename)
         filepath = os.path.abspath(os.path.join(script_dir, rel_path))
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"File not found: {filepath}")
