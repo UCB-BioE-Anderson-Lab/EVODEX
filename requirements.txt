@@ -1,6 +1,12 @@
 # Included in pypi distribution
 numpy<2
 rdkit-pypi
+pandas==2.2.2
+
+# Pypi dependencies
+twine
+setuptools
+wheel
 
 # Development dependencies
 pytest
@@ -8,8 +14,10 @@ pyyaml
 epam.indigo
 jinja2
 
-pandas==2.2.2
+# Analysis dependencies
 matplotlib==3.9.1
 seaborn==0.12.2
 scipy==1.14.0
 svgutils
+
+

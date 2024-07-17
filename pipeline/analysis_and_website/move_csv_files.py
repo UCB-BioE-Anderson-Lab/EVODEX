@@ -21,6 +21,7 @@ def convert_smiles_column(df, column_name):
 def move_and_convert_csv_files(data_dir, paths):
     source_dir = os.path.join('data', 'processed')
     error_dir = os.path.join('data', 'errors')
+    evodex_dir = 'evodex/data'
     error_logs = []
 
     # Move and convert other CSV files
@@ -80,6 +81,22 @@ def move_and_convert_csv_files(data_dir, paths):
         error_log_df = pd.DataFrame(error_logs)
         error_log_df.to_csv(os.path.join(error_dir, 'astatine_conversion_errors.csv'), index=False)
         print(f"Conversion errors logged to {os.path.join(error_dir, 'astatine_conversion_errors.csv')}")
+
+    # Copy specific files from EVODEX/website to EVODEX/evodex/data
+    files_to_copy = [
+        'EVODEX-C_reaction_operators.csv', 'EVODEX-N_reaction_operators.csv',
+        'EVODEX-Cm_reaction_operators.csv', 'EVODEX-Nm_reaction_operators.csv',
+        'EVODEX-E_reaction_operators.csv', 'EVODEX-E_synthesis_subset.csv',
+        'EVODEX-Em_reaction_operators.csv', 'EVODEX-F_unique_formulas.csv',
+        'EVODEX-M_mass_spec_subset.csv', 'EVODEX-M_unique_masses.csv'
+    ]
+
+    for filename in files_to_copy:
+        src_path = os.path.join(data_dir, filename)
+        dest_path = os.path.join(evodex_dir, filename)
+        if os.path.exists(src_path):
+            shutil.copy(src_path, dest_path)
+            print(f"Copied: {src_path} to {dest_path}")
 
 if __name__ == "__main__":
     data_dir = 'website/data'

@@ -1,7 +1,9 @@
-from pipeline.analysis.aggregate_data import main as aggregate_data_main
-from pipeline.analysis.generate_hierarchy import main as generate_hierarchy_main
-from pipeline.analysis.analyze_hierarchy import main as analyze_hierarchy_main
-from pipeline.analysis.correlation_analysis import analyze
+# run_analysis.py
+
+from .aggregate_data import main as aggregate_data_main
+from .generate_hierarchy import main as generate_hierarchy_main
+from .analyze_hierarchy import main as analyze_hierarchy_main
+from .correlation_analysis import analyze
 
 def main():
     # Call the main method of aggregate_data.py and get the ec_map object
