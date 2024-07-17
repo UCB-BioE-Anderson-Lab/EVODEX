@@ -32,9 +32,15 @@ def project_reaction_operator(smirks, substrate):
     if not products:
         return []
     
-    # Convert the product molecules to SMILES strings
-    product_smiles = [Chem.MolToSmiles(product[0]) for product in products if product]
-    return product_smiles
+    # Convert the product molecules to canonical SMILES strings
+    unique_products = set()
+    for product_tuple in products:
+        for product in product_tuple:
+            if product:
+                canonical_smiles = Chem.MolToSmiles(product)
+                unique_products.add(canonical_smiles)
+    
+    return list(unique_products)
 
 def project_evodex_operator(evodex_id, substrate):
     """Apply an EVODEX operator to a substrate."""
