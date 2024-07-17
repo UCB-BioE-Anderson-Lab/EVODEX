@@ -150,10 +150,10 @@ def create_graphic():
     
     print(f"Combined figure saved to {output_path}")
 
-# Load the data
-file_path = 'website/analysis/ec_map.json'
-with open(file_path, 'r') as f:
-    ec_map = json.load(f)
+# # Load the data
+# file_path = 'website/analysis/ec_map.json'
+# with open(file_path, 'r') as f:
+#     ec_map = json.load(f)
 
-# Run the analysis
-analyze(ec_map)
+# # Run the analysis
+# analyze(ec_map)

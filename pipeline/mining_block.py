@@ -190,33 +190,36 @@ def generate_synthesis_subset(input_csv, evodex_p_csv, evodex_e_csv, output_csv,
         fieldnames = reader.fieldnames
         writer = csv.DictWriter(outfile, fieldnames=['id', 'sources'])
         writer.writeheader()
+
         with open(error_csv, 'w', newline='') as errfile:
             err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
             err_writer.writeheader()
-        for row in reader:
-            try:
-                smirks = row['smirks']
-                partial_reaction = remove_cofactors(smirks)
-                reaction_hash_value = reaction_hash(partial_reaction)
-                print(f"Partial reaction: {partial_reaction}, Hash: {reaction_hash_value}")
-                evodex_p_id = evodex_p_map.get(reaction_hash_value)
-                print(f"EVODEX-P ID: {evodex_p_id}")
-                if evodex_p_id:
-                    evodex_e_ids = evodex_e_map.get(evodex_p_id)
-                    print(f"EVODEX-E IDs: {evodex_e_ids}")
-                    if evodex_e_ids:
-                        for evodex_e_id in evodex_e_ids:
-                            evodex_e_subset.add(evodex_e_id)
-                            if evodex_e_id in evodex_e_sources:
-                                evodex_e_sources[evodex_e_id].add(evodex_p_id)
-                            else:
-                                evodex_e_sources[evodex_e_id] = {evodex_p_id}
-            except Exception as e:
-                handle_error(row, e, reader.fieldnames, error_csv)
+
+            for row in reader:
+                try:
+                    smirks = row['smirks']
+                    partial_reaction = remove_cofactors(smirks)
+                    reaction_hash_value = reaction_hash(partial_reaction)
+                    evodex_p_id = evodex_p_map.get(reaction_hash_value)
+
+                    if evodex_p_id:
+                        evodex_e_ids = evodex_e_map.get(evodex_p_id)
+                        if evodex_e_ids:
+                            for evodex_e_id in evodex_e_ids:
+                                evodex_e_subset.add(evodex_e_id)
+                                if evodex_e_id in evodex_e_sources:
+                                    evodex_e_sources[evodex_e_id].add(evodex_p_id)
+                                else:
+                                    evodex_e_sources[evodex_e_id] = {evodex_p_id}
+                except Exception as e:
+                    handle_error(row, e, reader.fieldnames, error_csv)
 
         for evodex_e_id in sorted(evodex_e_subset):
-            sources = ','.join(sorted(evodex_e_sources[evodex_e_id]))
-            writer.writerow({'id': evodex_e_id, 'sources': sources})
+            sources = evodex_e_sources[evodex_e_id]
+            if len(sources) >= 2:
+                sources_str = ','.join(sorted(sources))
+                writer.writerow({'id': evodex_e_id, 'sources': sources_str})
+
 
 def generate_mass_spec_subset(evodex_p_csv, evodex_m_csv, output_csv, error_csv):
     valid_evodex_p_ids = set()
