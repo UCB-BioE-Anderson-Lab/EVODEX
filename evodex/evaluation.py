@@ -44,10 +44,7 @@ def assign_evodex_F(smirks):
     smirks (str): The SMIRKS string representing the reaction.
 
     Returns:
-    str: The EVODEX-F ID, if matched.
-
-    Raises:
-    ValueError: If the formula difference does not match any EVODEX-F ID.
+    str: The EVODEX-F ID, if matched. Returns None if no match is found.
 
     Example:
     >>> smirks = "CCO>>CC=O"
@@ -116,13 +113,11 @@ def match_operator(smirks, evodex_type='E'):
 
     Parameters:
     smirks (str): The SMIRKS string representing the reaction.
-    evodex_type (str): The type of EVODEX operator (default is 'E').
+    evodex_type (str): The type of EVODEX operator (Electronic 'E', Nearest-Neighbor 'N', 
+    or Core 'C', default is 'E').
 
     Returns:
-    list: A list of valid operator IDs.
-
-    Raises:
-    ValueError: If no matching operators are found.
+    list: A list of valid operator IDs. Returns an empty list if no matching operators are found.
 
     Example:
     >>> smirks = "CCCO>>CCC=O"
@@ -174,7 +169,7 @@ def match_operator(smirks, evodex_type='E'):
                 if proj_hash == pdt_hash:
                     valid_operators.append(id)
         except Exception as e:
-            print(f"{operator['id']} errored")
+            print(f"{operator['id']} errored: {e}")
 
     return valid_operators
 
@@ -284,5 +279,5 @@ if __name__ == "__main__":
     is_valid_formula = assign_evodex_F(smirks)
     print(f"{smirks} matches: {is_valid_formula}")
 
-    matching_operators = match_operator(smirks, 'E')
+    matching_operators = match_operator(smirks, 'C')
     print(f"Matching operators for {smirks}: {matching_operators}")

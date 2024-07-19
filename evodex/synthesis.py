@@ -104,11 +104,11 @@ def _lookup_smirks_by_evodex_id(evodex_id):
     Returns:
     str: The SMIRKS string for the EVODEX ID, or None if not found.
     """
-    if evodex_id.startswith("E"):
+    if evodex_id.startswith("EVODEX-E"):
         evodex_df = _load_evodex_data('EVODEX-E_reaction_operators.csv')
-    elif evodex_id.startswith("C"):
+    elif evodex_id.startswith("EVODEX-C"):
         evodex_df = _load_evodex_data('EVODEX-C_reaction_operators.csv')
-    elif evodex_id.startswith("N"):
+    elif evodex_id.startswith("EVODEX-N"):
         evodex_df = _load_evodex_data('EVODEX-N_reaction_operators.csv')
     else:
         return None

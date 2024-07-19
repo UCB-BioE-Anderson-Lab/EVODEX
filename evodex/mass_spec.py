@@ -14,7 +14,18 @@ evodex_data_cache = None
 evodex_m_to_f_cache = None
 
 def calculate_mass(smiles):
-    """Calculate the molecular mass of a given SMILES string."""
+    """
+    Calculate the molecular mass of a given SMILES string.
+
+    Parameters:
+    smiles (str): The SMILES string representing the molecule.
+
+    Returns:
+    float: The exact mass of the molecule.
+
+    Raises:
+    ValueError: If the SMILES string is invalid.
+    """
     mol = Chem.MolFromSmiles(smiles)
     if mol:
         return rdMolDescriptors.CalcExactMolWt(mol)
@@ -22,7 +33,15 @@ def calculate_mass(smiles):
         raise ValueError(f"Invalid SMILES string: {smiles}")
 
 def _load_evodex_m():
-    """Load EVODEX-M cache from the CSV file."""
+    """
+    Load EVODEX-M cache from the CSV file.
+
+    Returns:
+    list: A list of dictionaries, each containing 'id', 'mass', and 'sources' keys.
+
+    Raises:
+    FileNotFoundError: If the EVODEX-M CSV file is not found.
+    """
     global evodex_m_cache
     if evodex_m_cache is None:
         evodex_m_cache = []
@@ -42,7 +61,15 @@ def _load_evodex_m():
     return evodex_m_cache
 
 def _load_evodex_m_to_f():
-    """Load or create EVODEX-M to EVODEX-F mapping."""
+    """
+    Load or create EVODEX-M to EVODEX-F mapping.
+
+    Returns:
+    dict: A dictionary mapping EVODEX-M IDs to lists of EVODEX-F IDs.
+
+    Raises:
+    FileNotFoundError: If the necessary CSV files are not found.
+    """
     global evodex_m_to_f_cache
     if evodex_m_to_f_cache is not None:
         return evodex_m_to_f_cache
@@ -100,7 +127,16 @@ def _load_evodex_m_to_f():
     return evodex_m_to_f_cache
 
 def find_evodex_m(mass_diff, precision=0.01):
-    """Find EVODEX-M entries that correspond to a given mass difference within a specified precision."""
+    """
+    Find EVODEX-M entries that correspond to a given mass difference within a specified precision.
+
+    Parameters:
+    mass_diff (float): The mass difference to search for.
+    precision (float): The precision within which to match the mass difference (default is 0.01).
+
+    Returns:
+    list: A list of matching EVODEX-M entries, each containing 'id' and 'mass'.
+    """
     evodex_m = _load_evodex_m()
     matching_entries = [
         {"id": entry["id"], "mass": entry["mass"]}
@@ -110,7 +146,17 @@ def find_evodex_m(mass_diff, precision=0.01):
     return matching_entries
 
 def get_reaction_operators(mass_diff, precision=0.01):
-    """Retrieve reaction operators that could explain the mass difference."""
+    """
+    Retrieve reaction operators that could explain the mass difference.
+
+    Parameters:
+    mass_diff (float): The mass difference to search for.
+    precision (float): The precision within which to match the mass difference (default is 0.01).
+
+    Returns:
+    tuple: A dictionary of matching reaction operators by type ('E', 'C', 'N'), 
+           a list of matching EVODEX-M entries, and a list of corresponding EVODEX-F IDs.
+    """
     matching_evodex_m = find_evodex_m(mass_diff, precision)
     if not matching_evodex_m:
         return {}, matching_evodex_m, []
@@ -133,7 +179,25 @@ def get_reaction_operators(mass_diff, precision=0.01):
 
 
 def predict_products(smiles, mass_diff, precision=0.01, evodex_type='E'):
-    """Project all EVODEX-E operators consistent with the EVODEX-M onto given substrates and predict the products."""
+    """
+    Project all EVODEX-E, -N, or -C operators consistent with the EVODEX-M onto given substrates and predict the products.
+
+    Parameters:
+    smiles (str): The SMILES string representing the substrate.
+    mass_diff (float): The mass difference to search for.
+    precision (float): The precision within which to match the mass difference (default is 0.01).
+    evodex_type (str): The type of EVODEX operator (Electronic 'E', Nearest-Neighbor 'N', 
+    or Core 'C', default is 'E').
+
+    Returns:
+    dict: A dictionary of predicted products with details of the projections.
+
+    Example:
+    >>> smiles = "CCCO"
+    >>> mass_diff = 14.016
+    >>> precision = 0.01
+    >>> predict_products(smiles, mass_diff, precision, 'E')
+    """    
     matching_operators, matching_evodex_m, f_ids = get_reaction_operators(mass_diff, precision)
     evodex_e_ops = matching_operators.get(evodex_type, [])
 
