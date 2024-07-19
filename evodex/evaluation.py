@@ -13,7 +13,15 @@ evodex_f_cache = None
 evodex_data_cache = None
 
 def _add_hydrogens(smirks):
-    """Add hydrogens to both sides of the SMIRKS."""
+    """
+    Add hydrogens to both sides of the SMIRKS.
+
+    Parameters:
+    smirks (str): The SMIRKS string representing the reaction.
+
+    Returns:
+    str: The SMIRKS string with hydrogens added to both the substrate and product.
+    """
     substrate, product = smirks.split('>>')
     substrate_mol = Chem.MolFromSmiles(substrate)
     product_mol = Chem.MolFromSmiles(product)
@@ -25,7 +33,26 @@ def _add_hydrogens(smirks):
     return smirks_with_h
 
 def assign_evodex_F(smirks):
-    """Assign an EVODEX-F ID to a given SMIRKS."""
+    """
+    Assign an EVODEX-F ID to a given SMIRKS.
+
+    The function first adds hydrogens to both the substrate and product sides of the SMIRKS. 
+    It then calculates the difference in molecular formulas between the substrate and the product.
+    This formula difference is used to search a pre-loaded cache of EVODEX-F IDs to find a match.
+
+    Parameters:
+    smirks (str): The SMIRKS string representing the reaction.
+
+    Returns:
+    str: The EVODEX-F ID, if matched.
+
+    Raises:
+    ValueError: If the formula difference does not match any EVODEX-F ID.
+
+    Example:
+    >>> smirks = "CCO>>CC=O"
+    >>> assign_evodex_F(smirks)
+    """
     smirks_with_h = _add_hydrogens(smirks)
     formula_diff = calculate_formula_diff(smirks_with_h)
     print("Formula difference:", formula_diff)
@@ -35,7 +62,15 @@ def assign_evodex_F(smirks):
     return evodex_f_id
 
 def _load_evodex_f():
-    """Load EVODEX-F cache from the CSV file."""
+    """
+    Load EVODEX-F cache from the CSV file.
+
+    Returns:
+    dict: A dictionary mapping formula differences to EVODEX-F IDs.
+
+    Raises:
+    FileNotFoundError: If the EVODEX-F CSV file is not found.
+    """
     global evodex_f_cache
     if evodex_f_cache is None:
         evodex_f_cache = {}
@@ -56,12 +91,43 @@ def _load_evodex_f():
     return evodex_f_cache
 
 def _parse_sources(sources):
-    """Parse the sources field from the CSV file."""
+    """
+    Parse the sources field from the CSV file.
+
+    Parameters:
+    sources (str): The sources field as a string.
+
+    Returns:
+    list: A list of source strings.
+    """
     sources = sources.replace('"', '')  # Remove all double quotes
     return sources.split(',')  # Split by commas
 
 def match_operator(smirks, evodex_type='E'):
-    """Assign a complete-style operator based on a given SMIRKS and EVODEX type."""
+    """
+    Assign a complete-style operator based on a given SMIRKS and EVODEX type.
+
+    The function first adds hydrogens to the SMIRKS, then calculates the formula difference 
+    between the substrate and product. It uses this formula difference to find potential 
+    EVODEX-F IDs. For each matched ID, the function retrieves all associated operators of 
+    the specified EVODEX type (E, C, or N) and tests them by projecting the reaction 
+    operator on the substrate. If the projected product matches the expected product, the 
+    operator is considered valid.
+
+    Parameters:
+    smirks (str): The SMIRKS string representing the reaction.
+    evodex_type (str): The type of EVODEX operator (default is 'E').
+
+    Returns:
+    list: A list of valid operator IDs.
+
+    Raises:
+    ValueError: If no matching operators are found.
+
+    Example:
+    >>> smirks = "CCCO>>CCC=O"
+    >>> match_operator(smirks, 'E')
+    """
     # Calculate the formula difference
     smirks_with_h = _add_hydrogens(smirks)
     formula_diff = calculate_formula_diff(smirks_with_h)
@@ -112,14 +178,21 @@ def match_operator(smirks, evodex_type='E'):
 
     return valid_operators
 
-
 def _load_evodex_data():
-    """Return pre-cached JSON object."""
+    """
+    Return pre-cached JSON object.
+
+    Returns:
+    dict: The loaded EVODEX data as a dictionary.
+
+    Raises:
+    FileNotFoundError: If the JSON file is not found.
+    """
     global evodex_data_cache
     if evodex_data_cache is not None:
         return evodex_data_cache
 
-    """Load the EVODEX data from the JSON file and return it as an object."""
+    # Load the EVODEX data from the JSON file and return it as an object.
     script_dir = os.path.dirname(__file__)
     rel_path = os.path.join('..', 'evodex/data', 'evaluation_operator_data.json')
     json_filepath = os.path.abspath(os.path.join(script_dir, rel_path))
@@ -163,7 +236,18 @@ def _load_evodex_data():
     return evodex_data_cache
 
 def _create_evodex_json(file_suffix):
-    """Create a dictionary from EVODEX CSV files and save as JSON."""
+    """
+    Create a dictionary from EVODEX CSV files and save as JSON.
+
+    Parameters:
+    file_suffix (str): The suffix for the EVODEX data type ('E', 'N', or 'C').
+
+    Returns:
+    dict: The created dictionary from the EVODEX CSV files.
+
+    Raises:
+    FileNotFoundError: If the CSV file is not found.
+    """
     script_dir = os.path.dirname(__file__)
     csv_path = os.path.join('..', f'evodex/data/EVODEX-{file_suffix}_reaction_operators.csv')
     json_path = os.path.join('..', f'evodex/data/evodex_{file_suffix.lower()}_data.json')
