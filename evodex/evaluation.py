@@ -1,10 +1,11 @@
 import os
+import sys
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from synthesis import project_evodex_operator
-from formula import calculate_formula_diff
-from utils import get_molecule_hash
+from evodex.synthesis import project_evodex_operator
+from evodex.formula import calculate_formula_diff
+from evodex.utils import get_molecule_hash
 import json
 
 # Initialize caches
@@ -193,6 +194,8 @@ def _create_evodex_json(file_suffix):
 
 # Example usage:
 if __name__ == "__main__":
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
     smirks = "CCCO>>CCC=O"
     is_valid_formula = assign_evodex_F(smirks)
     print(f"{smirks} matches: {is_valid_formula}")
