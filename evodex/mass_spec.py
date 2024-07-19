@@ -6,6 +6,7 @@ import pandas as pd
 import json
 from evodex.synthesis import project_evodex_operator
 from evodex.evaluation import _load_evodex_data, _parse_sources
+from evodex.utils import get_molecule_hash
 
 # Initialize caches
 evodex_m_cache = None
@@ -112,40 +113,54 @@ def get_reaction_operators(mass_diff, precision=0.01):
     """Retrieve reaction operators that could explain the mass difference."""
     matching_evodex_m = find_evodex_m(mass_diff, precision)
     if not matching_evodex_m:
-        return {}
+        return {}, matching_evodex_m, []
 
     evodex_m_to_f = _load_evodex_m_to_f()
     evodex_data = _load_evodex_data()
 
     matching_operators = {"E": [], "C": [], "N": []}
+    f_ids = set()
     for entry in matching_evodex_m:
         evodex_m_id = entry["id"]
         if evodex_m_id in evodex_m_to_f:
-            f_ids = evodex_m_to_f[evodex_m_id]
-            for f_id in f_ids:
+            for f_id in evodex_m_to_f[evodex_m_id]:
+                f_ids.add(f_id)
                 if f_id in evodex_data:
                     for op_type, ops in evodex_data[f_id].items():
                         matching_operators[op_type].extend(ops)
 
-    return matching_operators
+    return matching_operators, matching_evodex_m, list(f_ids)
 
-def project_mass_diff_operators(smiles, mass_diff, precision=0.01):
+
+def predict_products(smiles, mass_diff, precision=0.01, evodex_type='E'):
     """Project all EVODEX-E operators consistent with the EVODEX-M onto given substrates and predict the products."""
-    matching_operators = get_reaction_operators(mass_diff, precision)
-    evodex_e_ops = matching_operators.get("E", [])
+    matching_operators, matching_evodex_m, f_ids = get_reaction_operators(mass_diff, precision)
+    evodex_e_ops = matching_operators.get(evodex_type, [])
 
-    valid_products = []
+    results = {}
     for operator in evodex_e_ops:
         try:
-            id = operator["id"]
-            projected_pdts = project_evodex_operator(id, smiles)
-            valid_products.extend(projected_pdts)
+            # Accessing the first element in the matching_evodex_m list
+            m_id = matching_evodex_m[0]["id"]
+            operator_id = operator["id"]
+            projected_pdts = project_evodex_operator(operator_id, smiles)
+            for proj_smiles in projected_pdts:
+                proj_hash = get_molecule_hash(proj_smiles)
+                if proj_hash not in results:
+                    results[proj_hash] = {
+                        "smiles": proj_smiles,
+                        "projections": {}
+                    }
+                formula_mass_key = (tuple(f_ids), m_id)
+                if formula_mass_key not in results[proj_hash]["projections"]:
+                    results[proj_hash]["projections"][formula_mass_key] = []
+                if operator_id not in results[proj_hash]["projections"][formula_mass_key]:
+                    results[proj_hash]["projections"][formula_mass_key].append(operator_id)
         except Exception as e:
             print(f"{operator['id']} errored: {str(e)}")
 
-    return valid_products
+    return results
 
-# Example usage
 if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -156,8 +171,11 @@ if __name__ == "__main__":
     evodex_m = find_evodex_m(mass_diff, precision)
     print(f"Found matching {mass_diff}: {evodex_m}")
 
-    matching_operators = get_reaction_operators(mass_diff, precision)
+    matching_operators, _, _ = get_reaction_operators(mass_diff, precision)
     print(f"Matching operators for mass difference {mass_diff}: {[op['id'] for op_list in matching_operators.values() for op in op_list]}")
 
-    predicted_products = project_mass_diff_operators(substrate, mass_diff, precision)
-    print(f"Predicted products for substrate {substrate} and mass difference {mass_diff}: {predicted_products}")
+    results = predict_products(substrate, mass_diff, precision, 'E')
+    for product, details in results.items():
+        print(f"Product: {details['smiles']}")
+        for (f_ids, m_id), operators in details['projections'].items():
+            print(f"  EVODEX-F (formula) IDs: {f_ids}, EVODEX-M (mass) ID: {m_id}, Operators: {operators}")
