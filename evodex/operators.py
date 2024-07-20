@@ -151,7 +151,7 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
 
     # Remove stereochemistry if requested
     if not include_stereochemistry:
-        print("Removing Stereochemistry")
+        # print("Removing Stereochemistry")
 
         # Create a new reaction object
         new_reaction = rdChemReactions.ChemicalReaction()
