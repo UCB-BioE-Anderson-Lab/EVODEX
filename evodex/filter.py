@@ -12,14 +12,11 @@ def validate_smiles(smiles: str) -> bool:
     Returns:
     bool: True if the SMILES string passes the filtering test, False otherwise.
     """
-    try:
-        reaction = AllChem.ReactionFromSmarts(smiles, useSmiles=True)
-        reactants = list(reaction.GetReactants())
-        products = list(reaction.GetProducts())
+    reaction = AllChem.ReactionFromSmarts(smiles, useSmiles=True)
+    reactants = list(reaction.GetReactants())
+    products = list(reaction.GetProducts())
 
-        for mol in reactants + products:
-            calculate_inchi(mol)
-    except Exception as e:
-        return False
+    for mol in reactants + products:
+        calculate_inchi(mol)
 
     return True

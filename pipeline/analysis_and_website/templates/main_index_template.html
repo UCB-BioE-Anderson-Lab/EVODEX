@@ -17,6 +17,14 @@
     </header>
     <main>
         <section>
+            <h2>Google Colab Notebooks</h2>
+            <ul>
+                {% for notebook in google_colab_notebooks %}
+                <li><a href="{{ notebook.url }}">{{ notebook.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </section>
+        <section>
             <h2>All Operators by Type</h2>
             <ul>
                 {% for evodex_type in evodex_types %}

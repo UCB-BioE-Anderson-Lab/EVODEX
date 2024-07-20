@@ -180,11 +180,15 @@ def generate_main_index_page(env, evodex_types, root_dir, ro_metadata):
     context = {
         'evodex_types': evodex_types,
         'ro_metadata': ro_metadata,
+        'google_colab_notebooks': [
+            {'title': 'EVODEX Synthesis Demo', 'url': 'https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA'},
+            {'title': 'EVODEX Evaluation Demo', 'url': 'https://colab.research.google.com/drive/1IvoaXjtnu7ZSvot_1Ovq3g-h5IVCdSn4'},
+            {'title': 'EVODEX Mass Spec Demo', 'url': 'https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX'}
+        ],
         'additional_links': [
             {'title': 'Correlating EC Number with EVODEX', 'url': 'website/pages/correlating_ec_number.html'},
             {'title': 'Synthesis Subset of EVODEX-E', 'url': 'website/pages/synthesis_subset.html'},
-            {'title': 'Mass Spectrometry Subset of EVODEX-M', 'url': 'website/pages/mass_spec_subset.html'},
-            {'title': 'Example Google Colab Notebooks', 'url': 'website/pages/example_colab_notebooks.html'}
+            {'title': 'Mass Spectrometry Subset of EVODEX-M', 'url': 'website/pages/mass_spec_subset.html'}
         ]
     }
     generate_html_page(template, 'index.html', context, root_dir)
