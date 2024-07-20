@@ -41,6 +41,9 @@ def process_reaction_data(input_csv, output_csv, error_csv, process_function, ad
             total_count += 1
             try:
                 result = process_function(row)
+                smirks = result["smirks"]
+                if smirks.startswith(">>") or smirks.endswith(">>"):
+                    continue
                 writer.writerow({**row, **result})
                 success_count += 1
             except Exception as e:
