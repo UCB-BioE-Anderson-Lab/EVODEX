@@ -1,13 +1,12 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import copy
-from evodex.utils import validate_smiles
 
 def map_atoms(smiles: str) -> str:
     """
     This function takes a SMILES string representing a chemical reaction,
-    validates and modifies it by ensuring that all atoms, including astatine,
-    have unique and valid atom maps.
+    modifies it by ensuring that all atoms, including astatine, have unique
+    and valid atom maps.
 
     Parameters:
     smiles (str): The input SMILES string with astatines replacing hydrogen
@@ -15,10 +14,6 @@ def map_atoms(smiles: str) -> str:
     Returns:
     str: The modified SMILES string with atom maps.
     """
-
-    if not validate_smiles(smiles):
-        raise ValueError(f"Invalid SMILES: {smiles}")
-
     try:
         raw_rxn = AllChem.ReactionFromSmarts(smiles, useSmiles=True)
     except Exception as e:

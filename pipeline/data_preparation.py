@@ -1,7 +1,6 @@
 import csv
 import os
 from collections import defaultdict
-from evodex.filter import validate_smiles
 from evodex.astatine import hydrogen_to_astatine_reaction
 from evodex.mapping import map_atoms
 from evodex.utils import reaction_hash
@@ -20,24 +19,32 @@ def write_row(writer, data):
 
 def process_raw_data(input_file, output_file, ec_representation):
     """Process the initial raw data file."""
+    total_raw_reactions = 0
+    valid_reactions = 0
+
     with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
         fieldnames = ['id', 'smirks', 'sources', 'error', 'ec_num']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         for row in reader:
+            total_raw_reactions += 1
             ec_num = row.get('ec_num', '')
             if ec_num:
                 ec_representation[ec_num] = False
             try:
-                if validate_smiles(row['mapped']):
-                    new_row = {'id': row['rxn_idx'], 'smirks': row['mapped'], 'sources': row.get('rxn_idx', ''), 'error': '', 'ec_num': ec_num}
-                else:
-                    raise ValueError("SMILES validation failed")
+                # This is a validation step to exclude any malformed data
+                reaction_hash(row['mapped'])
+                valid_reactions += 1
+
+                # Write the validated data row
+                new_row = {'id': row['rxn_idx'], 'smirks': row['mapped'], 'sources': row.get('rxn_idx', ''), 'error': '', 'ec_num': ec_num}
             except Exception as e:
+                # Write an erroneous data row
                 new_row = {'id': row['rxn_idx'], 'smirks': '', 'sources': '', 'error': str(e), 'ec_num': ec_num}
             write_row(writer, new_row)
 
+    return total_raw_reactions, valid_reactions
 
 def process_data(input_file, output_file, transformation_function):
     """General function to process data with transformation."""
@@ -57,11 +64,13 @@ def process_data(input_file, output_file, transformation_function):
                 row['error'] = str(e)
                 write_row(writer, row)
 
-def consolidate_reactions(input_file, output_file, ec_representation):
+def consolidate_reactions(input_file, output_file, raw_input_file, evodex_raw_output_file, ec_representation):
     """Consolidate similar reactions based on reaction_hash and retain up to 2 unique instances of each ec_num."""
     ec_num_map = defaultdict(lambda: defaultdict(dict))
+    total_evodex_r_reactions = 0
+    evodex_r_ids = set()
 
-    with open(input_file, 'r') as infile:
+    with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
         for row in reader:
             try:
@@ -71,6 +80,7 @@ def consolidate_reactions(input_file, output_file, ec_representation):
                     rxn_hash = reaction_hash(smirks)
                     if rxn_hash not in ec_num_map[ec_num]:  # Ensure unique reaction hash
                         ec_num_map[ec_num][rxn_hash] = row
+                        evodex_r_ids.add(row['id'])
             except Exception as e:
                 print(f"Error processing row: {row} - {e}")
 
@@ -95,7 +105,19 @@ def consolidate_reactions(input_file, output_file, ec_representation):
                 })
                 ec_representation[ec_num] = True
                 evodex_id_counter += 1
+                total_evodex_r_reactions += 1
     print(f"Total reactions written: {evodex_id_counter - 1}")
+
+    # Write the filtered raw reactions to evodex_raw_output_file
+    with open(raw_input_file, 'r') as infile, open(evodex_raw_output_file, 'w', newline='') as outfile:
+        reader = csv.DictReader(infile)
+        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
+        writer.writeheader()
+        for row in reader:
+            if row['rxn_idx'] in evodex_r_ids:
+                writer.writerow(row)
+
+    return total_evodex_r_reactions
 
 def write_ec_representation(ec_representation, output_file):
     """Write the EC number representation dictionary to a CSV file."""
@@ -112,7 +134,7 @@ def main():
     ec_representation = {}
 
     # Process initial raw data
-    process_raw_data(paths['raw_data'], paths['filtered_data'], ec_representation)
+    total_raw_reactions, valid_reactions = process_raw_data(paths['raw_data'], paths['filtered_data'], ec_representation)
 
     # Subsequent processing steps
     process_data(paths['filtered_data'], paths['astatine_data'], lambda row: {
@@ -132,10 +154,28 @@ def main():
     })
 
     # Consolidate reactions to generate EVODEX-R data with EC number constraints
-    consolidate_reactions(paths['mapped_data'], paths['evodex_r'], ec_representation)
+    total_evodex_r_reactions = consolidate_reactions(
+        paths['mapped_data'],
+        paths['evodex_r'],
+        paths['raw_data'],
+        paths['selected_data'],  # Use the selected_data path from paths.yaml
+        ec_representation
+    )
 
     # Write EC number representation to a CSV file
     write_ec_representation(ec_representation, os.path.join(paths['errors_dir'], 'ec_representation.csv'))
+
+    # Calculate statistics
+    percentage_loss = ((total_raw_reactions - valid_reactions) / total_raw_reactions) * 100
+    ec_with_reactions = sum(1 for represented in ec_representation.values() if represented)
+
+    # Print final statistics
+    print(f"Total raw reactions processed: {total_raw_reactions}")
+    print(f"Valid reactions retained after hash sanitization: {valid_reactions}")
+    print(f"Percentage data loss due to hash sanitization: {percentage_loss:.2f}%")
+    print(f"Total unique EC numbers encountered: {len(ec_representation)}")
+    print(f"EC numbers populated with at least one reaction: {ec_with_reactions}")
+    print(f"Total EVODEX-R reactions: {total_evodex_r_reactions}")
 
 if __name__ == "__main__":
     main()

@@ -68,12 +68,12 @@ def move_and_convert_csv_files(data_dir, paths):
         synthesis_df.to_csv(synthesis_dest_path, index=False)
         print(f"Copied and converted: {synthesis_src_path} to {synthesis_dest_path}")
 
-    raw_src_path = paths['raw_data']
-    raw_dest_path = os.path.join(data_dir, os.path.basename(raw_src_path))
+    selected_src_path = paths['selected_data']
+    selected_dest_path = os.path.join(data_dir, 'selected_data.csv')
     
-    # Copy raw data file without conversion
-    shutil.copy(raw_src_path, raw_dest_path)
-    print(f"Copied: {raw_src_path} to {raw_dest_path}")
+    # Copy selected data file without conversion
+    shutil.copy(selected_src_path, selected_dest_path)
+    print(f"Copied: {selected_src_path} to {selected_dest_path}")
 
     # Save error logs
     if error_logs:

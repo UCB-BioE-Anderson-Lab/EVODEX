@@ -1,4 +1,5 @@
 raw_data: "data/raw/raw_reactions.csv"
+selected_data: "data/processed/selected_reactions.csv"
 filtered_data: "data/processed/filtered_reactions.csv"
 astatine_data: "data/processed/astatine_reactions.csv"
 mapped_data: "data/processed/mapped_reactions.csv"
