@@ -206,7 +206,6 @@ def generate_synthesis_subset(input_csv, evodex_p_csv, evodex_e_csv, output_csv,
 
         # Map reaction hashes to EVODEX-P IDs
         for row in p_reader:
-            total_count += 1
             reaction_hash_value = reaction_hash(row['smirks'])
             evodex_p_map[reaction_hash_value] = row['id']
 
@@ -234,10 +233,14 @@ def generate_synthesis_subset(input_csv, evodex_p_csv, evodex_e_csv, output_csv,
             err_writer.writeheader()
 
             for row in reader:
-                success_count += 1
+                total_count += 1
                 try:
                     smirks = row['smirks']
                     partial_reaction = remove_cofactors(smirks)
+                    # Check if partial_reaction starts or ends with >>
+                    if partial_reaction.startswith(">>") or partial_reaction.endswith(">>"):
+                        continue
+                    
                     reaction_hash_value = reaction_hash(partial_reaction)
                     evodex_p_id = evodex_p_map.get(reaction_hash_value)
 
@@ -256,12 +259,11 @@ def generate_synthesis_subset(input_csv, evodex_p_csv, evodex_e_csv, output_csv,
 
         for evodex_e_id in sorted(evodex_e_subset):
             sources = evodex_e_sources[evodex_e_id]
-            if len(sources) >= 2:
-                sources_str = ','.join(sorted(sources))
-                writer.writerow({'id': evodex_e_id, 'sources': sources_str})
+            sources_str = ','.join(sorted(sources))
+            writer.writerow({'id': evodex_e_id, 'sources': sources_str})
+            success_count += 1
 
     return {"total":total_count, "successes":success_count, "errors":error_count}
-
 
 def generate_mass_spec_subset(evodex_p_csv, evodex_m_csv, output_csv, error_csv):
     error_count = 0
