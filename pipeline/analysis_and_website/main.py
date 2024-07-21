@@ -47,8 +47,6 @@ def create_website(paths):
         generate_all_svgs(evodex_type, csv_path, images_dir)
 
     generate_html_pages(paths, data_dir, images_dir, pages_dir, list(ro_metadata.keys()) + ['F', 'M'])
-    # ec_number_correlation_main() I think that's old
-    run_analysis_main()
     
 def main():
     paths = load_paths('pipeline/config/paths.yaml')
