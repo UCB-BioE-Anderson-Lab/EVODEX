@@ -11,7 +11,7 @@ def load_data(data_dir):
     Load raw reactions and EVODEX data files.
     """
     print("Loading data...")
-    raw_reactions = pd.read_csv(f'{data_dir}/raw_reactions.csv')
+    raw_reactions = pd.read_csv(f'{data_dir}/selected_reactions.csv')
     evodex_files = {
         'C': 'EVODEX-C_reaction_operators.csv',
         'Cm': 'EVODEX-Cm_reaction_operators.csv',

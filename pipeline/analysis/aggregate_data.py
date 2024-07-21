@@ -5,7 +5,7 @@ import json
 def load_raw_data(data_dir):
     """Loads raw reactions and evodex data files from the specified directory."""
     print("Loading data...")
-    raw_reactions = pd.read_csv(f'{data_dir}/raw_reactions.csv')
+    raw_reactions = pd.read_csv(f'{data_dir}/selected_reactions.csv')
     evodex_files = {
         'C': 'EVODEX-C_reaction_operators.csv',
         'Cm': 'EVODEX-Cm_reaction_operators.csv',

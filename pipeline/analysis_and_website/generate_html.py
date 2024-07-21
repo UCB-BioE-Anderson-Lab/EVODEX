@@ -9,12 +9,29 @@ def generate_html_page(template, filename, context, output_dir):
     with open(os.path.join(output_dir, filename), 'w') as file:
         file.write(html_content)
 
+def _parse_sources(sources):
+    """
+    Parse the sources field from the CSV file.
+
+    Parameters:
+    sources (str): The sources field as a string.
+
+    Returns:
+    list: A list of source strings.
+    """
+    sources = "" + str(sources)  # Turn the int to a string, or no effect if already a string
+    sources = sources.replace('"', '')  # Remove all double quotes
+    return sources.split(',')  # Split by commas
+
 def generate_evodex_r_pages(env, evodex_r_df, source_df, pages_dir):
     template = env.get_template('evodex_r_template.html')
+    
     for index, row in evodex_r_df.iterrows():
         evodex_id = row['id']
         smirks = row['smirks']
-        sources = row['sources'].replace('"', '').split(',')
+        
+        # Parse the sources column using the _parse_sources function
+        sources = _parse_sources(row['sources'])
 
         # Create a copy of the relevant DataFrame slice
         sources_data = source_df[source_df['rxn_idx'].astype(str).isin(sources)].copy()
