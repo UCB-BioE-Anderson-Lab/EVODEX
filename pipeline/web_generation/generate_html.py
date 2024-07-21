@@ -170,7 +170,7 @@ def generate_evodex_ro_pages(env, evodex_ro_dfs, evodex_p_df, ro_metadata, pages
 
             context = {
                 'evodex_id': evodex_id,
-                'smirks': smirks,
+                'operator_smirks': smirks,
                 'sources': sources,
                 'partial_reactions': partial_reactions,
                 'ro_metadata': ro_metadata,
