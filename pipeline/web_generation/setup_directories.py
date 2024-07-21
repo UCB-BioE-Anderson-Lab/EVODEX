@@ -20,5 +20,5 @@ def setup_directories(base_dir, logo_path):
 
 if __name__ == "__main__":
     base_dir = 'website'
-    logo_path = 'pipeline/analysis_and_website/templates/evodex_logo.png'
+    logo_path = 'pipeline/web_generation/templates/evodex_logo.png'
     setup_directories(base_dir, logo_path)

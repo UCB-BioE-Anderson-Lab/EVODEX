@@ -1,12 +1,12 @@
 import os
 import shutil
 from pipeline.config import load_paths
-from pipeline.analysis_and_website.setup_directories import setup_directories
-from pipeline.analysis_and_website.move_csv_files import move_and_convert_csv_files
-from pipeline.analysis_and_website.generate_css import generate_css
-from pipeline.analysis_and_website.generate_svg import generate_all_svgs, generate_svgs_for_data_preparation
-from pipeline.analysis_and_website.generate_html import generate_html_pages
-from pipeline.analysis_and_website.ec_number_correlation import main as ec_number_correlation_main
+from pipeline.web_generation.setup_directories import setup_directories
+from pipeline.web_generation.move_csv_files import move_and_convert_csv_files
+from pipeline.web_generation.generate_css import generate_css
+from pipeline.web_generation.generate_svg import generate_all_svgs, generate_svgs_for_data_preparation
+from pipeline.web_generation.generate_html import generate_html_pages
+from pipeline.web_generation.ec_number_correlation import main as ec_number_correlation_main
 from pipeline.analysis.run_analysis import main as run_analysis_main
 
 def clean_website_directory(base_dir):

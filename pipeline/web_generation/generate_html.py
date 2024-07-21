@@ -288,7 +288,7 @@ def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
 
 if __name__ == "__main__":
     paths = {
-        'template_dir': 'pipeline/analysis_and_website/templates',
+        'template_dir': 'pipeline/web_generation/templates',
         'raw_data': 'website/data/raw_reactions.csv',
         'evodex_r': 'website/data/EVODEX-R_full_reactions.csv',
         'evodex_p': 'website/data/EVODEX-P_partial_reactions.csv',

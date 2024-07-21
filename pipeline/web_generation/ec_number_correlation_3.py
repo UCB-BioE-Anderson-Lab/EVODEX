@@ -205,7 +205,7 @@ def main():
     with open(hierarchy_file, 'r') as f:
         json_data = json.load(f)
     
-    template_path = 'pipeline/analysis_and_website/templates/ec_hierarchy_template.html'
+    template_path = 'pipeline/web_generation/templates/ec_hierarchy_template.html'
     output_file = os.path.join('website', 'ec_hierarchy_visualization.html')
     inject_json_to_template(json_data, template_path, output_file)
 

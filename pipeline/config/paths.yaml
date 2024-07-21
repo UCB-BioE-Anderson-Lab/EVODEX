@@ -30,6 +30,6 @@ evodex_m_subset: "data/processed/EVODEX-M_mass_spec_subset.csv"
 errors_dir: "data/errors/"
 
 # Analysis and website templates and static files
-template_dir: "pipeline/analysis_and_website/templates"
-static_dir: "pipeline/analysis_and_website/static"
-logo_image: "pipeline/analysis_and_website/templates/evodex_logo.png"
+template_dir: "pipeline/web_generation/templates"
+static_dir: "pipeline/web_generation/static"
+logo_image: "pipeline/web_generation/templates/evodex_logo.png"
