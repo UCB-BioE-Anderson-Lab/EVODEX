@@ -7,6 +7,7 @@ from evodex.synthesis import project_evodex_operator
 from evodex.formula import calculate_formula_diff
 from evodex.utils import get_molecule_hash
 import json
+from itertools import combinations
 
 # Initialize caches
 evodex_f_cache = None
@@ -52,10 +53,10 @@ def assign_evodex_F(smirks):
     """
     smirks_with_h = _add_hydrogens(smirks)
     formula_diff = calculate_formula_diff(smirks_with_h)
-    print("Formula difference:", formula_diff)
+    # print("Formula difference:", formula_diff)
     evodex_f = _load_evodex_f()
     evodex_f_id = evodex_f.get(frozenset(formula_diff.items()))
-    print("Matched EVODEX-F ID:", evodex_f_id)
+    # print("Matched EVODEX-F ID:", evodex_f_id)
     return evodex_f_id
 
 def _load_evodex_f():
@@ -100,16 +101,13 @@ def _parse_sources(sources):
     sources = sources.replace('"', '')  # Remove all double quotes
     return sources.split(',')  # Split by commas
 
-def match_operator(smirks, evodex_type='E'):
+def match_operators(smirks, evodex_type='E'):
     """
-    Assign a complete-style operator based on a given SMIRKS and EVODEX type.
+    Assign complete-style operators based on a given SMIRKS and EVODEX type.
 
-    The function first adds hydrogens to the SMIRKS, then calculates the formula difference 
-    between the substrate and product. It uses this formula difference to find potential 
-    EVODEX-F IDs. For each matched ID, the function retrieves all associated operators of 
-    the specified EVODEX type (E, C, or N) and tests them by projecting the reaction 
-    operator on the substrate. If the projected product matches the expected product, the 
-    operator is considered valid.
+    This function splits the reaction SMIRKS into substrates and products,
+    enumerates all possible pairings, and runs a helper method to find
+    matching operators for each pairing.
 
     Parameters:
     smirks (str): The SMIRKS string representing the reaction.
@@ -118,15 +116,58 @@ def match_operator(smirks, evodex_type='E'):
 
     Returns:
     list: A list of valid operator IDs. Returns an empty list if no matching operators are found.
+    """
+    # Initialize valid operators list
+    valid_operators = []
 
-    Example:
-    >>> smirks = "CCCO>>CCC=O"
-    >>> match_operator(smirks, 'E')
+    try:
+        # Split the SMIRKS string into substrates and products
+        if '>>' in smirks:
+            substrates, products = smirks.split('>>')
+            substrate_list = substrates.split('.')
+            product_list = products.split('.')
+
+            # Assign an integer index to each substrate and product
+            substrate_indices = list(range(len(substrate_list)))
+            product_indices = list(range(len(product_list)))
+
+            # Construct new reaction objects combinatorially
+            all_pairings = set()
+            for i in range(1, len(substrate_indices) + 1):
+                for j in range(1, len(product_indices) + 1):
+                    for reactant_combo in combinations(substrate_indices, i):
+                        for product_combo in combinations(product_indices, j):
+                            all_pairings.add((frozenset(reactant_combo), frozenset(product_combo)))
+
+            # Generate all pairings of substrates and products
+            for pairing in all_pairings:
+                reactant_indices, product_indices = pairing
+                reactant_smiles = '.'.join([substrate_list[i] for i in sorted(reactant_indices)])
+                product_smiles = '.'.join([product_list[i] for i in sorted(product_indices)])
+                pairing_smirks = f"{reactant_smiles}>>{product_smiles}"
+                valid_operators.extend(_match_operator(pairing_smirks, evodex_type))
+
+    except Exception as e:
+        print(f"Error processing SMIRKS {smirks}: {e}")
+    
+    return valid_operators
+
+def _match_operator(smirks, evodex_type='E'):
+    """
+    Helper function to assign a complete-style operator based on a given SMIRKS and EVODEX type.
+
+    Parameters:
+    smirks (str): The SMIRKS string representing the reaction.
+    evodex_type (str): The type of EVODEX operator (Electronic 'E', Nearest-Neighbor 'N', 
+    or Core 'C', default is 'E').
+
+    Returns:
+    list: A list of valid operator IDs. Returns an empty list if no matching operators are found.
     """
     # Calculate the formula difference
     smirks_with_h = _add_hydrogens(smirks)
     formula_diff = calculate_formula_diff(smirks_with_h)
-    print("Formula difference:", formula_diff)
+    # print("Formula difference:", formula_diff)
 
     # Lazy load the operators associated with each formula
     evodex_f = _load_evodex_f()
@@ -138,7 +179,7 @@ def match_operator(smirks, evodex_type='E'):
         return {}
     f_id = f_id_list[0]  # Extract the single F_id from the list
 
-    print(f"Potential F ID for formula {formula_diff}: {f_id}")
+    # print(f"Potential F ID for formula {formula_diff}: {f_id}")
 
     evodex_data = _load_evodex_data()
 
@@ -148,7 +189,7 @@ def match_operator(smirks, evodex_type='E'):
     # Retrieve all operators of the right type associated with the formula difference
     potential_operators = evodex_data[f_id].get(evodex_type, [])
     evodex_ids = [op["id"] for op in potential_operators]
-    print(f"Potential operator IDs for {smirks} of type {evodex_type}: {evodex_ids}")
+    # print(f"Potential operator IDs for {smirks} of type {evodex_type}: {evodex_ids}")
 
     # Split the input smirks into substrates and products
     sub_smiles, pdt_smiles = smirks.split('>>')
@@ -161,15 +202,16 @@ def match_operator(smirks, evodex_type='E'):
     for operator in potential_operators:
         try:
             id = operator["id"]
-            print(f"Projecting:  {id} on {sub_smiles}")
+            # print(f"Projecting:  {id} on {sub_smiles}")
             projected_pdts = project_evodex_operator(id, sub_smiles)
-            print(f"Projected products: {projected_pdts}")
+            # print(f"Projected products: {projected_pdts}")
             for proj_smiles in projected_pdts:
                 proj_hash = get_molecule_hash(proj_smiles)
                 if proj_hash == pdt_hash:
                     valid_operators.append(id)
         except Exception as e:
-            print(f"{operator['id']} errored: {e}")
+            # print(f"{operator['id']} errored: {e}")
+            pass
 
     return valid_operators
 
@@ -268,7 +310,7 @@ def _create_evodex_json(file_suffix):
     with open(json_filepath, 'w') as json_file:
         json.dump(evodex_dict, json_file, indent=4)
 
-    print(f"EVODEX-{file_suffix} data has been saved to {json_filepath}")
+    # print(f"EVODEX-{file_suffix} data has been saved to {json_filepath}")
     return evodex_dict
 
 # Example usage:
