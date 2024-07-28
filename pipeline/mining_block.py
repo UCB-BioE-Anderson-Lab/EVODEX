@@ -8,6 +8,8 @@ from evodex.formula import calculate_formula_diff, calculate_exact_mass
 from evodex.splitting import split_reaction
 from evodex.utils import reaction_hash
 from pipeline.config import load_paths
+from pipeline.version import __version__
+
 
 def ensure_directories(paths: dict):
     for path in paths.values():
@@ -113,7 +115,7 @@ def process_formula_data(input_csv, output_csv, error_csv):
         writer.writeheader()
         evodex_id_counter = 1
         for formula_hash, data in data_map.items():
-            evodex_id = f'EVODEX-F{evodex_id_counter}'
+            evodex_id = f'EVODEX.{__version__}-F{evodex_id_counter}'
             sources = ','.join(data['sources'])
             writer.writerow({'id': evodex_id, 'formula': str(data['formula']), 'sources': sources})
             evodex_id_counter += 1
@@ -139,7 +141,7 @@ def process_mass_data(formula_csv, output_csv, error_csv):
                 formula_diff = eval(row['formula'])
                 mass_diff = calculate_exact_mass(formula_diff)
                 sources = row['sources']
-                evodex_id = f'EVODEX-M{evodex_id_counter}'
+                evodex_id = f'EVODEX.{__version__}-M{evodex_id_counter}'
                 writer.writerow({'id': evodex_id, 'mass': mass_diff, 'sources': sources})
                 evodex_id_counter += 1
                 success_count += 1
@@ -189,7 +191,7 @@ def process_split_reactions(input_csv, output_csv, error_csv):
         for reaction_hash_value, id_set in hash_to_ids.items():
             example_smirks = hash_to_example_smirks[reaction_hash_value]
             sources = ','.join(id_set)  # Ensure sources are stored as a comma-separated string
-            new_id = f'EVODEX-P{evodex_id_counter}'
+            new_id = f'EVODEX.{__version__}-P{evodex_id_counter}'
             writer.writerow({'id': new_id, 'smirks': example_smirks, 'sources': sources})
             evodex_id_counter += 1
 
@@ -389,7 +391,7 @@ def main():
 
     # Process operator data and consolidate
     for key, params in extract_params_map.items():
-        prefix = f'EVODEX-{key.split("_")[1].upper()}' if 'cm' not in key and 'em' not in key and 'nm' not in key else f'EVODEX-{key.split("_")[1].capitalize()}'
+        prefix = f'EVODEX.{__version__}-{key.split("_")[1].upper()}' if 'cm' not in key and 'em' not in key and 'nm' not in key else f'EVODEX.{__version__}-{key.split("_")[1].capitalize()}'
         error_log = f"{paths['errors_dir']}{key}_errors.csv"
         result = process_reaction_data(paths['evodex_p'], paths[key], error_log, lambda row: process_operators(row, params), ['smirks'])
         result_stats[key] = result

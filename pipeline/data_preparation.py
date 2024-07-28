@@ -5,6 +5,8 @@ from evodex.astatine import hydrogen_to_astatine_reaction
 from evodex.mapping import map_atoms
 from evodex.utils import reaction_hash
 from pipeline.config import load_paths
+from pipeline.version import __version__
+
 
 def ensure_directories(paths: dict):
     """Ensure that all necessary directories exist."""
@@ -93,7 +95,7 @@ def consolidate_reactions(input_file, output_file, raw_input_file, evodex_raw_ou
         evodex_id_counter = 1
         for ec_num in sorted_ec_nums:
             for rxn_hash, data in ec_num_map[ec_num].items():
-                evodex_id = f'EVODEX-R{evodex_id_counter}'
+                evodex_id = f'EVODEX.{__version__}-R{evodex_id_counter}'
                 data['id'] = evodex_id
                 sources = data['sources']
                 writer.writerow({
