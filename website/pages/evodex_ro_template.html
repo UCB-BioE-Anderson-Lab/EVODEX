@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ evodex_id }} - {{ title }}</title>
+    <title>EVODEX - Reaction Operator</title>
     <link rel="stylesheet" href="../styles.css">
+    <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+    <script src="../scripts/rdkit_image_generator.js" defer></script>
 </head>
 <body>
     <header>
@@ -12,29 +14,23 @@
             <img src="../images/evodex_logo.png" alt="EVODEX Logo">
         </a>
         <div>
-            <h1>{{ evodex_id }}</h1>
-            <h2>{{ title }}</h2>
+            <h1 id="evodex-id"></h1>
+            <h2 id="evodex-title"></h2>
         </div>
     </header>
     <main>
         <section>
             <h2>SMIRKS</h2>
-            <img src="../images/{{ evodex_id }}.svg" alt="Operator SMIRKS Rendering">
-            <p>{{ operator_smirks }}</p>
+            <canvas id="reactionCanvas" width="1000" height="300"></canvas>
+            <p id="operator-smirks"></p>
         </section>
         <section>
             <h2>Source Partial Reactions</h2>
-            {% for p_id in sources %}
-            <div>
-                <h3><a href="../pages/{{ p_id }}.html">{{ p_id }}</a></h3>
-                <img src="../images/{{ p_id }}.svg" alt="Partial Reaction Rendering">
-                <p>{{ partial_reactions[p_id] }}</p>
-            </div>
-            {% endfor %}
+            <div id="source-partial-reactions"></div>
         </section>
     </main>
     <footer>
-        {{ copyright }}
+        <p>&copy; EVODEX Project</p>
     </footer>
 </body>
 </html>
