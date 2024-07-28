@@ -34,7 +34,7 @@ def _remove_stereochemistry(molecule):
 def _process_static_hydrogens(molecule, center_atom_indices):
     static_hydrogen_indices = set()
     for atom in molecule.GetAtoms():
-        if atom.GetAtomicNum() != 1:
+        if atom.GetAtomicNum() != 1 and atom.GetAtomicNum() != 85:
             continue
         if atom.GetAtomMapNum() == 0:
             continue
@@ -125,7 +125,7 @@ def _process_unmapped_atoms(molecule):
         if atom_map != 0:
             continue
         atomic_number = atom.GetAtomicNum()
-        if atomic_number == 1:
+        if atomic_number == 1 or atomic_number == 85:
             unmapped_hydrogen_indices.add(atom.GetIdx())
         else:
             unmapped_heavy_indices.add(atom.GetIdx())

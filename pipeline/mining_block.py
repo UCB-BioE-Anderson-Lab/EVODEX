@@ -343,7 +343,7 @@ def main():
             'include_pi': True,
             'include_unmapped_hydrogens': True,
             'include_unmapped_heavy_atoms': True,
-            'include_static_hydrogens': False
+            'include_static_hydrogens': True
         },
         'evodex_c': {
             'include_stereochemistry': True,
@@ -359,7 +359,7 @@ def main():
             'include_pi': False,
             'include_unmapped_hydrogens': True,
             'include_unmapped_heavy_atoms': True,
-            'include_static_hydrogens': False
+            'include_static_hydrogens': True
         },
         'evodex_em': {
             'include_stereochemistry': False,
@@ -367,7 +367,7 @@ def main():
             'include_pi': True,
             'include_unmapped_hydrogens': False,
             'include_unmapped_heavy_atoms': False,
-            'include_static_hydrogens': False
+            'include_static_hydrogens': True
         },
         'evodex_cm': {
             'include_stereochemistry': False,
@@ -383,7 +383,7 @@ def main():
             'include_pi': False,
             'include_unmapped_hydrogens': False,
             'include_unmapped_heavy_atoms': False,
-            'include_static_hydrogens': False
+            'include_static_hydrogens': True
         }
     }
 
