@@ -88,7 +88,9 @@ def move_and_convert_csv_files(data_dir, paths):
         'EVODEX-Cm_reaction_operators.csv', 'EVODEX-Nm_reaction_operators.csv',
         'EVODEX-E_reaction_operators.csv', 'EVODEX-E_synthesis_subset.csv',
         'EVODEX-Em_reaction_operators.csv', 'EVODEX-F_unique_formulas.csv',
-        'EVODEX-M_mass_spec_subset.csv', 'EVODEX-M_unique_masses.csv'
+        'EVODEX-M_mass_spec_subset.csv', 'EVODEX-M_unique_masses.csv',
+        'EVODEX-R_full_reactions.csv', 'EVODEX-P_partial_reactions.csv',
+        'selected_reactions.csv'
     ]
 
     for filename in files_to_copy:

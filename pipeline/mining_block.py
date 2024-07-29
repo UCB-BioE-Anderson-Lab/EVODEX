@@ -116,10 +116,11 @@ def process_formula_data(input_csv, output_csv, error_csv):
         writer.writeheader()
         evodex_id_counter = 1
         for formula_hash, data in data_map.items():
-            evodex_id = f'EVODEX.{__version__}-F{evodex_id_counter}'
-            sources = ','.join(data['sources'])
-            writer.writerow({'id': evodex_id, 'formula': str(data['formula']), 'sources': sources})
-            evodex_id_counter += 1
+            if len(data['sources']) >= 2:  # Only include if observed at least twice
+                evodex_id = f'EVODEX.{__version__}-F{evodex_id_counter}'
+                sources = ','.join(data['sources'])
+                writer.writerow({'id': evodex_id, 'formula': str(data['formula']), 'sources': sources})
+                evodex_id_counter += 1
 
     return {"total":total_count, "successes":success_count, "errors":error_count}
 
@@ -127,10 +128,11 @@ def process_mass_data(formula_csv, output_csv, error_csv):
     error_count = 0
     success_count = 0
     total_count = 0
+
     with open(formula_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
-        fieldnames = reader.fieldnames
-        writer = csv.DictWriter(outfile, fieldnames=fieldnames + ['mass'])
+        fieldnames = reader.fieldnames + ['mass']
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         evodex_id_counter = 1
         with open(error_csv, 'w', newline='') as errfile:
@@ -143,7 +145,7 @@ def process_mass_data(formula_csv, output_csv, error_csv):
                 mass_diff = calculate_exact_mass(formula_diff)
                 sources = row['sources']
                 evodex_id = f'EVODEX.{__version__}-M{evodex_id_counter}'
-                writer.writerow({'id': evodex_id, 'mass': mass_diff, 'sources': sources})
+                writer.writerow({'id': evodex_id, 'mass': mass_diff, 'sources': sources, 'formula': row['formula']})
                 evodex_id_counter += 1
                 success_count += 1
             except Exception as e:
