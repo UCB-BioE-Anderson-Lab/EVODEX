@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import re
 
 # Global cache for EVODEX data
 evodex_data_cache = {}
@@ -104,15 +105,15 @@ def _lookup_smirks_by_evodex_id(evodex_id):
     Returns:
     str: The SMIRKS string for the EVODEX ID, or None if not found.
     """
-    if evodex_id.startswith("EVODEX-E"):
+    if re.match(r"EVODEX\.\d+-E", evodex_id):
         evodex_df = _load_evodex_data('EVODEX-E_reaction_operators.csv')
-    elif evodex_id.startswith("EVODEX-C"):
+    elif re.match(r"EVODEX\.\d+-C", evodex_id):
         evodex_df = _load_evodex_data('EVODEX-C_reaction_operators.csv')
-    elif evodex_id.startswith("EVODEX-N"):
+    elif re.match(r"EVODEX\.\d+-N", evodex_id):
         evodex_df = _load_evodex_data('EVODEX-N_reaction_operators.csv')
     else:
         return None
-
+    
     smirks = evodex_df.loc[evodex_df['id'] == evodex_id, 'smirks'].values
     return smirks[0] if len(smirks) > 0 else None
 
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     print("Direct projection: ", result)
 
     # Project from EVODEX ID
-    evodex_id = "EVODEX-E170"
+    evodex_id = "EVODEX.1-E2"
     result = project_evodex_operator(evodex_id, substrate)
     print("Referenced EVODEX projection: ", result)
 
