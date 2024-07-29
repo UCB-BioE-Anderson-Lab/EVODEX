@@ -8,10 +8,11 @@ from evodex.formula import calculate_formula_diff
 from evodex.utils import get_molecule_hash
 import json
 from itertools import combinations
+import re
 
 # Initialize caches
-evodex_f_cache = None
-evodex_data_cache = None
+evodex_f_cache = {}
+evodex_data_cache = {}
 
 def _add_hydrogens(smirks):
     """
@@ -23,15 +24,21 @@ def _add_hydrogens(smirks):
     Returns:
     str: The SMIRKS string with hydrogens added to both the substrate and product.
     """
-    substrate, product = smirks.split('>>')
-    substrate_mol = Chem.MolFromSmiles(substrate)
-    product_mol = Chem.MolFromSmiles(product)
-    substrate_mol = Chem.AddHs(substrate_mol)
-    product_mol = Chem.AddHs(product_mol)
-    substrate_smiles = Chem.MolToSmiles(substrate_mol)
-    product_smiles = Chem.MolToSmiles(product_mol)
-    smirks_with_h = f"{substrate_smiles}>>{product_smiles}"
-    return smirks_with_h
+    try:
+        substrate, product = smirks.split('>>')
+        substrate_mol = Chem.MolFromSmiles(substrate)
+        product_mol = Chem.MolFromSmiles(product)
+        if substrate_mol is None or product_mol is None:
+            raise ValueError(f"Invalid SMILES in SMIRKS: {smirks}")
+        substrate_mol = Chem.AddHs(substrate_mol)
+        product_mol = Chem.AddHs(product_mol)
+        substrate_smiles = Chem.MolToSmiles(substrate_mol)
+        product_smiles = Chem.MolToSmiles(product_mol)
+        smirks_with_h = f"{substrate_smiles}>>{product_smiles}"
+        return smirks_with_h
+    except Exception as e:
+        print(f"Error in _add_hydrogens: {e}")
+        return smirks
 
 def assign_evodex_F(smirks):
     """
@@ -53,10 +60,11 @@ def assign_evodex_F(smirks):
     """
     smirks_with_h = _add_hydrogens(smirks)
     formula_diff = calculate_formula_diff(smirks_with_h)
-    # print("Formula difference:", formula_diff)
+    print(f"Formula difference: {formula_diff}")
     evodex_f = _load_evodex_f()
-    evodex_f_id = evodex_f.get(frozenset(formula_diff.items()))
-    # print("Matched EVODEX-F ID:", evodex_f_id)
+    frozen_f_query = frozenset(formula_diff.items())
+    evodex_f_id = evodex_f.get(frozen_f_query)
+    print(f"Matched EVODEX-F ID: {evodex_f_id}")
     return evodex_f_id
 
 def _load_evodex_f():
@@ -70,8 +78,7 @@ def _load_evodex_f():
     FileNotFoundError: If the EVODEX-F CSV file is not found.
     """
     global evodex_f_cache
-    if evodex_f_cache is None:
-        evodex_f_cache = {}
+    if not evodex_f_cache:
         script_dir = os.path.dirname(__file__)
         rel_path = os.path.join('..', 'evodex/data', 'EVODEX-F_unique_formulas.csv')
         filepath = os.path.abspath(os.path.join(script_dir, rel_path))
@@ -86,6 +93,7 @@ def _load_evodex_f():
             if frozenset(formula_diff.items()) not in evodex_f_cache:
                 evodex_f_cache[frozenset(formula_diff.items())] = []
             evodex_f_cache[frozenset(formula_diff.items())].append(evodex_id)
+    # print(f"Loaded EVODEX-F data: {evodex_f_cache}")
     return evodex_f_cache
 
 def _parse_sources(sources):
@@ -167,29 +175,29 @@ def _match_operator(smirks, evodex_type='E'):
     # Calculate the formula difference
     smirks_with_h = _add_hydrogens(smirks)
     formula_diff = calculate_formula_diff(smirks_with_h)
-    # print("Formula difference:", formula_diff)
+    print(f"Formula difference for {smirks}: {formula_diff}")
 
     # Lazy load the operators associated with each formula
     evodex_f = _load_evodex_f()
     if evodex_f is None:
-        return {}
+        return []
 
     f_id_list = evodex_f.get(frozenset(formula_diff.items()), [])
     if not f_id_list:
-        return {}
-    f_id = f_id_list[0]  # Extract the single F_id from the list
-
-    # print(f"Potential F ID for formula {formula_diff}: {f_id}")
+        print(f"No F IDs found for formula {formula_diff}")
+        return []
+    f_id = f_id_list[0]  # Extract the first F_id from the list
 
     evodex_data = _load_evodex_data()
 
     if f_id not in evodex_data:
-        return {}
+        print(f"F ID {f_id} not in EVODEX data")
+        return []
 
     # Retrieve all operators of the right type associated with the formula difference
     potential_operators = evodex_data[f_id].get(evodex_type, [])
     evodex_ids = [op["id"] for op in potential_operators]
-    # print(f"Potential operator IDs for {smirks} of type {evodex_type}: {evodex_ids}")
+    print(f"Potential operator IDs for {smirks} of type {evodex_type}: {evodex_ids}")
 
     # Split the input smirks into substrates and products
     sub_smiles, pdt_smiles = smirks.split('>>')
@@ -202,16 +210,13 @@ def _match_operator(smirks, evodex_type='E'):
     for operator in potential_operators:
         try:
             id = operator["id"]
-            # print(f"Projecting:  {id} on {sub_smiles}")
             projected_pdts = project_evodex_operator(id, sub_smiles)
-            # print(f"Projected products: {projected_pdts}")
             for proj_smiles in projected_pdts:
                 proj_hash = get_molecule_hash(proj_smiles)
                 if proj_hash == pdt_hash:
                     valid_operators.append(id)
         except Exception as e:
-            # print(f"{operator['id']} errored: {e}")
-            pass
+            print(f"{operator['id']} errored: {e}")
 
     return valid_operators
 
@@ -227,6 +232,7 @@ def _load_evodex_data():
     """
     global evodex_data_cache
     if evodex_data_cache is not None:
+        print("Using cached EVODEX data.")
         return evodex_data_cache
 
     # Load the EVODEX data from the JSON file and return it as an object.
@@ -234,9 +240,13 @@ def _load_evodex_data():
     rel_path = os.path.join('..', 'evodex/data', 'evaluation_operator_data.json')
     json_filepath = os.path.abspath(os.path.join(script_dir, rel_path))
     if os.path.exists(json_filepath):
+        print(f"Loading EVODEX data from {json_filepath}.")
         with open(json_filepath, 'r') as json_file:
             evodex_data_cache = json.load(json_file)
         return evodex_data_cache
+    
+    # If the JSON file does not exist, create the data from CSV files and save it as JSON.
+    print(f"{json_filepath} does not exist. Creating new JSON data from CSV files.")
     
     # Index EVODEX data as JSON files
     e_data = _create_evodex_json('E')
@@ -269,6 +279,7 @@ def _load_evodex_data():
     # Save the combined EVODEX data to a JSON file
     with open(json_filepath, 'w') as json_file:
         json.dump(evodex_data_cache, json_file, indent=4)
+    print(f"Saved EVODEX data to {json_filepath}.")
 
     return evodex_data_cache
 
@@ -302,15 +313,17 @@ def _create_evodex_json(file_suffix):
         evodex_id = row['id']
         sources = _parse_sources(row['sources'])
         for source in sources:
-            evodex_dict[source] = {
+            if source not in evodex_dict:
+                evodex_dict[source] = []
+            evodex_dict[source].append({
                 "id": evodex_id,
                 "smirks": row['smirks']
-            }
+            })
 
     with open(json_filepath, 'w') as json_file:
         json.dump(evodex_dict, json_file, indent=4)
 
-    # print(f"EVODEX-{file_suffix} data has been saved to {json_filepath}")
+    print(f"EVODEX-{file_suffix} data has been saved to {json_filepath}")
     return evodex_dict
 
 # Example usage:
@@ -321,5 +334,5 @@ if __name__ == "__main__":
     is_valid_formula = assign_evodex_F(smirks)
     print(f"{smirks} matches: {is_valid_formula}")
 
-    matching_operators = match_operator(smirks, 'C')
+    matching_operators = match_operators(smirks, 'C')
     print(f"Matching operators for {smirks}: {matching_operators}")
