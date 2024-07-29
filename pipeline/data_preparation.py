@@ -67,7 +67,7 @@ def process_data(input_file, output_file, transformation_function):
                 write_row(writer, row)
 
 def consolidate_reactions(input_file, output_file, raw_input_file, evodex_raw_output_file, ec_representation):
-    """Consolidate similar reactions based on reaction_hash and retain up to 2 unique instances of each ec_num."""
+    """Consolidate similar reactions based on reaction_hash and retain up to 4 unique instances of each ec_num."""
     ec_num_map = defaultdict(lambda: defaultdict(dict))
     total_evodex_r_reactions = 0
     evodex_r_ids = set()
@@ -78,7 +78,7 @@ def consolidate_reactions(input_file, output_file, raw_input_file, evodex_raw_ou
             try:
                 smirks = row['smirks']
                 ec_num = row.get('ec_num', '')
-                if smirks and ec_num and len(ec_num_map[ec_num]) < 2:  # Ensure smirks and ec_num are not empty and limit to 2 instances
+                if smirks and ec_num and len(ec_num_map[ec_num]) < 4:  # Ensure smirks and ec_num are not empty and limit to 4 instances
                     rxn_hash = reaction_hash(smirks)
                     if rxn_hash not in ec_num_map[ec_num]:  # Ensure unique reaction hash
                         ec_num_map[ec_num][rxn_hash] = row

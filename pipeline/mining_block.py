@@ -77,11 +77,12 @@ def consolidate_reactions(input_file, output_file, prefix):
         writer.writeheader()
         evodex_id_counter = 1
         for rxn_hash, data in data_map.items():
-            evodex_id = f'{prefix}{evodex_id_counter}'
-            most_common_smirks = max(data['smirks'], key=data['smirks'].get)
-            sources = ','.join(data['sources'])
-            writer.writerow({'id': evodex_id, 'smirks': most_common_smirks, 'sources': sources})
-            evodex_id_counter += 1
+            if len(data['sources']) >= 2:  # Only include operators observed twice or more
+                evodex_id = f'{prefix}{evodex_id_counter}'
+                most_common_smirks = max(data['smirks'], key=data['smirks'].get)
+                sources = ','.join(data['sources'])
+                writer.writerow({'id': evodex_id, 'smirks': most_common_smirks, 'sources': sources})
+                evodex_id_counter += 1
 
 def process_formula_data(input_csv, output_csv, error_csv):
     error_count = 0
