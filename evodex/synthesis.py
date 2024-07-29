@@ -113,8 +113,7 @@ def _lookup_smirks_by_evodex_id(evodex_id):
         evodex_df = _load_evodex_data('EVODEX-N_reaction_operators.csv')
     else:
         return None
-    return evodex_df
-
+    
     smirks = evodex_df.loc[evodex_df['id'] == evodex_id, 'smirks'].values
     return smirks[0] if len(smirks) > 0 else None
 
@@ -168,7 +167,7 @@ if __name__ == "__main__":
     print("Direct projection: ", result)
 
     # Project from EVODEX ID
-    evodex_id = "EVODEX-E170"
+    evodex_id = "EVODEX.1-E2"
     result = project_evodex_operator(evodex_id, substrate)
     print("Referenced EVODEX projection: ", result)
 
