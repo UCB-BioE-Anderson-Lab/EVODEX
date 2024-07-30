@@ -33,14 +33,31 @@ pip install evodex
 The synthesis module provides tools for assigning EVODEX formulas and matching reaction operators. Below is an example usage:
 
 ```python
-from evodex.synthesis import assign_evodex_F, match_operators
+from evodex.synthesis import project_reaction_operator, project_evodex_operator, project_synthesis_operators
 
-smirks = "CCCO>>CCC=O"
-is_valid_formula = assign_evodex_F(smirks)
-print(f"{smirks} matches: {is_valid_formula}")
+# Specify propanol as the substrate
+substrate = "CCCO"
 
-matching_operators = match_operators(smirks, 'C')
-print(f"Matching operators for {smirks}: {matching_operators}")
+# Represent of the oxidation of an alcohol:
+smirks = "[H][C:8]([C:7])([O:9][H])[H:19]>>[C:7][C:8](=[O:9])[H:19]"
+
+# Project the oxidation operator on propanol:
+result = project_reaction_operator(smirks, substrate)
+print("Direct projection: ", result)
+
+# Specify the dehydrogenase reaction by its EVODEX ID:
+evodex_id = "EVODEX.1-E2"
+
+# Apply the dehydrogenase operator to propanol
+result = project_evodex_operator(evodex_id, substrate)
+print("Referenced EVODEX projection: ", result)
+pdt = Chem.MolFromSmiles(result[0])
+pdt
+
+# Project All Synthesis Subset EVODEX-E operators on propanol
+result = project_synthesis_operators(substrate)
+print("All Synthesis Subset projection: ", result)
+
 ```
 
 For more detailed usage, refer to the [EVODEX Synthesis Demo](https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA).
