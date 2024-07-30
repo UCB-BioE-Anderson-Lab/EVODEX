@@ -9,7 +9,7 @@ from evodex.splitting import split_reaction
 from evodex.utils import reaction_hash
 from pipeline.config import load_paths
 from pipeline.version import __version__
-
+import hashlib
 
 def ensure_directories(paths: dict):
     for path in paths.values():
@@ -91,29 +91,28 @@ def process_formula_data(input_csv, output_csv, error_csv):
     hash_map = defaultdict(list)
     data_map = defaultdict(lambda: {'formula': None, 'sources': []})
     
-    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
+    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile, open(error_csv, 'w', newline='') as errfile:
         reader = csv.DictReader(infile)
         fieldnames = reader.fieldnames
-        with open(error_csv, 'w', newline='') as errfile:
-            err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
-            err_writer.writeheader()
+        err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
+        err_writer.writeheader()
+        writer = csv.DictWriter(outfile, fieldnames=['id', 'formula', 'sources'])
+        writer.writeheader()
+
         for row in reader:
             total_count += 1
             try:
                 formula_diff = calculate_formula_diff(row['smirks'])
-                formula_hash = hash(tuple(sorted(formula_diff.items())))
+                formula_frozenset = frozenset(formula_diff.items())
+                formula_hash = hashlib.sha256(str(formula_frozenset).encode()).hexdigest()
                 hash_map[formula_hash].append(row['id'])
                 data_map[formula_hash]['formula'] = formula_diff
                 data_map[formula_hash]['sources'].append(row['id'])
                 success_count += 1
             except Exception as e:
                 error_count += 1
-                handle_error(row, e, fieldnames, error_csv)
+                handle_error(row, e, fieldnames, err_writer)
                 
-    with open(output_csv, 'w', newline='') as outfile:
-        fieldnames = ['id', 'formula', 'sources']
-        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-        writer.writeheader()
         evodex_id_counter = 1
         for formula_hash, data in data_map.items():
             if len(data['sources']) >= 2:  # Only include if observed at least twice
@@ -122,7 +121,7 @@ def process_formula_data(input_csv, output_csv, error_csv):
                 writer.writerow({'id': evodex_id, 'formula': str(data['formula']), 'sources': sources})
                 evodex_id_counter += 1
 
-    return {"total":total_count, "successes":success_count, "errors":error_count}
+    return {"total": total_count, "successes": success_count, "errors": error_count}
 
 def process_mass_data(formula_csv, output_csv, error_csv):
     error_count = 0
