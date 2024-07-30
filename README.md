@@ -51,8 +51,6 @@ evodex_id = "EVODEX.0-E2"
 # Apply the dehydrogenase operator to propanol
 result = project_evodex_operator(evodex_id, substrate)
 print("Referenced EVODEX projection: ", result)
-pdt = Chem.MolFromSmiles(result[0])
-pdt
 
 # Project All Synthesis Subset EVODEX-E operators on propanol
 result = project_synthesis_operators(substrate)
