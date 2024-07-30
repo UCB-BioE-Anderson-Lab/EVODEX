@@ -46,25 +46,51 @@ print(f"Matching operators for {smirks}: {matching_operators}")
 For more detailed usage, refer to the [EVODEX Synthesis Demo](https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA).
 
 ### Evaluation
-The evaluation module provides tools for evaluating reaction operators and synthesis results. Example usage:
+The evaluation module provides tools for evaluating reaction operators and synthesis results. Below is an example usage:
 
 ```python
-from evodex.evaluation import evaluate_reaction_operators, evaluate_synthesis_results, generate_evaluation_report
+from evodex.evaluation import assign_evodex_F, match_operators
 
-evaluate_reaction_operators()
-evaluate_synthesis_results()
-generate_evaluation_report()
+# Define reactions
+reactions = ["CCCO>>CCC=O", "CCCCO>>CCCC=O", "CCCO>>CCCOC", "CCCO>>CC(C)CO"]
+
+# Assign EVODEX-F IDs
+assign_results = {reaction: assign_evodex_F(reaction) for reaction in reactions}
+print(assign_results)
+
+# Match reaction operators
+match_results = {reaction: match_operators(reaction, 'E') for reaction in reactions}
+print(match_results)
 ```
 
 For more detailed usage, refer to the [EVODEX Evaluation Demo](https://colab.research.google.com/drive/1IvoaXjtnu7ZSvot_1Ovq3g-h5IVCdSn4).
 
 ### Mass Spectrometry
-The mass spectrometry module provides tools for processing mass spectrometry data. Example usage:
+The mass spectrometry module provides tools for predicting masses and identifying reaction operators. Below is an example usage:
 
 ```python
-from evodex.mass_spec import process_mass_spec_data
+from evodex.mass_spec import calculate_mass, find_evodex_m, get_reaction_operators, predict_products
 
-process_mass_spec_data()
+# Calculate mass of a molecule
+mass = calculate_mass("O=C4\C=C2/[C@]([C@H]1[C@@H](O)C[C@@]3([C@@](O)(C(=O)CO)CC[C@H]3[C@@H]1CC2)C)(C)CC4.[H+]")
+print(mass)
+
+# Define observed masses
+substrate_mass = 363.2166
+potential_product_mass = 377.2323
+mass_diff = potential_product_mass - substrate_mass
+
+# Find matching EVODEX-M entries
+matching_evodex_m = find_evodex_m(mass_diff, 0.01)
+print(matching_evodex_m)
+
+# Get reaction operators
+matching_operators = get_reaction_operators(mass_diff, 0.01)
+print(matching_operators)
+
+# Predict product structures
+predicted_products = predict_products("O=C4\C=C2/[C@]([C@H]1[C@@H](O)C[C@@]3([C@@](O)(C(=O)CO)CC[C@H]3[C@@H]1CC2)C)(C)CC4", mass_diff, 0.01)
+print(predicted_products)
 ```
 
 For more detailed usage, refer to the [EVODEX Mass Spec Demo](https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX).
@@ -87,7 +113,7 @@ with open("/content/processed_reactions.csv.gz", "wb") as f:
 
 # Decompress the file
 with gzip.open("/content/processed_reactions.csv.gz", "rt") as f_in:
-    with open("/content/processed_reactions.csv", "wt") as f_out:
+    with open("/content/processed_reactions.csv", "wt") as f_out):
         f_out.write(f_in.read())
 ```
 
