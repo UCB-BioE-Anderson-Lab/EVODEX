@@ -30,17 +30,32 @@ pip install evodex
 ## Usage
 
 ### Synthesis
-The synthesis module provides tools for assigning EVODEX formulas and matching reaction operators. Below is an example usage:
+The synthesis module provides tools for predicting reaction products using reaction operators. Below is an example usage:
 
 ```python
-from evodex.synthesis import assign_evodex_F, match_operators
+from evodex.synthesis import project_reaction_operator, project_evodex_operator, project_synthesis_operators
 
-smirks = "CCCO>>CCC=O"
-is_valid_formula = assign_evodex_F(smirks)
-print(f"{smirks} matches: {is_valid_formula}")
+# Specify propanol as the substrate as SMILES
+substrate = "CCCO"
 
-matching_operators = match_operators(smirks, 'C')
-print(f"Matching operators for {smirks}: {matching_operators}")
+# Representation of alcohol oxidation as SMIRKS:
+smirks = "[H][C:8]([C:7])([O:9][H])[H:19]>>[C:7][C:8](=[O:9])[H:19]"
+
+# Project the oxidation operator on propanol:
+result = project_reaction_operator(smirks, substrate)
+print("Direct projection: ", result)
+
+# Specify the dehydrogenase reaction by its EVODEX ID:
+evodex_id = "EVODEX.0-E2"
+
+# Apply the dehydrogenase operator to propanol
+result = project_evodex_operator(evodex_id, substrate)
+print("Referenced EVODEX projection: ", result)
+
+# Project All Synthesis Subset EVODEX-E operators on propanol
+result = project_synthesis_operators(substrate)
+print("All Synthesis Subset projection: ", result)
+
 ```
 
 For more detailed usage, refer to the [EVODEX Synthesis Demo](https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA).
@@ -51,15 +66,15 @@ The evaluation module provides tools for evaluating reaction operators and synth
 ```python
 from evodex.evaluation import assign_evodex_F, match_operators
 
-# Define reactions
-reactions = ["CCCO>>CCC=O", "CCCCO>>CCCC=O", "CCCO>>CCCOC", "CCCO>>CC(C)CO"]
+# Define reaction as oxidation of propanol
+reaction = "CCCO>>CCC=O"
 
 # Assign EVODEX-F IDs
-assign_results = {reaction: assign_evodex_F(reaction) for reaction in reactions}
+assign_results = assign_evodex_F(reaction)
 print(assign_results)
 
-# Match reaction operators
-match_results = {reaction: match_operators(reaction, 'E') for reaction in reactions}
+# Match reaction operators of type 'E' (or C or N)
+match_results = match_operators(reaction, 'E')
 print(match_results)
 ```
 
@@ -71,13 +86,13 @@ The mass spectrometry module provides tools for predicting masses and identifyin
 ```python
 from evodex.mass_spec import calculate_mass, find_evodex_m, get_reaction_operators, predict_products
 
-# Calculate mass of a molecule
-mass = calculate_mass("O=C4\C=C2/[C@]([C@H]1[C@@H](O)C[C@@]3([C@@](O)(C(=O)CO)CC[C@H]3[C@@H]1CC2)C)(C)CC4.[H+]")
-print(mass)
+# Calculate exact mass of the compound cortisol as an [M+H]+ ion
+cortisol_M_plus_H = "O=C4\C=C2/[C@]([C@H]1[C@@H](O)C[C@@]3([C@@](O)(C(=O)CO)CC[C@H]3[C@@H]1CC2)C)(C)CC4.[H+]"
+mass = calculate_mass(cortisol_M_plus_H)
 
 # Define observed masses
-substrate_mass = 363.2166
-potential_product_mass = 377.2323
+substrate_mass = 363.2166 # The expected mass for cortisol's ion
+potential_product_mass = 377.2323 # A mass of unknown identity
 mass_diff = potential_product_mass - substrate_mass
 
 # Find matching EVODEX-M entries
@@ -89,16 +104,19 @@ matching_operators = get_reaction_operators(mass_diff, 0.01)
 print(matching_operators)
 
 # Predict product structures
-predicted_products = predict_products("O=C4\C=C2/[C@]([C@H]1[C@@H](O)C[C@@]3([C@@](O)(C(=O)CO)CC[C@H]3[C@@H]1CC2)C)(C)CC4", mass_diff, 0.01)
+predicted_products = predict_products(cortisol_M_plus_H, mass_diff, 0.01)
 print(predicted_products)
 ```
 
 For more detailed usage, refer to the [EVODEX Mass Spec Demo](https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX).
 
 ## Pipeline
-The `run_pipeline.py` script is the highest-level runner script for generating EVODEX. This script is not included in the PyPI distribution but can be accessed by cloning the repository. The pipeline processes raw data files and generates the necessary data for EVODEX's functionalities and website.
+The `run_pipeline.py` script is the highest-level runner script for generating EVODEX. This script is not included in the PyPI distribution but can be accessed by cloning the repository. The pipeline processes raw data files and generates the necessary data for EVODEX's functionalities and website. It includes additional dependencies not required of the PyPI distribution.  See requirements.txt for details. 
 
 ### Raw Data File
+EVODEX.0, the current distribution of operators, was built from the dataset derived from BRENDA discussed in:
+"EnzymeMap: Curation, validation and data-driven prediction of enzymatic reactions" by E. Heid, D. Probst, W. H. Green and G. K. H. Madsen.
+
 To use the full version of the raw data file, download and decompress it as follows:
 
 ```python
@@ -118,6 +136,10 @@ with gzip.open("/content/processed_reactions.csv.gz", "rt") as f_in:
 ```
 
 The repository includes a partial version of this file containing only selected reactions. Running the pipeline with this file will reproduce the same results as using the full version.
+
+## GitHub Pages Website
+A partial set of the most common reaction operators (about 100 of each type) generated by the software is available on the GitHub Pages website. This partial dataset provides a preview of the most common operators. The full dataset can be rendered by running `run_pipeline.py`. Access the website here: [EVODEX GitHub Pages](https://ucb-bioe-anderson-lab.github.io/EVODEX/).
+
 
 ## Data
 The pipeline initially writes preliminary mined data files and errors to `EVODEX/data`. These files are then reprocessed and saved in the `EVODEX/evodex/data` and `EVODEX/website/data` folders. The files in `evodex/data` are included in the PyPI distribution, while the files in `website/data` are used to generate the EVODEX website.
