@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import sys,os
 
 # Exact mass values for elements
 EXACT_MASS = {
@@ -53,7 +54,7 @@ def calculate_formula_diff(smirks: str) -> Dict[str, int]:
 
     # Switch 'At' to 'H' in the dictionary
     if 'At' in atom_diff:
-        atom_diff['H'] = atom_diff.pop('At')
+        atom_diff['H'] += atom_diff.pop('At')
 
     return atom_diff
 
@@ -68,3 +69,15 @@ def calculate_exact_mass(atom_diff: Dict[str, int]) -> float:
     for atom, count in atom_diff.items():
         exact_mass += EXACT_MASS.get(atom, 0.0) * count
     return exact_mass
+
+# Use this:
+# calculate the formula diff
+
+# Example usage:
+if __name__ == "__main__":
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+    # Run direct projection
+    smirks = '[H][C:2]([C:1]([At:48])([H:49])[H:50])([O:3][H])[H:51]>>[C:1]([C:2](=[O:3])[H:51])([H:48])([H:49])[H:50]'
+    result = calculate_formula_diff(smirks)
+    print("Formula: ", result)
