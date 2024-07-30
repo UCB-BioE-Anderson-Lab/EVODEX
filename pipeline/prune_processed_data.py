@@ -2,6 +2,11 @@ import csv
 import os
 from collections import defaultdict
 
+'''To use this, first run_pipeline. Then run this and it will make a smaller version 
+of the full data with just the most common evodex-e and related others.  You can then
+copy and paste those back into data/processed and run main.py to make small website'''
+
+
 def ensure_directory(path):
     """Ensure that the directory exists."""
     if not os.path.exists(path):
