@@ -16,7 +16,9 @@ EXACT_MASS = {
     'S': 31.9721,
     'Cl': 34.9689,
     'Br': 78.9183,
-    'I': 126.9045
+    'I': 126.9045,
+    'As': 74.921596,
+    'Se': 79.916521
 }
 
 def calculate_formula_diff(smirks: str) -> Dict[str, int]:
