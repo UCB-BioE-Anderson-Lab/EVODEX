@@ -3,7 +3,7 @@ import os
 from collections import defaultdict
 
 '''To use this, first run_pipeline. Then run this and it will make a smaller version 
-of the full data with just the most common evodex-e and related others.  You can then
+of the full data with just the most common evodex-e and related others. You can then
 copy and paste those back into data/processed and run main.py to make small website'''
 
 
@@ -39,7 +39,7 @@ def _parse_sources(sources):
     sources = sources.replace('"', '')  # Remove all double quotes
     return sources.split(',')  # Split by commas
 
-def prune_evodeex_e(data, top_n=100, max_sources=3):
+def prune_evodeex_e(data, top_n=100, max_sources=2):
     """Prune EVODEX-E data to the top N based on the count of unique EVODEX-P references, limiting sources to max_sources."""
     data_with_counts = []
     for row in data:
@@ -108,7 +108,7 @@ def main():
                         "EVODEX-Nm_reaction_operators.csv"]
 
     # Prune EVODEX-E
-    pruned_e, valid_p = prune_evodeex_e(evodex_e, top_n=100, max_sources=3)
+    pruned_e, valid_p = prune_evodeex_e(evodex_e, top_n=100, max_sources=2)
 
     # Prune EVODEX-P based on valid EVODEX-P IDs
     pruned_p = [row for row in evodex_p if row['id'] in valid_p]
@@ -124,12 +124,11 @@ def main():
 
     # Prune EVODEX-R based on sources in pruned EVODEX-P
     valid_r = {source for row in pruned_p for source in _parse_sources(row['sources'])}
-    pruned_r, valid_rxn_idx = prune_evodeex_r(evodex_r, valid_r)
-
-    # Debug: Check for valid_rxn_idx and valid sources in EVODEX-R
+    pruned_r = [row for row in evodex_r if row['id'] in valid_r]
+    valid_rxn_idx = {row['sources'] for row in pruned_r}
+    
     print(f"Valid sources in EVODEX-R: {valid_r}")
     print(f"Number of pruned EVODEX-R entries: {len(pruned_r)}")
-    print(f"Valid rxn_idx: {valid_rxn_idx}")
 
     # Prune selected_reactions based on sources in pruned EVODEX-R
     pruned_selected_reactions = [row for row in selected_reactions if row['rxn_idx'] in valid_rxn_idx]
