@@ -1,7 +1,6 @@
 from pipeline.data_preparation import main as data_preparation_main
 from pipeline.mining_block import main as mining_block_main
 from pipeline.web_generation.main import main as web_generation_main
-from pipeline.web_generation.main import main as web_generation_main
 from pipeline.analysis.run_analysis import main as analysis_main
 
 def run_pipeline():
