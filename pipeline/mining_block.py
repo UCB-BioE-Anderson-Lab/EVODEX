@@ -20,10 +20,10 @@ def ensure_directories(paths: dict):
 def write_row(writer, row_data):
     writer.writerow(row_data)
 
-def handle_error(row, e, fieldnames, error_file):
+def handle_error(row, e, fieldnames, error_file_path):
     error_row = {key: row[key] for key in fieldnames if key in row}
     error_row['error_message'] = str(e)
-    with open(error_file, 'a', newline='') as errfile:
+    with open(error_file_path, 'a', newline='') as errfile:
         err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
         err_writer.writerow(error_row)
 
@@ -91,35 +91,36 @@ def process_formula_data(input_csv, output_csv, error_csv):
     hash_map = defaultdict(list)
     data_map = defaultdict(lambda: {'formula': None, 'sources': []})
     
-    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile, open(error_csv, 'w', newline='') as errfile:
+    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
         fieldnames = reader.fieldnames
-        err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
-        err_writer.writeheader()
-        writer = csv.DictWriter(outfile, fieldnames=['id', 'formula', 'sources'])
-        writer.writeheader()
+        with open(error_csv, 'w', newline='') as errfile:
+            err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
+            err_writer.writeheader()
+            writer = csv.DictWriter(outfile, fieldnames=['id', 'formula', 'sources'])
+            writer.writeheader()
 
-        for row in reader:
-            total_count += 1
-            try:
-                formula_diff = calculate_formula_diff(row['smirks'])
-                formula_frozenset = frozenset(formula_diff.items())
-                formula_hash = hashlib.sha256(str(formula_frozenset).encode()).hexdigest()
-                hash_map[formula_hash].append(row['id'])
-                data_map[formula_hash]['formula'] = formula_diff
-                data_map[formula_hash]['sources'].append(row['id'])
-                success_count += 1
-            except Exception as e:
-                error_count += 1
-                handle_error(row, e, fieldnames, err_writer)
+            for row in reader:
+                total_count += 1
+                try:
+                    formula_diff = calculate_formula_diff(row['smirks'])
+                    formula_frozenset = frozenset(formula_diff.items())
+                    formula_hash = hashlib.sha256(str(formula_frozenset).encode()).hexdigest()
+                    hash_map[formula_hash].append(row['id'])
+                    data_map[formula_hash]['formula'] = formula_diff
+                    data_map[formula_hash]['sources'].append(row['id'])
+                    success_count += 1
+                except Exception as e:
+                    error_count += 1
+                    handle_error(row, e, fieldnames, error_csv)
                 
-        evodex_id_counter = 1
-        for formula_hash, data in data_map.items():
-            if len(data['sources']) >= 2:  # Only include if observed at least twice
-                evodex_id = f'EVODEX.{__version__}-F{evodex_id_counter}'
-                sources = ','.join(data['sources'])
-                writer.writerow({'id': evodex_id, 'formula': str(data['formula']), 'sources': sources})
-                evodex_id_counter += 1
+            evodex_id_counter = 1
+            for formula_hash, data in data_map.items():
+                if len(data['sources']) >= 2:  # Only include if observed at least twice
+                    evodex_id = f'EVODEX.{__version__}-F{evodex_id_counter}'
+                    sources = ','.join(data['sources'])
+                    writer.writerow({'id': evodex_id, 'formula': str(data['formula']), 'sources': sources})
+                    evodex_id_counter += 1
 
     return {"total": total_count, "successes": success_count, "errors": error_count}
 
