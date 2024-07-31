@@ -167,7 +167,7 @@ if __name__ == "__main__":
     print("Direct projection: ", result)
 
     # Project from EVODEX ID
-    evodex_id = "EVODEX.1-E2"
+    evodex_id = "EVODEX.0-E2"
     result = project_evodex_operator(evodex_id, substrate)
     print("Referenced EVODEX projection: ", result)
 
