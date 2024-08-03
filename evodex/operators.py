@@ -52,22 +52,14 @@ def _extract_center_atom_indices(molecule, center_atom_maps):
     return center_atom_indices
 
 # Function to process a molecule and identify sigma atom indices
-def _process_sigma_molecule(molecule, center_atom_maps):
+def _process_sigma_molecule(molecule, center_atom_indices):
     sigma_indices = set()
     for atom in molecule.GetAtoms():
-        atom_map = atom.GetAtomMapNum()
+        atom_idx = atom.GetIdx()
         for neighbor in atom.GetNeighbors():
-            neighbor_map = neighbor.GetAtomMapNum()
-            if neighbor_map in center_atom_maps:
-                sigma_indices.add(atom.GetIdx())
-    return sigma_indices
-
-# Function to augment sigma atom indices with conjugated atoms
-def _augment_sigma_indices(molecule, sigma_atom_maps, sigma_indices):
-    for atom in molecule.GetAtoms():
-        atom_map = atom.GetAtomMapNum()
-        if atom_map in sigma_atom_maps:
-            sigma_indices.add(atom.GetIdx())
+            neighbor_idx = neighbor.GetIdx()
+            if neighbor_idx in center_atom_indices:
+                sigma_indices.add(atom_idx)
     return sigma_indices
 
 # Helper function to check if an atom is SP2 or SP hybridized
@@ -116,6 +108,16 @@ def _grow_pi_shell(reaction, current_pi_indices):
     else:
         return _grow_pi_shell(reaction, new_pi_indices)
 
+# Function to augment pi atom indices with conjugated atoms
+def _augment_pi_indices(molecule, pi_atom_indices):
+    for atom in molecule.GetAtoms():
+        atom_idx = atom.GetIdx()
+        if atom_idx in pi_atom_indices:
+            for neighbor in atom.GetNeighbors():
+                if _is_sp_or_sp2(neighbor):
+                    pi_atom_indices.add(neighbor.GetIdx())
+    return pi_atom_indices
+
 # Function to process a molecule and identify unmapped hydrogen and heavy atom indices
 def _process_unmapped_atoms(molecule):
     unmapped_hydrogen_indices = set()
@@ -130,14 +132,6 @@ def _process_unmapped_atoms(molecule):
         else:
             unmapped_heavy_indices.add(atom.GetIdx())
     return unmapped_hydrogen_indices, unmapped_heavy_indices
-
-# Function to augment pi atom indices with conjugated atoms
-def _augment_pi_indices(molecule, pi_atom_maps, pi_indices):
-    for atom in molecule.GetAtoms():
-        atom_map = atom.GetAtomMapNum()
-        if atom_map in pi_atom_maps:
-            pi_indices.add(atom.GetIdx())
-    return pi_indices
 
 # Main function to process the reaction
 def extract_operator(smirks: str, include_stereochemistry: bool = False, include_sigma: bool = True, include_pi: bool = True, include_unmapped_hydrogens: bool = True, include_unmapped_heavy_atoms: bool = True, include_static_hydrogens: bool = False):
@@ -181,7 +175,6 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
     # ---------------------- POPULATE CENTER ATOMS ---------------------
     # Identify indices of reacting mapped atoms
     reacting_atoms = reaction.GetReactingAtoms(mappedAtomsOnly=True)
-    # ic(reacting_atoms)
 
     # Identify the atom maps of the reacting mapped atoms
     center_atom_maps = set()
@@ -191,8 +184,6 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
             atom = reactant.GetAtomWithIdx(atom_idx)
             atom_map = atom.GetAtomMapNum()
             center_atom_maps.add(atom_map)
-
-    # ic(center_atom_maps)
 
     # Create a tuple of lists of sets called center_atom_indices
     center_atom_indices = ([], [])
@@ -207,6 +198,29 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         product = reaction.GetProductTemplate(i)
         center_atom_indices[1].append(_extract_center_atom_indices(product, center_atom_maps))
 
+    # Augment center_atom_indices with unmapped-and-adjacent atoms for reactants
+    for i in range(reaction.GetNumReactantTemplates()):
+        reactant = reaction.GetReactantTemplate(i)
+        for atom_idx in reacting_atoms[i]:
+            atom = reactant.GetAtomWithIdx(atom_idx)
+            for neighbor in atom.GetNeighbors():
+                if neighbor.GetAtomMapNum() == 0:
+                    center_atom_indices[0][i].add(neighbor.GetIdx())
+
+    # Augment center_atom_indices with unmapped-and-adjacent atoms for products
+    for i in range(reaction.GetNumProductTemplates()):
+        product = reaction.GetProductTemplate(i)
+        for atom in product.GetAtoms():
+            atom_map = atom.GetAtomMapNum()
+            if atom_map in center_atom_maps:
+                for neighbor in atom.GetNeighbors():
+                    if neighbor.GetAtomMapNum() == 0:
+                        center_atom_indices[1][i].add(neighbor.GetIdx())
+
+    # Print the final center_atom_indices for reactants and products
+    print("Final Center Atom Indices Reactants:", [list(indices) for indices in center_atom_indices[0]])
+    print("Final Center Atom Indices Products:", [list(indices) for indices in center_atom_indices[1]])
+
     # ic(center_atom_indices)
 
     # ---------------------- POPULATE SIGMA-BONDED ATOMS ---------------------
@@ -216,91 +230,36 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
     # Iterate through reactants and add to the first list in the tuple
     for i in range(reaction.GetNumReactantTemplates()):
         reactant = reaction.GetReactantTemplate(i)
-        sigma_atom_indices[0].append(_process_sigma_molecule(reactant, center_atom_maps))
+        sigma_atom_indices[0].append(_process_sigma_molecule(reactant, center_atom_indices[0][i]))
 
     # Iterate through products and add to the second list in the tuple
     for i in range(reaction.GetNumProductTemplates()):
         product = reaction.GetProductTemplate(i)
-        sigma_atom_indices[1].append(_process_sigma_molecule(product, center_atom_maps))
+        sigma_atom_indices[1].append(_process_sigma_molecule(product, center_atom_indices[1][i]))
 
-    # ic(sigma_atom_indices)
-
-    # Augment sigma_atom_indices with conjugated atoms on the other side of the reaction
-    sigma_atom_maps = set()
-
-    # Process reactants
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        for atom_idx in sigma_atom_indices[0][i]:
-            atom = reactant.GetAtomWithIdx(atom_idx)
-            atom_map = atom.GetAtomMapNum()
-            if atom_map != 0:
-                sigma_atom_maps.add(atom_map)
-
-    # Process products
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        for atom_idx in sigma_atom_indices[1][i]:
-            atom = product.GetAtomWithIdx(atom_idx)
-            atom_map = atom.GetAtomMapNum()
-            if atom_map != 0:
-                sigma_atom_maps.add(atom_map)
-
-    # ic(sigma_atom_maps)
-
-    # Process reactants and products to augment sigma_atom_indices
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        sigma_atom_indices[0][i] = _augment_sigma_indices(reactant, sigma_atom_maps, sigma_atom_indices[0][i])
-
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        sigma_atom_indices[1][i] = _augment_sigma_indices(product, sigma_atom_maps, sigma_atom_indices[1][i])
-
-    # Display the final augmented sigma_atom_indices
-    # ic(sigma_atom_indices)
+    # Print the final sigma_atom_indices for reactants and products
+    print("Sigma Atom Indices Reactants:", [list(indices) for indices in sigma_atom_indices[0]])
+    print("Sigma Atom Indices Products:", [list(indices) for indices in sigma_atom_indices[1]])
 
     # ---------------------- POPULATE PI-BONDED ATOMS ---------------------
     # Grow the pi shell until it no longer changes
     pi_atom_indices = _grow_pi_shell(reaction, center_atom_indices)
 
     # Display the pi_atom_indices
-    # ic(pi_atom_indices)
-
-    # Gather all the atom maps on both sides of the reaction using pi_atom_indices
-    pi_atom_maps = set()
-
-    # Process reactants
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        for atom_idx in pi_atom_indices[0][i]:
-            atom = reactant.GetAtomWithIdx(atom_idx)
-            atom_map = atom.GetAtomMapNum()
-            if atom_map != 0:
-                pi_atom_maps.add(atom_map)
-
-    # Process products
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        for atom_idx in pi_atom_indices[1][i]:
-            atom = product.GetAtomWithIdx(atom_idx)
-            atom_map = atom.GetAtomMapNum()
-            if atom_map != 0:
-                pi_atom_maps.add(atom_map)
-
-    # ic(pi_atom_maps)
+    print("Pi Atom Indices:", pi_atom_indices)
 
     # Process reactants and products to augment pi_atom_indices
     for i in range(reaction.GetNumReactantTemplates()):
         reactant = reaction.GetReactantTemplate(i)
-        pi_atom_indices[0][i] = _augment_pi_indices(reactant, pi_atom_maps, pi_atom_indices[0][i])
+        pi_atom_indices[0][i] = _augment_pi_indices(reactant, pi_atom_indices[0][i])
 
     for i in range(reaction.GetNumProductTemplates()):
         product = reaction.GetProductTemplate(i)
-        pi_atom_indices[1][i] = _augment_pi_indices(product, pi_atom_maps, pi_atom_indices[1][i])
+        pi_atom_indices[1][i] = _augment_pi_indices(product, pi_atom_indices[1][i])
 
-    # Display the final augmented pi_atom_indices
-    # ic(pi_atom_indices)
+    # Print the final pi_atom_indices for reactants and products
+    print("Final Pi Atom Indices Reactants:", [list(indices) for indices in pi_atom_indices[0]])
+    print("Final Pi Atom Indices Products:", [list(indices) for indices in pi_atom_indices[1]])
 
     # ---------------------- POPULATE UNMAPPED ATOMS ---------------------
     # Initialize unmapped_hydrogen_indices and unmapped_heavy_indices with the same structure as pi_atom_indices
