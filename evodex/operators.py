@@ -218,8 +218,8 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
                         center_atom_indices[1][i].add(neighbor.GetIdx())
 
     # Print the final center_atom_indices for reactants and products
-    print("Final Center Atom Indices Reactants:", [list(indices) for indices in center_atom_indices[0]])
-    print("Final Center Atom Indices Products:", [list(indices) for indices in center_atom_indices[1]])
+    # print("Final Center Atom Indices Reactants:", [list(indices) for indices in center_atom_indices[0]])
+    # print("Final Center Atom Indices Products:", [list(indices) for indices in center_atom_indices[1]])
 
     # ic(center_atom_indices)
 
@@ -238,15 +238,15 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         sigma_atom_indices[1].append(_process_sigma_molecule(product, center_atom_indices[1][i]))
 
     # Print the final sigma_atom_indices for reactants and products
-    print("Sigma Atom Indices Reactants:", [list(indices) for indices in sigma_atom_indices[0]])
-    print("Sigma Atom Indices Products:", [list(indices) for indices in sigma_atom_indices[1]])
+    # print("Sigma Atom Indices Reactants:", [list(indices) for indices in sigma_atom_indices[0]])
+    # print("Sigma Atom Indices Products:", [list(indices) for indices in sigma_atom_indices[1]])
 
     # ---------------------- POPULATE PI-BONDED ATOMS ---------------------
     # Grow the pi shell until it no longer changes
     pi_atom_indices = _grow_pi_shell(reaction, center_atom_indices)
 
     # Display the pi_atom_indices
-    print("Pi Atom Indices:", pi_atom_indices)
+    # print("Pi Atom Indices:", pi_atom_indices)
 
     # Process reactants and products to augment pi_atom_indices
     for i in range(reaction.GetNumReactantTemplates()):
@@ -258,8 +258,8 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         pi_atom_indices[1][i] = _augment_pi_indices(product, pi_atom_indices[1][i])
 
     # Print the final pi_atom_indices for reactants and products
-    print("Final Pi Atom Indices Reactants:", [list(indices) for indices in pi_atom_indices[0]])
-    print("Final Pi Atom Indices Products:", [list(indices) for indices in pi_atom_indices[1]])
+    # print("Final Pi Atom Indices Reactants:", [list(indices) for indices in pi_atom_indices[0]])
+    # print("Final Pi Atom Indices Products:", [list(indices) for indices in pi_atom_indices[1]])
 
     # ---------------------- POPULATE UNMAPPED ATOMS ---------------------
     # Initialize unmapped_hydrogen_indices and unmapped_heavy_indices with the same structure as pi_atom_indices
