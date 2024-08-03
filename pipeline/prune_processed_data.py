@@ -108,7 +108,7 @@ def main():
                         "EVODEX-Nm_reaction_operators.csv"]
 
     # Prune EVODEX-E
-    pruned_e, valid_p = prune_evodeex_e(evodex_e, top_n=100, max_sources=2)
+    pruned_e, valid_p = prune_evodeex_e(evodex_e, top_n=50, max_sources=2)
 
     # Prune EVODEX-P based on valid EVODEX-P IDs
     pruned_p = [row for row in evodex_p if row['id'] in valid_p]
