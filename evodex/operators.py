@@ -10,18 +10,6 @@ def _is_sp3(atom):
             return False
     return True
 
-# Function to add conjugated atoms and bonds
-def _add_conjugated(molecule, atom, keep_atoms, mol_idx):
-    conjugated_indices = set()
-    for neighbor in atom.GetNeighbors():
-        bond = molecule.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx())
-        if not _is_sp3(neighbor):
-            conjugated_indices.add((mol_idx, bond.GetIdx()))
-            if (mol_idx, neighbor.GetIdx()) not in keep_atoms:
-                keep_atoms.add((mol_idx, neighbor.GetIdx()))
-                conjugated_indices.update(_add_conjugated(molecule, neighbor, keep_atoms, mol_idx))
-    return conjugated_indices
-
 # Function to remove stereochemistry from a molecule
 def _remove_stereochemistry(molecule):
     for atom in molecule.GetAtoms():
@@ -69,15 +57,14 @@ def _is_sp_or_sp2(atom):
             return True
     return False
 
-# Recursive function to grow the pi shell
 def _grow_pi_shell(reaction, current_pi_indices):
     new_pi_indices = ([], [])
+    flagged_atom_maps = set()
 
-    # Process reactants
-    for i in range(reaction.GetNumReactantTemplates()):
-        molecule = reaction.GetReactantTemplate(i)
+    # Helper function to process a molecule
+    def process_molecule(molecule, current_indices):
         pi_set = set()
-        for atom_idx in current_pi_indices[0][i]:
+        for atom_idx in current_indices:
             atom = molecule.GetAtomWithIdx(atom_idx)
             if not _is_sp_or_sp2(atom):
                 continue
@@ -85,30 +72,45 @@ def _grow_pi_shell(reaction, current_pi_indices):
             for neighbor in atom.GetNeighbors():
                 if _is_sp_or_sp2(neighbor):
                     pi_set.add(neighbor.GetIdx())
+            if atom.GetAtomMapNum() > 0:
+                flagged_atom_maps.add(atom.GetAtomMapNum())
+        return pi_set
+
+    # Process reactants
+    for i in range(reaction.GetNumReactantTemplates()):
+        molecule = reaction.GetReactantTemplate(i)
+        pi_set = process_molecule(molecule, current_pi_indices[0][i])
         new_pi_indices[0].append(pi_set)
 
     # Process products
     for i in range(reaction.GetNumProductTemplates()):
         molecule = reaction.GetProductTemplate(i)
-        pi_set = set()
-        for atom_idx in current_pi_indices[1][i]:
-            atom = molecule.GetAtomWithIdx(atom_idx)
-            if not _is_sp_or_sp2(atom):
-                continue
-            pi_set.add(atom_idx)
-            for neighbor in atom.GetNeighbors():
-                if _is_sp_or_sp2(neighbor):
-                    pi_set.add(neighbor.GetIdx())
+        pi_set = process_molecule(molecule, current_pi_indices[1][i])
         new_pi_indices[1].append(pi_set)
+
+    # Include flagged atoms based on atom map values
+    def include_flagged_atoms(molecule, pi_set):
+        for atom in molecule.GetAtoms():
+            if atom.GetAtomMapNum() in flagged_atom_maps:
+                pi_set.add(atom.GetIdx())
+
+    for i in range(reaction.GetNumReactantTemplates()):
+        molecule = reaction.GetReactantTemplate(i)
+        include_flagged_atoms(molecule, new_pi_indices[0][i])
+
+    for i in range(reaction.GetNumProductTemplates()):
+        molecule = reaction.GetProductTemplate(i)
+        include_flagged_atoms(molecule, new_pi_indices[1][i])
 
     # Check if the new pi indices are the same as the current ones
     if sorted([sorted(list(s)) for s in new_pi_indices[0]]) == sorted([sorted(list(s)) for s in current_pi_indices[0]]) and \
-      sorted([sorted(list(s)) for s in new_pi_indices[1]]) == sorted([sorted(list(s)) for s in current_pi_indices[1]]):
+       sorted([sorted(list(s)) for s in new_pi_indices[1]]) == sorted([sorted(list(s)) for s in current_pi_indices[1]]):
         return new_pi_indices
     else:
         return _grow_pi_shell(reaction, new_pi_indices)
 
 # Function to augment pi atom indices with conjugated atoms
+# JCA Note:  I'm not sure this step is needed, though ChatGPT thinks it is.
 def _augment_pi_indices(molecule, pi_atom_indices):
     for atom in molecule.GetAtoms():
         atom_idx = atom.GetIdx()
