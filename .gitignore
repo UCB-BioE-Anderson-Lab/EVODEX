@@ -162,3 +162,10 @@ cython_debug/
 /evodex/data/
 /data/
 # /website/
+
+# macOS system file
+.DS_Store
+evodex/.DS_Store
+
+# EVODEX1 output
+evodex1_outputs/
