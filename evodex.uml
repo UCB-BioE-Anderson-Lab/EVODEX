@@ -1,0 +1,138 @@
+@startuml
+
+' ============================
+' HIGH-LEVEL PIPELINE FLOW
+' ============================
+
+package evodex1.pipeline {
+    class run_pipeline {
+        +run_pipeline()
+    }
+
+    class data_preparation {
+        +main()
+        +process_raw_data()
+    }
+
+    class ero_mining {
+        +main()
+        +generate_all_operator_types()
+    }
+
+    class test_set_generation {
+        +main()
+    }
+
+    run_pipeline --> data_preparation
+    run_pipeline --> ero_mining
+    run_pipeline --> test_set_generation
+}
+
+' ============================
+' CORE OPERATOR FRAMEWORK
+' ============================
+
+package evodex1.ero_engine {
+    class ERO {
+        +smirks: str
+        +source_ec: str
+        +hash(): str
+    }
+
+    class ERORegistry {
+        +register(ero, source_ec)
+        +increment_usage(ero)
+        +get_sources(ero): list
+        +promote_if_threshold(ero): bool
+        +is_saved(ero): bool
+        +saved_eros: set
+    }
+
+    class EROMatcher {
+        +match(ero_list, reaction): bool
+    }
+
+    class EROGenerator {
+        +generate(reaction): ERO
+    }
+
+    ERORegistry --> ERO : manages
+    EROMatcher --> ERO : matches against
+    EROGenerator --> ERO : produces
+}
+
+' ============================
+' OPERATOR SYNTHESIS & OUTPUT
+' ============================
+
+package evodex1.operators {
+    class OperatorSynthesizer {
+        +from_eros(ero_list): dict
+        +generate_all_types()
+    }
+
+    class OutputWriter {
+        +write_csv(file_name, operators)
+    }
+
+    OperatorSynthesizer --> ERO : aggregates
+    ero_mining --> OperatorSynthesizer : calls
+    ero_mining --> OutputWriter : writes to file
+}
+
+' ============================
+' MODULE ROLES & SUPPORT
+' ============================
+
+package evodex {
+    class mapping {
+        +map_atoms()
+    }
+
+    class decofactor {
+        +remove_cofactors()
+    }
+
+    class formula {
+        +calculate_formula_diff()
+        +calculate_exact_mass()
+    }
+
+    class utils {
+        +reaction_hash()
+        +load_yaml()
+    }
+
+    class splitting {
+        +split_reaction()
+    }
+
+    class astatine {
+        +hydrogen_to_astatine_reaction()
+    }
+
+    class evaluation {
+        +assign_evodex_F()
+        +assign_evodex_M()
+    }
+
+    class synthesis {
+        +predict_synthesis_paths()
+    }
+
+    class mass_spec {
+        +predict_mass()
+    }
+
+    mapping --> utils
+    synthesis --> formula
+    evaluation --> formula
+    mass_spec --> formula
+    decofactor --> utils
+    ero_mining --> mapping
+    ero_mining --> decofactor
+    ero_mining --> formula
+    ero_mining --> utils
+}
+
+@enduml

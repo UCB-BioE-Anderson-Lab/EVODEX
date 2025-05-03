@@ -1,6 +1,5 @@
 # Included in pypi distribution
 numpy<2
-rdkit-pypi
 pandas==2.2.2
 
 # Pypi dependencies

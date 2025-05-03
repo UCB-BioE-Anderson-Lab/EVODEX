@@ -1,3 +1,6 @@
+!!!!!!Need to change synthesis methods to return the labeled reaction, as should operator_matcher
+
+
 
 # EVODEX
 
@@ -147,10 +150,10 @@ The pipeline initially writes preliminary mined data files and errors to `EVODEX
 
 ## Developer Notes
 To run some of the main methods in this project in Visual Studio Code, you may need to enable developer mode from the command line. This typically involves setting environment variables or modifying your VS Code configuration to include the necessary paths and dependencies.
-
+<!-- 
 ## Citing EVODEX
 If you use EVODEX, please cite our publication:
-"Extraction of Enzymatic Partial Reaction Operators for Biochemical Analysis and Synthesis" by <insert all authors>, and J. Christopher Anderson.
+"Extraction of Enzymatic Partial Reaction Operators for Biochemical Analysis and Synthesis" by <insert all authors>, and J. Christopher Anderson. -->
 
 ## License
 EVODEX is released under the MIT License.

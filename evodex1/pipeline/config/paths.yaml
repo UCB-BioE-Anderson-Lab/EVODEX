@@ -1,0 +1,35 @@
+raw_data: "data/raw/raw_reactions.csv"
+selected_data: "data/processed/selected_reactions.csv"
+filtered_data: "data/processed/filtered_reactions.csv"
+astatine_data: "data/processed/astatine_reactions.csv"
+mapped_data: "data/processed/mapped_reactions.csv"
+
+# Full reactions consolidated
+evodex_r: "data/processed/EVODEX-R_full_reactions.csv"
+
+# The reaction operators
+evodex_p: "data/processed/EVODEX-P_partial_reactions.csv"
+evodex_e: "data/processed/EVODEX-E_reaction_operators.csv"
+evodex_c: "data/processed/EVODEX-C_reaction_operators.csv"
+evodex_n: "data/processed/EVODEX-N_reaction_operators.csv"
+evodex_em: "data/processed/EVODEX-Em_reaction_operators.csv"
+evodex_cm: "data/processed/EVODEX-Cm_reaction_operators.csv"
+evodex_nm: "data/processed/EVODEX-Nm_reaction_operators.csv"
+
+# The atom difference operators
+evodex_m: "data/processed/EVODEX-M_unique_masses.csv"
+evodex_f: "data/processed/EVODEX-F_unique_formulas.csv"
+
+# Synthesis subset
+evodex_e_synthesis: "data/processed/EVODEX-E_synthesis_subset.csv"
+
+# Mass spec subset
+evodex_m_subset: "data/processed/EVODEX-M_mass_spec_subset.csv"
+
+# Error logs
+errors_dir: "data/errors/"
+
+# Analysis and website templates and static files
+template_dir: "pipeline/web_generation/templates"
+static_dir: "pipeline/web_generation/static"
+logo_image: "pipeline/web_generation/templates/evodex_logo.png"
