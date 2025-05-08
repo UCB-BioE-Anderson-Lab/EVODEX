@@ -65,7 +65,7 @@ def generate_svgs_for_data_preparation(data_paths, images_dir):
             print(f"Column not found in the file {csv_path}")
 
 if __name__ == "__main__":
-    from pipeline.config import load_paths
+    from pipeline0.config import load_paths
     paths = load_paths('pipeline/config/paths.yaml')
     
     website_data_dir = 'website/data'

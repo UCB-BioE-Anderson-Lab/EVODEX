@@ -3,6 +3,7 @@ import sys
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from rdkit.Chem.rdChemReactions import ReactionFromSmarts
 from evodex.synthesis import project_evodex_operator
 from evodex.formula import calculate_formula_diff
 from evodex.utils import get_molecule_hash
@@ -104,115 +105,117 @@ def _parse_sources(sources):
 def match_operators(smirks, evodex_type='E'):
     """
     Assign complete-style operators based on a given SMIRKS and EVODEX type.
-
-    This function splits the reaction SMIRKS into substrates and products,
-    enumerates all possible pairings, and runs a helper method to find
-    matching operators for each pairing.
-
-    Parameters:
-    smirks (str): The SMIRKS string representing the reaction.
-    evodex_type (str): The type of EVODEX operator (Electronic 'E', Nearest-Neighbor 'N', 
-    or Core 'C', default is 'E').
-
-    Returns:
-    list: A list of valid operator IDs. Returns an empty list if no matching operators are found.
+    Returns a list of dictionaries, each containing:
+      - "id": operator id
+      - "labeled_reaction": reaction SMIRKS string with atom mappings applied.
     """
-    # Initialize valid operators list
     valid_operators = []
-
     try:
-        # Split the SMIRKS string into substrates and products
         if '>>' in smirks:
             substrates, products = smirks.split('>>')
             substrate_list = substrates.split('.')
             product_list = products.split('.')
-
-            # Assign an integer index to each substrate and product
             substrate_indices = list(range(len(substrate_list)))
             product_indices = list(range(len(product_list)))
-
-            # Construct new reaction objects combinatorially
             all_pairings = set()
             for i in range(1, len(substrate_indices) + 1):
                 for j in range(1, len(product_indices) + 1):
                     for reactant_combo in combinations(substrate_indices, i):
                         for product_combo in combinations(product_indices, j):
                             all_pairings.add((frozenset(reactant_combo), frozenset(product_combo)))
-
-            # Generate all pairings of substrates and products
             for pairing in all_pairings:
                 reactant_indices, product_indices = pairing
                 reactant_smiles = '.'.join([substrate_list[i] for i in sorted(reactant_indices)])
                 product_smiles = '.'.join([product_list[i] for i in sorted(product_indices)])
                 pairing_smirks = f"{reactant_smiles}>>{product_smiles}"
                 valid_operators.extend(_match_operator(pairing_smirks, evodex_type))
-
     except Exception as e:
         print(f"Error processing SMIRKS {smirks}: {e}")
-    
     return valid_operators
 
 def _match_operator(smirks, evodex_type='E'):
     """
     Helper function to assign a complete-style operator based on a given SMIRKS and EVODEX type.
-
-    Parameters:
-    smirks (str): The SMIRKS string representing the reaction.
-    evodex_type (str): The type of EVODEX operator (Electronic 'E', Nearest-Neighbor 'N', 
-    or Core 'C', default is 'E').
-
-    Returns:
-    list: A list of valid operator IDs. Returns an empty list if no matching operators are found.
+    Returns a list of dictionaries with keys:
+      - "id": operator id,
+      - "labeled_reaction": the reaction string with atom maps labeled.
     """
     # Calculate the formula difference
     smirks_with_h = _add_hydrogens(smirks)
     formula_diff = calculate_formula_diff(smirks_with_h)
-    # print("Formula difference:", formula_diff)
-
+    
     # Lazy load the operators associated with each formula
     evodex_f = _load_evodex_f()
     if evodex_f is None:
-        return {}
+        return []
 
     f_id_list = evodex_f.get(frozenset(formula_diff.items()), [])
     if not f_id_list:
-        return {}
+        return []
     f_id = f_id_list[0]  # Extract the single F_id from the list
-
-    # print(f"Potential F ID for formula {formula_diff}: {f_id}")
-
+    
     evodex_data = _load_evodex_data()
-
     if f_id not in evodex_data:
-        return {}
+        return []
 
     # Retrieve all operators of the right type associated with the formula difference
     potential_operators = evodex_data[f_id].get(evodex_type, [])
-    evodex_ids = [op["id"] for op in potential_operators]
-    # print(f"Potential operator IDs for {smirks} of type {evodex_type}: {evodex_ids}")
-
+    
     # Split the input smirks into substrates and products
     sub_smiles, pdt_smiles = smirks.split('>>')
-
-    # Convert pdt_smiles to a hash
     pdt_hash = get_molecule_hash(pdt_smiles)
 
-    # Iterate through potential operators and test
     valid_operators = []
     for operator in potential_operators:
         try:
-            id = operator["id"]
-            # print(f"Projecting:  {id} on {sub_smiles}")
-            projected_pdts = project_evodex_operator(id, sub_smiles)
-            # print(f"Projected products: {projected_pdts}")
+            op_id = operator["id"]
+            # Project products using the operator on the substrate
+            projected_pdts = project_evodex_operator(op_id, sub_smiles)
             for proj_smiles in projected_pdts:
                 proj_hash = get_molecule_hash(proj_smiles)
                 if proj_hash == pdt_hash:
-                    valid_operators.append(id)
-        except Exception as e:
-            # print(f"{operator['id']} errored: {e}")
-            pass
+                    # Found a matching operator; now generate labeled reaction
+                    substrate_mol = Chem.MolFromSmiles(sub_smiles)
+                    op_rxn_smarts = operator["smirks"]
+                    # Assume the operator SMIRKS is in the format 'reactant>product'
+                    op_reactant_smarts = op_rxn_smarts.split('>')[0]
+                    op_reactant_mol = Chem.MolFromSmarts(op_reactant_smarts)
+                    
+                    # Find the substructure match in the substrate
+                    match = substrate_mol.GetSubstructMatch(op_reactant_mol)
+                    if not match:
+                        continue
+                    
+                    # Reset atom map numbers
+                    for atom in substrate_mol.GetAtoms():
+                        atom.SetAtomMapNum(0)
+                    
+                    # Assign atom map numbers from the operator's reactant pattern
+                    for i, atom_idx in enumerate(match):
+                        op_atom = op_reactant_mol.GetAtomWithIdx(i)
+                        substrate_mol.GetAtomWithIdx(atom_idx).SetAtomMapNum(op_atom.GetAtomMapNum())
+                    
+                    # Generate labeled substrate SMILES
+                    labeled_substrate = Chem.MolToSmiles(substrate_mol)
 
+                    # Create a reaction operator object from the operator SMIRKS
+                    op_rxn = ReactionFromSmarts(op_rxn_smarts, useSmiles=False)
+                    op_products = op_rxn.RunReactants([substrate_mol])
+                    labeled_product = None
+                    for prod_set in op_products:
+                        prod_mol = prod_set[0]
+                        if get_molecule_hash(Chem.MolToSmiles(prod_mol)) == pdt_hash:
+                            labeled_product = prod_mol
+                            break
+                    if labeled_product is None:
+                        continue
+                    labeled_product_smiles = Chem.MolToSmiles(labeled_product)
+                    
+                    labeled_reaction = f"{labeled_substrate}>>{labeled_product_smiles}"
+                    valid_operators.append({"id": op_id, "labeled_reaction": labeled_reaction})
+        except Exception as e:
+            # Optional: log or handle errors if needed
+            pass
     return valid_operators
 
 def _load_evodex_data():

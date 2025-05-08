@@ -7,8 +7,8 @@ from evodex.operators import extract_operator
 from evodex.formula import calculate_formula_diff, calculate_exact_mass
 from evodex.splitting import split_reaction
 from evodex.utils import reaction_hash
-from pipeline.config import load_paths
-from pipeline.version import __version__
+from pipeline0.config import load_paths
+from pipeline0.version import __version__
 import hashlib
 
 def ensure_directories(paths: dict):

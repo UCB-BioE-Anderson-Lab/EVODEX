@@ -5,8 +5,8 @@ from collections import defaultdict
 from evodex.astatine import hydrogen_to_astatine_reaction
 from evodex.mapping import map_atoms
 from evodex.utils import reaction_hash
-from pipeline.config import load_paths
-from pipeline.version import __version__
+from pipeline0.config import load_paths
+from pipeline0.version import __version__
 
 
 def ensure_directories(paths: dict):

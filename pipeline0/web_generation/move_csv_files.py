@@ -3,7 +3,7 @@ import shutil
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from pipeline.config import load_paths
+from pipeline0.config import load_paths
 from evodex.astatine import astatine_to_hydrogen_reaction
 
 def convert_smiles_column(df, column_name):
