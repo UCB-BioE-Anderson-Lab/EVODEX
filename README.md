@@ -1,8 +1,33 @@
 !!!!!!Need to change synthesis methods to return the labeled reaction, as should operator_matcher
 
 
-
 # EVODEX
+
+## 🛠 Developer Installation for Mining Pipeline
+
+These instructions are for developers who want to rebuild and modify the EVODEX mining pipeline. This is **not required** for installing EVODEX from PyPI for prediction or general use.
+
+### 1. Install Miniconda
+Follow the [Miniconda Installation Instructions](https://docs.conda.io/en/latest/miniconda.html)
+
+### 2. Create the Environment
+```sh
+conda create -n evodex-dev python=3.9 rdkit -c conda-forge
+conda activate evodex-dev
+```
+
+### 3. Install Dependencies
+```sh
+pip install -r requirements.txt
+```
+
+## 🚀 Running the EVODEX Pipeline
+From the project root, execute:
+```sh
+python run_pipeline.py
+```
+
+This runs the full data mining pipeline and generates EVODEX operators and metadata.
 
 EVODEX is a Python package that provides tools for the curation, validation, and data-driven prediction of enzymatic reactions. This package includes core algorithms for synthesis, evaluation, and mass spectrometry analysis, and can be installed via PyPI. Additionally, users can clone the repository to access the full pipeline for data mining and website generation.
 

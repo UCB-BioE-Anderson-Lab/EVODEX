@@ -16,7 +16,7 @@ jinja2
 # Analysis dependencies
 matplotlib==3.9.1
 seaborn==0.12.2
-scipy==1.14.0
+scipy
 svgutils
 
 
