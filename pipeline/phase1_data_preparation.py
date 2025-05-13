@@ -1,5 +1,6 @@
 import csv
 import os
+import time
 from collections import defaultdict, Counter
 import statistics
 from evodex.astatine import hydrogen_to_astatine_reaction
@@ -7,6 +8,13 @@ from evodex.mapping import map_atoms
 from evodex.utils import reaction_hash
 from pipeline.config import load_paths
 from pipeline.version import __version__
+
+
+# Phase 1: Data Preparation
+# This script starts from the BRENDA dataset (downloaded via EnzymeMap) and reduces it to a deduplicated bag of unique reactions.
+# The reactions are stripped of enzyme-specific information, retaining only substrate and product SMILES.
+# Reactions come with atom maps already applied. Hydrogens are replaced with astatines, and new atom maps are assigned to the 
+# astatines using the next available map index.
 
 
 def ensure_directories(paths: dict):
@@ -34,6 +42,8 @@ def process_raw_data(input_file, output_file):
             if not any(row.values()):
                 continue
             total_raw_reactions += 1
+            if total_raw_reactions % 100 == 0:
+                print(f"[{time.strftime('%H:%M:%S')}] Processed {total_raw_reactions} raw reactions...")
             try:
                 # This is a validation step to exclude any malformed data
                 reaction_hash(row['mapped'])
@@ -55,7 +65,9 @@ def process_data(input_file, output_file, transformation_function, stage_name, e
         fieldnames = ['id', 'smirks', 'sources', 'error']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
-        for row in reader:
+        for idx, row in enumerate(reader, start=1):
+            if idx % 100 == 0:
+                print(f"[{time.strftime('%H:%M:%S')}] {stage_name} processing row {idx}...")
             if row['error']:  # Skip processing if there's an existing error
                 write_row(writer, row)
                 continue
@@ -127,7 +139,7 @@ def main():
     for line in report_lines:
         print(line)
 
-    report_path = os.path.join(paths['errors_dir'], 'evodex_report.txt')
+    report_path = os.path.join(paths['errors_dir'], 'Phase1_evodex_report.txt')
     with open(report_path, 'w') as report_file:
         report_file.write('\n'.join(report_lines))
 

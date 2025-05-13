@@ -7,6 +7,9 @@ mapped_data: "data/processed/mapped_reactions.csv"
 # Full reactions consolidated
 evodex_r: "data/processed/EVODEX-R_full_reactions.csv"
 
+evodex_f_filtered: "data/processed/evodex_f_filtered.csv"
+evodex_p_filtered: "data/processed/evodex_p_filtered.csv"
+
 # The reaction operators
 evodex_p: "data/processed/EVODEX-P_partial_reactions.csv"
 evodex_e: "data/processed/EVODEX-E_reaction_operators.csv"
