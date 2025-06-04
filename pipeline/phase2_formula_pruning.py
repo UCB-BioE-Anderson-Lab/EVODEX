@@ -223,6 +223,84 @@ def main():
     print("Phase 2 formula pruning complete.")
     print(f"Retained {len(retained_formula_hashes)} formula groups with ≥5 sources.")
 
+    # Generate Phase 2 mining report
+    print("Generating Phase 2 mining report...")
+
+    # Gather EVODEX-P stats
+    p_counts = []
+    with open(paths['evodex_p'], 'r') as infile:
+        reader = csv.DictReader(infile)
+        for row in reader:
+            sources = row['sources'].split(',')
+            p_counts.append(len(sources))
+    num_p_total = len(p_counts)
+
+    # Gather EVODEX-F stats
+    f_counts = []
+    with open(paths['evodex_f'], 'r') as infile:
+        reader = csv.DictReader(infile)
+        for row in reader:
+            sources = row['sources'].split(',')
+            f_counts.append(len(sources))
+    num_f_total = len(f_counts)
+
+    # Gather retained EVODEX-F stats
+    retained_f_counts = []
+    with open(paths['evodex_f_filtered'], 'r') as infile:
+        reader = csv.DictReader(infile)
+        for row in reader:
+            sources = row['sources'].split(',')
+            retained_f_counts.append(len(sources))
+    num_f_retained = len(retained_f_counts)
+
+    # Gather retained EVODEX-P stats
+    retained_p_counts = []
+    with open(paths['evodex_p_filtered'], 'r') as infile:
+        reader = csv.DictReader(infile)
+        for row in reader:
+            sources = row['sources'].split(',')
+            retained_p_counts.append(len(sources))
+    num_p_retained = len(retained_p_counts)
+
+    # Compression rates
+    f_compression = 100 * (num_f_total - num_f_retained) / num_f_total if num_f_total else 0
+    p_compression = 100 * (num_p_total - num_p_retained) / num_p_total if num_p_total else 0
+
+    import statistics
+
+    report_lines = [
+        f"EVODEX Phase 2 Formula Pruning Report (version {__version__})",
+        "=============================================================",
+        "",
+        f"EVODEX-P:",
+        f"Total EVODEX-P generated: {num_p_total}",
+        f"Min sources per EVODEX-P: {min(p_counts) if p_counts else 0}",
+        f"Max sources per EVODEX-P: {max(p_counts) if p_counts else 0}",
+        f"Mean sources per EVODEX-P: {statistics.mean(p_counts) if p_counts else 0:.2f}",
+        f"Median sources per EVODEX-P: {statistics.median(p_counts) if p_counts else 0}",
+        "",
+        f"EVODEX-F:",
+        f"Total EVODEX-F generated: {num_f_total}",
+        f"Min sources per EVODEX-F: {min(f_counts) if f_counts else 0}",
+        f"Max sources per EVODEX-F: {max(f_counts) if f_counts else 0}",
+        f"Mean sources per EVODEX-F: {statistics.mean(f_counts) if f_counts else 0:.2f}",
+        f"Median sources per EVODEX-F: {statistics.median(f_counts) if f_counts else 0}",
+        "",
+        f"Pruning (threshold ≥5 sources):",
+        f"EVODEX-F retained: {num_f_retained} of {num_f_total} ({100 - f_compression:.2f}% retained, {f_compression:.2f}% pruned)",
+        f"EVODEX-P retained: {num_p_retained} of {num_p_total} ({100 - p_compression:.2f}% retained, {p_compression:.2f}% pruned)",
+        "",
+    ]
+
+    # Print to console
+    for line in report_lines:
+        print(line)
+
+    # Write report to file
+    report_path = os.path.join(paths['errors_dir'], 'Phase2_evodex_report.txt')
+    with open(report_path, 'w') as report_file:
+        report_file.write('\n'.join(report_lines))
+
 
 if __name__ == "__main__":
     main()

@@ -77,7 +77,6 @@ def consolidate_reactions(input_file, output_file, prefix):
         writer.writeheader()
         evodex_id_counter = 1
         for rxn_hash, data in data_map.items():
-            if len(data['sources']) >= 2:  # Only include operators observed twice or more
                 evodex_id = f'{prefix}{evodex_id_counter}'
                 most_common_smirks = max(data['smirks'], key=data['smirks'].get)
                 sources = ','.join(data['sources'])
@@ -116,7 +115,6 @@ def process_formula_data(input_csv, output_csv, error_csv):
                 
             evodex_id_counter = 1
             for formula_hash, data in data_map.items():
-                if len(data['sources']) >= 2:  # Only include if observed at least twice
                     evodex_id = f'EVODEX.{__version__}-F{evodex_id_counter}'
                     sources = ','.join(data['sources'])
                     writer.writerow({'id': evodex_id, 'formula': str(data['formula']), 'sources': sources})
