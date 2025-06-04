@@ -1,13 +1,15 @@
-
-
-
 import csv
 import os
 from collections import defaultdict
-from evodex.decofactor import remove_cofactors
-from evodex.utils import reaction_hash
+from evodex.decofactor import contains_cofactor
 from pipeline.config import load_paths
 from pipeline.version import __version__
+
+# Phase 6: Synthesis Subset
+# This phase filters EVODEX-E operators to a subset usable for synthesis algorithms.
+# It iterates through EVODEX-P reactions, skipping any reactions
+# that involve cofactors as substrates or products. The remaining EVODEX-P IDs
+# are used to find associated EVODEX-E operators, which are then output as the synthesis subset.
 
 def ensure_directories(paths: dict):
     for path in paths.values():
@@ -19,51 +21,72 @@ def main():
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
 
-    print("Starting Phase 6: Synthesis subset generation...")
+    print("Starting Phase 6: Synthesis subset generation (cofactor filtering)...")
 
     evodex_p_map = {}
     evodex_e_map = {}
+    evodex_e_full_map = {}
 
+    # Load EVODEX-P reactions
     with open(paths['evodex_p'], 'r') as p_file:
         p_reader = csv.DictReader(p_file)
         for row in p_reader:
-            rxn_hash = reaction_hash(row['smirks'])
-            evodex_p_map[rxn_hash] = row['id']
+            evodex_p_map[row['id']] = row['smirks']
 
+    # Load EVODEX-E operators mapping from EVODEX-P IDs
     with open(paths['evodex_e'], 'r') as e_file:
         e_reader = csv.DictReader(e_file)
         for row in e_reader:
             sources = row['sources'].split(',')
+            evodex_e_full_map[row['id']] = {
+                'smirks': row['smirks'],
+                'sources': sources
+            }
             for source in sources:
                 evodex_e_map.setdefault(source, []).append(row['id'])
 
     evodex_e_subset = set()
     evodex_e_sources = {}
 
-    with open(paths['evodex_r'], 'r') as infile, open(paths['evodex_e_synthesis'], 'w', newline='') as outfile:
-        reader = csv.DictReader(infile)
-        writer = csv.DictWriter(outfile, fieldnames=['id', 'sources'])
-        writer.writeheader()
-
-        for row in reader:
-            try:
-                smirks = row['smirks']
-                partial = remove_cofactors(smirks)
-                if partial.startswith(">>") or partial.endswith(">>"):
-                    continue
-                rxn_hash = reaction_hash(partial)
-                evodex_p_id = evodex_p_map.get(rxn_hash)
-                if evodex_p_id:
-                    evodex_e_ids = evodex_e_map.get(evodex_p_id)
-                    if evodex_e_ids:
-                        for eid in evodex_e_ids:
-                            evodex_e_subset.add(eid)
-                            evodex_e_sources.setdefault(eid, set()).add(evodex_p_id)
-            except Exception:
+    # Process EVODEX-P reactions, skipping those with cofactors in substrates or products
+    for p_id, smirks in evodex_p_map.items():
+        try:
+            # Skip if reaction contains any cofactor
+            if contains_cofactor(smirks):
                 continue
 
+            # If passed filtering, find associated EVODEX-E IDs
+            evodex_e_ids = evodex_e_map.get(p_id)
+            if evodex_e_ids:
+                for eid in evodex_e_ids:
+                    evodex_e_subset.add(eid)
+                    evodex_e_sources.setdefault(eid, set()).add(p_id)
+
+        except Exception:
+            # Skip malformed entries or parsing errors
+            continue
+
+    # Write filtered EVODEX-E synthesis subset
+    with open(paths['evodex_e_synthesis'], 'w', newline='') as outfile:
+        writer = csv.DictWriter(outfile, fieldnames=['id', 'sources', 'smirks'])
+        writer.writeheader()
         for eid in sorted(evodex_e_subset):
-            writer.writerow({'id': eid, 'sources': ','.join(sorted(evodex_e_sources[eid]))})
+            row_data = evodex_e_full_map[eid]
+            writer.writerow({
+                'id': eid,
+                'sources': ','.join(sorted(evodex_e_sources[eid])),
+                'smirks': row_data['smirks']
+            })
+
+    # Summary statistics
+    total_evode_p = len(evodex_p_map)
+    total_evode_p_filtered = len(set().union(*evodex_e_sources.values())) if evodex_e_sources else 0
+    total_evode_e_written = len(evodex_e_subset)
+
+    print(f"Phase 6 Statistics:")
+    print(f"  Total EVODEX-P entries processed: {total_evode_p}")
+    print(f"  Total EVODEX-P entries after cofactor filtering: {total_evode_p_filtered}")
+    print(f"  Total EVODEX-E synthesis operators written: {total_evode_e_written}")
 
     print("Phase 6 complete: Synthesis subset written.")
 

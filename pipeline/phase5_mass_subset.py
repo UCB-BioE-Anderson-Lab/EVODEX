@@ -1,5 +1,3 @@
-
-
 import csv
 import os
 from collections import defaultdict
@@ -7,15 +5,30 @@ from evodex.formula import calculate_exact_mass
 from pipeline.config import load_paths
 from pipeline.version import __version__
 
+# Phase 5: Mass Spec Subset
+# This phase generates EVODEX_M and EVODEX_M_SUBSET tables.
+# EVODEX_M contains exact mass differences for all formula differences in EVODEX_F.
+# EVODEX_M_SUBSET filters these to reaction patterns (EVODEX_P) compatible with single-species
+# mass spec observations (i.e., at least one side of the reaction is a single fragment).
+
 def ensure_directories(paths: dict):
     for path in paths.values():
         dir_path = os.path.dirname(path)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
 
+def print_stats(label, value):
+    print(f"{label}: {value:,}")
+
 def main():
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
+
+    total_f_rows = 0
+    total_m_rows = 0
+    total_subset_rows = 0
+    errors_f = 0
+    errors_p = 0
 
     print("Starting Phase 5: Mass spec subset generation...")
     
@@ -26,6 +39,7 @@ def main():
         writer = csv.DictWriter(outfile, fieldnames=['id', 'mass', 'sources', 'formula'])
         writer.writeheader()
         for row in reader:
+            total_f_rows += 1
             try:
                 formula_diff = eval(row['formula'])
                 mass_diff = calculate_exact_mass(formula_diff)
@@ -40,7 +54,9 @@ def main():
                     'sources': row['sources'],
                     'formula': row['formula']
                 })
+                total_m_rows += 1
             except Exception:
+                errors_f += 1
                 continue
 
     # Step 2: filter evodex_p for mass-spec compatible ones
@@ -53,6 +69,7 @@ def main():
                 if len(left.split('.')) == 1 or len(right.split('.')) == 1:
                     valid_p_ids.add(row['id'])
             except Exception:
+                errors_p += 1
                 continue
 
     # Step 3: generate evodex_m_subset
@@ -67,6 +84,15 @@ def main():
                     'mass': m_data['mass'],
                     'sources': ','.join(sorted(intersecting_sources))
                 })
+                total_subset_rows += 1
+
+    print("\n=== Phase 5 Statistics ===")
+    print_stats("Total EVODEX_F rows processed", total_f_rows)
+    print_stats("Total EVODEX_M rows written", total_m_rows)
+    print_stats("EVODEX_P valid (mass-spec compatible)", len(valid_p_ids))
+    print_stats("Total EVODEX_M_SUBSET rows written", total_subset_rows)
+    print_stats("Errors in EVODEX_F", errors_f)
+    print_stats("Errors in EVODEX_P", errors_p)
 
     print("Phase 5 complete: Mass subset written.")
 

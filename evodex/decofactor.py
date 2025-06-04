@@ -147,3 +147,36 @@ def remove_cofactors(smiles: str) -> str:
         return modified_smiles
     except Exception as e:
         raise RuntimeError(f"Failed to remove cofactors from SMILES: {smiles}, Error: {e}")
+
+def contains_cofactor(smiles: str) -> bool:
+    try:
+        native_metabolites = _load_native_metabolites()
+
+        rxn = AllChem.ReactionFromSmarts(smiles, useSmiles=True)
+        if not rxn:
+            raise ValueError(f"Invalid SMILES string: {smiles}")
+
+        # Check reactants
+        for mol in rxn.GetReactants():
+            try:
+                mol_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
+                custom_hash = get_molecule_hash(mol_smiles)
+                if custom_hash in native_metabolites:
+                    return True
+            except Exception as e:
+                raise RuntimeError(f"Failed to process reactant: {e}")
+
+        # Check products
+        for mol in rxn.GetProducts():
+            try:
+                mol_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
+                custom_hash = get_molecule_hash(mol_smiles)
+                if custom_hash in native_metabolites:
+                    return True
+            except Exception as e:
+                raise RuntimeError(f"Failed to process product: {e}")
+
+        return False
+
+    except Exception as e:
+        raise RuntimeError(f"Failed to check for cofactors in SMILES: {smiles}, Error: {e}")
