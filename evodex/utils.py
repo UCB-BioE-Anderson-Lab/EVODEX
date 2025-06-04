@@ -27,12 +27,18 @@ def get_molecule_hash(smiles: str) -> str:
         atomic_num = atom.GetAtomicNum()
         if 1 < atomic_num < 85:  # Exclude H (1) and At (85)
             new_atom = Chem.Atom(atomic_num)
+
+            # Infer hybridization BEFORE bond stripping
+            oxidized = False
+            for bond in atom.GetBonds():
+                if bond.GetBondType() != Chem.BondType.SINGLE:
+                    oxidized = True
+                    break
+
+            # Encode hybridization state in isotope
             if atomic_num == 6:  # Only apply labeling to carbon atoms
-                is_sp3 = _is_sp3(atom)
-                if not is_sp3:
-                    new_atom.SetIsotope(0)
-                else:
-                    new_atom.SetIsotope(1)
+                new_atom.SetIsotope(0 if oxidized else 1)
+
             new_idx = rwmol.AddAtom(new_atom)
             atom_map[atom.GetIdx()] = new_idx
 

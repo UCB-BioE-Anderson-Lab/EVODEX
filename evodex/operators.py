@@ -175,9 +175,9 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
     # ==================================================================
 
     # ---------------------- POPULATE CENTER ATOMS ---------------------
-    # Identify indices of reacting mapped atoms
-    reacting_atoms = reaction.GetReactingAtoms(mappedAtomsOnly=True)
-
+    # Identify reacting mapped atoms using our custom method
+    reacting_atoms = _identify_changed_mapped_atoms(reaction)
+    
     # Identify the atom maps of the reacting mapped atoms
     center_atom_maps = set()
     for i, atom_indices in enumerate(reacting_atoms):
@@ -407,3 +407,73 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
     # Convert to SMIRKS
     smirks = rdChemReactions.ReactionToSmarts(new_reaction)
     return smirks
+
+
+# Helper function to identify changed mapped atoms between reactants and products
+# Returns (reactants, products) tuple of lists of sets of atom indices (matching original GetReactingAtoms behavior)
+def _identify_changed_mapped_atoms(reaction):
+    def get_atom_signature(atom):
+        signature = {
+            'neighbors': set(),
+            'chirality': atom.GetChiralTag().name
+        }
+        for bond in atom.GetBonds():
+            neighbor = bond.GetOtherAtom(atom)
+            neighbor_atomic_num = neighbor.GetAtomicNum()
+            neighbor_atom_map = neighbor.GetAtomMapNum()
+            # bond_order = bond.GetBondTypeAsDouble()
+            signature['neighbors'].add((neighbor_atomic_num, neighbor_atom_map))
+        return signature
+
+    def build_signature_dict(molecule):
+        signature_dict = {}
+        for atom in molecule.GetAtoms():
+            atom_map = atom.GetAtomMapNum()
+            if atom_map > 0:
+                signature_dict[atom_map] = get_atom_signature(atom)
+        return signature_dict
+
+    # Build signature dicts
+    reactant_signatures = {}
+    for i in range(reaction.GetNumReactantTemplates()):
+        molecule = reaction.GetReactantTemplate(i)
+        sigs = build_signature_dict(molecule)
+        reactant_signatures.update(sigs)
+
+    product_signatures = {}
+    for i in range(reaction.GetNumProductTemplates()):
+        molecule = reaction.GetProductTemplate(i)
+        sigs = build_signature_dict(molecule)
+        product_signatures.update(sigs)
+
+    # Compare signatures
+    changed_atom_maps = set()
+    all_atom_maps = set(reactant_signatures.keys()).union(product_signatures.keys())
+    for atom_map in all_atom_maps:
+        react_sig = reactant_signatures.get(atom_map)
+        prod_sig = product_signatures.get(atom_map)
+        if react_sig != prod_sig:
+            changed_atom_maps.add(atom_map)
+
+    # Now return reacting_atoms = (reactants, products), in the same format as before
+    reacting_atoms = ([], [])
+
+    # Reactants
+    for i in range(reaction.GetNumReactantTemplates()):
+        molecule = reaction.GetReactantTemplate(i)
+        index_set = set()
+        for atom in molecule.GetAtoms():
+            if atom.GetAtomMapNum() in changed_atom_maps:
+                index_set.add(atom.GetIdx())
+        reacting_atoms[0].append(index_set)
+
+    # Products
+    for i in range(reaction.GetNumProductTemplates()):
+        molecule = reaction.GetProductTemplate(i)
+        index_set = set()
+        for atom in molecule.GetAtoms():
+            if atom.GetAtomMapNum() in changed_atom_maps:
+                index_set.add(atom.GetIdx())
+        reacting_atoms[1].append(index_set)
+
+    return reacting_atoms[0]

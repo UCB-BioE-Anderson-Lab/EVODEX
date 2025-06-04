@@ -6,6 +6,12 @@ from evodex.utils import reaction_hash
 from pipeline.config import load_paths
 from pipeline.version import __version__
 
+# Phase 3: EVODEX-E Pruning
+# This script derives EVODEX-E operators from the filtered EVODEX-P reactions.
+# It extracts the most specific reaction operators and retains only those supported by ≥5 EVODEX-P sources.
+# The corresponding EVODEX-P and EVODEX-F entries are filtered accordingly.
+# The result is the final highly simplified dataset reduced to data supporting the common EVODEX-E.
+
 def ensure_directories(paths: dict):
     for path in paths.values():
         dir_path = os.path.dirname(path)
@@ -57,7 +63,7 @@ def main():
         for op_hash, data in retained_ops.items():
             writer.writerow({'id': op_hash, 'smirks': data['smirks'], 'sources': ','.join(sorted(data['sources']))})
 
-    # Filter evodex_p
+    # Write pruned EVODEX-P (only P used in retained EVODEX-E)
     with open(paths['evodex_p_filtered'], 'r') as infile, open(paths['evodex_p'], 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
         writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
@@ -87,12 +93,20 @@ def main():
             if row['id'] in retained_f_ids:
                 writer.writerow(row)
 
-    # Write summary report
+    import statistics
+
+    e_counts = [len(v['sources']) for v in retained_ops.values()]
+
     report_lines = [
         f"EVODEX Phase 3 Final Pruning Report (version {__version__})",
         "=============================================================",
         f"Total EVODEX-E extracted: {len(operator_map)}",
         f"Retained EVODEX-E (≥5 sources): {len(retained_ops)}",
+        f"Min sources per EVODEX-E: {min(e_counts) if e_counts else 0}",
+        f"Max sources per EVODEX-E: {max(e_counts) if e_counts else 0}",
+        f"Mean sources per EVODEX-E: {statistics.mean(e_counts) if e_counts else 0:.2f}",
+        f"Median sources per EVODEX-E: {statistics.median(e_counts) if e_counts else 0}",
+        "",
         f"Retained EVODEX-P: {len(retained_p_ids)}",
         f"Retained EVODEX-F: {len(retained_f_ids)}"
     ]
