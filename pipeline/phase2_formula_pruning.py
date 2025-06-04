@@ -1,4 +1,3 @@
-
 import csv
 import os
 from collections import defaultdict
@@ -120,13 +119,8 @@ def process_formula_data(input_csv, output_csv, error_csv):
                     error_count += 1
                     handle_error(row, e, fieldnames, error_csv)
             
-            evodex_id_counter = 1
             for formula_hash, data in data_map.items():
-                if len(data['sources']) >= 2:  # Only include if observed at least twice
-                    evodex_id = f'EVODEX.{__version__}-F{evodex_id_counter}'
-                    sources = ','.join(data['sources'])
-                    writer.writerow({'id': evodex_id, 'formula': str(data['formula']), 'sources': sources})
-                    evodex_id_counter += 1
+                writer.writerow({'id': formula_hash, 'formula': str(data['formula']), 'sources': ','.join(data['sources'])})
 
     return {"total": total_count, "successes": success_count, "errors": error_count}
 
@@ -158,24 +152,19 @@ def process_split_reactions(input_csv, output_csv, error_csv):
                 split_reactions = split_reaction(smirks)
                 for reaction in split_reactions:
                     reaction_hash_value = reaction_hash(reaction)
-                    if reaction_hash_value not in hash_to_ids:
-                        hash_to_ids[reaction_hash_value].add(rxn_idx)
+                    hash_to_ids[reaction_hash_value].add(rxn_idx)
+                    if reaction_hash_value not in hash_to_example_smirks:
                         hash_to_example_smirks[reaction_hash_value] = reaction
-                    else:
-                        hash_to_ids[reaction_hash_value].add(rxn_idx)
                 success_count += 1
             except Exception as e:
                 error_count += 1
                 handle_error(row, e, fieldnames, error_csv)
                 errors.append((row['id'], str(e)))
 
-        evodex_id_counter = 1
         for reaction_hash_value, id_set in hash_to_ids.items():
             example_smirks = hash_to_example_smirks[reaction_hash_value]
             sources = ','.join(id_set)  # Ensure sources are stored as a comma-separated string
-            new_id = f'EVODEX.{__version__}-P{evodex_id_counter}'
-            writer.writerow({'id': new_id, 'smirks': example_smirks, 'sources': sources})
-            evodex_id_counter += 1
+            writer.writerow({'id': reaction_hash_value, 'smirks': example_smirks, 'sources': sources})
 
     return {"total":total_count, "successes":success_count, "errors":error_count}
 
@@ -185,14 +174,16 @@ def main():
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
 
-    # Only run process_split_reactions and process_formula_data
-    process_split_reactions(paths['evodex_r'], paths['evodex_p'], f"{paths['errors_dir']}split_reactions_errors.csv")
-    process_formula_data(paths['evodex_p'], paths['evodex_f'], f"{paths['errors_dir']}formula_errors.csv")
+    # Step 1: Process EVODEX-R into preliminary EVODEX-P with hash as id
+    process_split_reactions(paths['evodex_r_preliminary'], paths['evodex_p_preliminary'], f"{paths['errors_dir']}split_reactions_errors.csv")
 
-    # Load EVODEX-F and retain only those with >=5 sources
+    # Step 2: Process preliminary EVODEX-P into preliminary EVODEX-F with formula hash as id
+    process_formula_data(paths['evodex_p_preliminary'], paths['evodex_f_preliminary'], f"{paths['errors_dir']}formula_errors.csv")
+
+    # Step 3: Prune EVODEX-F to retain only those with >=5 sources
     retained_formula_hashes = set()
     formula_source_map = {}
-    with open(paths['evodex_f'], 'r') as f_file:
+    with open(paths['evodex_f_preliminary'], 'r') as f_file:
         reader = csv.DictReader(f_file)
         for row in reader:
             sources = row['sources'].split(',')
@@ -200,8 +191,7 @@ def main():
                 retained_formula_hashes.add(row['id'])
                 formula_source_map[row['id']] = set(sources)
 
-    # Filter and write evodex_f_filtered
-    with open(paths['evodex_f'], 'r') as infile, open(paths['evodex_f_filtered'], 'w', newline='') as outfile:
+    with open(paths['evodex_f_preliminary'], 'r') as infile, open(paths['evodex_f_filtered'], 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
         writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
         writer.writeheader()
@@ -209,8 +199,8 @@ def main():
             if row['id'] in retained_formula_hashes:
                 writer.writerow(row)
 
-    # Filter and write evodex_p_filtered
-    with open(paths['evodex_p'], 'r') as infile, open(paths['evodex_p_filtered'], 'w', newline='') as outfile:
+    # Step 4: Prune EVODEX-P based on retained EVODEX-F sources
+    with open(paths['evodex_p_preliminary'], 'r') as infile, open(paths['evodex_p_filtered'], 'w', newline='') as outfile:
         reader = csv.DictReader(infile)
         writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
         writer.writeheader()
@@ -226,18 +216,20 @@ def main():
     # Generate Phase 2 mining report
     print("Generating Phase 2 mining report...")
 
-    # Gather EVODEX-P stats
+    import statistics
+
+    # Gather EVODEX-P preliminary stats
     p_counts = []
-    with open(paths['evodex_p'], 'r') as infile:
+    with open(paths['evodex_p_preliminary'], 'r') as infile:
         reader = csv.DictReader(infile)
         for row in reader:
             sources = row['sources'].split(',')
             p_counts.append(len(sources))
     num_p_total = len(p_counts)
 
-    # Gather EVODEX-F stats
+    # Gather EVODEX-F preliminary stats
     f_counts = []
-    with open(paths['evodex_f'], 'r') as infile:
+    with open(paths['evodex_f_preliminary'], 'r') as infile:
         reader = csv.DictReader(infile)
         for row in reader:
             sources = row['sources'].split(',')
@@ -266,20 +258,18 @@ def main():
     f_compression = 100 * (num_f_total - num_f_retained) / num_f_total if num_f_total else 0
     p_compression = 100 * (num_p_total - num_p_retained) / num_p_total if num_p_total else 0
 
-    import statistics
-
     report_lines = [
         f"EVODEX Phase 2 Formula Pruning Report (version {__version__})",
         "=============================================================",
         "",
-        f"EVODEX-P:",
+        f"EVODEX-P Preliminary:",
         f"Total EVODEX-P generated: {num_p_total}",
         f"Min sources per EVODEX-P: {min(p_counts) if p_counts else 0}",
         f"Max sources per EVODEX-P: {max(p_counts) if p_counts else 0}",
         f"Mean sources per EVODEX-P: {statistics.mean(p_counts) if p_counts else 0:.2f}",
         f"Median sources per EVODEX-P: {statistics.median(p_counts) if p_counts else 0}",
         "",
-        f"EVODEX-F:",
+        f"EVODEX-F Preliminary:",
         f"Total EVODEX-F generated: {num_f_total}",
         f"Min sources per EVODEX-F: {min(f_counts) if f_counts else 0}",
         f"Max sources per EVODEX-F: {max(f_counts) if f_counts else 0}",

@@ -10,6 +10,10 @@ from pipeline.version import __version__
 # It iterates through EVODEX-P reactions, skipping any reactions
 # that involve cofactors as substrates or products. The remaining EVODEX-P IDs
 # are used to find associated EVODEX-E operators, which are then output as the synthesis subset.
+# Note: The 'sources' column in the synthesis subset reflects only EVODEX-P entries
+# that passed the cofactor filter. Therefore, the source counts and order of EVODEX-E entries
+# may differ from the full EVODEX-E table produced in Phase 3 (which used all EVODEX-P sources).
+# EVODEX-E IDs remain unchanged and consistent across phases.
 
 def ensure_directories(paths: dict):
     for path in paths.values():
@@ -68,7 +72,7 @@ def main():
 
     # Write filtered EVODEX-E synthesis subset
     with open(paths['evodex_e_synthesis'], 'w', newline='') as outfile:
-        writer = csv.DictWriter(outfile, fieldnames=['id', 'sources', 'smirks'])
+        writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
         writer.writeheader()
         for eid in sorted(evodex_e_subset):
             row_data = evodex_e_full_map[eid]

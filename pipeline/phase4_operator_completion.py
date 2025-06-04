@@ -49,11 +49,15 @@ def main():
 
     for key, data_map in operator_maps.items():
         out_path = paths[key]
+        # Sort operators by source count (descending)
+        sorted_ops = sorted(data_map.items(), key=lambda item: len(item[1]['sources']), reverse=True)
         with open(out_path, 'w', newline='') as outfile:
             writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
             writer.writeheader()
-            for rxn_hash, data in data_map.items():
-                writer.writerow({'id': rxn_hash, 'smirks': data['smirks'], 'sources': ','.join(sorted(data['sources']))})
+            for idx, (rxn_hash, data) in enumerate(sorted_ops, start=1):
+                op_code = key.split('_')[1]
+                op_id = f"EVODEX.1-{op_code[0].upper()}{op_code[1:]}{idx}"
+                writer.writerow({'id': op_id, 'smirks': data['smirks'], 'sources': ','.join(sorted(data['sources']))})
 
     # Validation: Check for operator fragmentation per EVODEX-E
     print("Validating EVODEX-E → Operator mappings for consistency...")
@@ -146,14 +150,16 @@ def main():
     ]
 
     for key, data_map in operator_maps.items():
+        op_code = key.split('_')[1]
+        op_prefix = f"EVODEX_{op_code[0].upper()}{op_code[1:]}"
         counts = [len(data['sources']) for data in data_map.values()]
         report_lines.extend([
-            f"{key.upper()}:",
-            f"Total unique {key.upper()} entries: {len(counts)}",
-            f"Min sources per {key.upper()}: {min(counts) if counts else 0}",
-            f"Max sources per {key.upper()}: {max(counts) if counts else 0}",
-            f"Mean sources per {key.upper()}: {statistics.mean(counts) if counts else 0:.2f}",
-            f"Median sources per {key.upper()}: {statistics.median(counts) if counts else 0}",
+            f"{op_prefix}:",
+            f"Total unique {op_prefix} entries: {len(counts)}",
+            f"Min sources per {op_prefix}: {min(counts) if counts else 0}",
+            f"Max sources per {op_prefix}: {max(counts) if counts else 0}",
+            f"Mean sources per {op_prefix}: {statistics.mean(counts) if counts else 0:.2f}",
+            f"Median sources per {op_prefix}: {statistics.median(counts) if counts else 0}",
             ""
         ])
 

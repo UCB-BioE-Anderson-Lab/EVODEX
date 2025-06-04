@@ -5,10 +5,13 @@ astatine_data: "data/processed/astatine_reactions.csv"
 mapped_data: "data/processed/mapped_reactions.csv"
 
 # Full reactions consolidated
+evodex_r_preliminary: "data/processed/temp_evodex_r_preliminary.csv"
 evodex_r: "data/processed/EVODEX-R_full_reactions.csv"
 
-evodex_f_filtered: "data/processed/evodex_f_filtered.csv"
-evodex_p_filtered: "data/processed/evodex_p_filtered.csv"
+evodex_p_preliminary: "data/processed/temp_evodex_p_preliminary.csv"
+evodex_f_preliminary: "data/processed/temp_evodex_f_preliminary.csv"
+evodex_f_filtered: "data/processed/temp_evodex_f_filtered.csv"
+evodex_p_filtered: "data/processed/temp_evodex_p_filtered.csv"
 
 # The reaction operators
 evodex_p: "data/processed/EVODEX-P_partial_reactions.csv"

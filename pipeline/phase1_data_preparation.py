@@ -157,7 +157,7 @@ def main():
                         'sources': row['sources']
                     }
 
-    with open(paths['evodex_r'], 'w', newline='') as outfile:
+    with open(paths['evodex_r_preliminary'], 'w', newline='') as outfile:
         fieldnames = ['id', 'smirks', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()

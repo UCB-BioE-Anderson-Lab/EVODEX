@@ -34,10 +34,8 @@ def main():
     
     # Step 1: generate evodex_m
     evodex_m_map = {}
-    with open(paths['evodex_f'], 'r') as infile, open(paths['evodex_m'], 'w', newline='') as outfile:
+    with open(paths['evodex_f'], 'r') as infile:
         reader = csv.DictReader(infile)
-        writer = csv.DictWriter(outfile, fieldnames=['id', 'mass', 'sources', 'formula'])
-        writer.writeheader()
         for row in reader:
             total_f_rows += 1
             try:
@@ -48,16 +46,30 @@ def main():
                     'sources': set(row['sources'].split(',')),
                     'formula': row['formula']
                 }
-                writer.writerow({
-                    'id': row['id'],
-                    'mass': mass_diff,
-                    'sources': row['sources'],
-                    'formula': row['formula']
-                })
                 total_m_rows += 1
             except Exception:
                 errors_f += 1
                 continue
+
+    # Step 1b: assign EVODEX_M IDs
+    sorted_m_entries = sorted(evodex_m_map.items(), key=lambda x: len(x[1]['sources']), reverse=True)
+    m_id_map = {}
+    for i, (orig_id, data) in enumerate(sorted_m_entries, start=1):
+        assigned_id = f"EVODEX.1-M{i}"
+        m_id_map[orig_id] = assigned_id
+
+    # Write EVODEX_M with new IDs
+    with open(paths['evodex_m'], 'w', newline='') as outfile:
+        writer = csv.DictWriter(outfile, fieldnames=['id', 'mass', 'sources', 'formula'])
+        writer.writeheader()
+        for orig_id, data in sorted_m_entries:
+            assigned_id = m_id_map[orig_id]
+            writer.writerow({
+                'id': assigned_id,
+                'mass': data['mass'],
+                'sources': ','.join(sorted(data['sources'])),
+                'formula': data['formula']
+            })
 
     # Step 2: filter evodex_p for mass-spec compatible ones
     valid_p_ids = set()
@@ -76,12 +88,13 @@ def main():
     with open(paths['evodex_m_subset'], 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=['id', 'mass', 'sources'])
         writer.writeheader()
-        for m_id, m_data in evodex_m_map.items():
-            intersecting_sources = m_data['sources'].intersection(valid_p_ids)
+        for orig_id, data in evodex_m_map.items():
+            intersecting_sources = data['sources'].intersection(valid_p_ids)
             if intersecting_sources:
+                assigned_id = m_id_map[orig_id]
                 writer.writerow({
-                    'id': m_id,
-                    'mass': m_data['mass'],
+                    'id': assigned_id,
+                    'mass': data['mass'],
                     'sources': ','.join(sorted(intersecting_sources))
                 })
                 total_subset_rows += 1
