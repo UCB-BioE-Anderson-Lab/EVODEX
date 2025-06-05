@@ -84,7 +84,7 @@ def generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m
             for p_id in sources:
                 if p_id not in p_to_ro_map:
                     p_to_ro_map[p_id] = {}
-                p_to_ro_map[p_id][evodex_type] = {'value': value, 'id': row['id']}
+                p_to_ro_map[p_id][evodex_type] = {'value': value, 'id': row['id'], 'type': evodex_type}
 
     for index, row in evodex_p_df.iterrows():
         evodex_id = row['id']
@@ -99,6 +99,7 @@ def generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m
 
         context = {
             'evodex_id': evodex_id,
+            'svg_filename': f"{evodex_id}.svg",
             'smirks': smirks,
             'f_data': f_data,
             'm_data': m_data,
@@ -127,6 +128,7 @@ def generate_evodex_f_pages(env, evodex_f_df, evodex_p_df, pages_dir):
 
         context = {
             'evodex_id': evodex_id,
+            'svg_filename': f"{evodex_id}.svg",
             'formula': formula_list,
             'sources': source_details
         }
@@ -148,6 +150,7 @@ def generate_evodex_m_pages(env, evodex_m_df, evodex_p_df, pages_dir):
 
         context = {
             'evodex_id': evodex_id,
+            'svg_filename': f"{evodex_id}.svg",
             'mass': mass,
             'sources': source_details
         }
@@ -170,6 +173,7 @@ def generate_evodex_ro_pages(env, evodex_ro_dfs, evodex_p_df, ro_metadata, pages
 
             context = {
                 'evodex_id': evodex_id,
+                'svg_filename': f"{evodex_id}.svg",
                 'operator_smirks': smirks,
                 'sources': sources,
                 'partial_reactions': partial_reactions,
@@ -203,7 +207,6 @@ def generate_main_index_page(env, evodex_types, root_dir, ro_metadata):
             {'title': 'EVODEX Mass Spec Demo', 'url': 'https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX'}
         ],
         'additional_links': [
-            {'title': 'Correlating EC Number with EVODEX', 'url': 'website/pages/correlating_ec_number.html'},
             {'title': 'Synthesis Subset of EVODEX-E', 'url': 'website/pages/synthesis_subset.html'},
             {'title': 'Mass Spectrometry Subset of EVODEX-M', 'url': 'website/pages/mass_spec_subset.html'}
         ]
@@ -234,23 +237,25 @@ def generate_mass_spec_subset_page(env, evodex_m_subset_df, pages_dir):
 
     generate_html_page(template, 'mass_spec_subset.html', context, pages_dir)
 
-def generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types):
+def generate_html_pages(paths, website_root, pages_dir, evodex_types):
     env = Environment(loader=FileSystemLoader(paths['template_dir']))
 
-    evodex_r_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_r'])))
-    evodex_p_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_p'])))
-    evodex_f_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_f'])))
-    evodex_m_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_m'])))
-    evodex_e_synthesis_df = pd.read_csv(os.path.join(data_dir, os.path.basename(paths['evodex_e_synthesis'])))
-    evodex_m_subset_df = pd.read_csv(os.path.join(data_dir, 'EVODEX-M_mass_spec_subset.csv'))
+    images_dir = os.path.join(website_root, 'images')
+
+    evodex_r_df = pd.read_csv(paths['evodex_r'])
+    evodex_p_df = pd.read_csv(paths['evodex_p'])
+    evodex_f_df = pd.read_csv(paths['evodex_f'])
+    evodex_m_df = pd.read_csv(paths['evodex_m'])
+    evodex_e_synthesis_df = pd.read_csv(paths['evodex_e_synthesis'])
+    evodex_m_subset_df = pd.read_csv(paths['evodex_m_subset'])
 
     evodex_ro_dfs = {}
     evodex_type_dfs = {}
 
     for evodex_type in evodex_types:
         if evodex_type not in ['R', 'P', 'F', 'M']:
-            evodex_ro_dfs[evodex_type] = pd.read_csv(os.path.join(data_dir, os.path.basename(paths[f'evodex_{evodex_type.lower()}'])))
-        evodex_type_dfs[evodex_type] = pd.read_csv(os.path.join(data_dir, os.path.basename(paths[f'evodex_{evodex_type.lower()}'])))
+            evodex_ro_dfs[evodex_type] = pd.read_csv(paths[f'evodex_{evodex_type.lower()}'])
+        evodex_type_dfs[evodex_type] = pd.read_csv(paths[f'evodex_{evodex_type.lower()}'])
 
     ro_metadata = {
         'E': {'title': 'Reaction Operator E'},
@@ -304,9 +309,8 @@ if __name__ == "__main__":
         'evodex_m_mass_spec_subset': 'website/data/EVODEX-M_mass_spec_subset.csv',
         
     }
-    data_dir = 'website/data'
-    images_dir = 'website/images'
+    website_root = 'website'
     pages_dir = 'website/pages'
     evodex_types = ['R', 'P', 'E', 'N', 'C', 'Em', 'Nm', 'Cm', 'F', 'M']
 
-    generate_html_pages(paths, data_dir, images_dir, pages_dir, evodex_types)
+    generate_html_pages(paths, website_root, pages_dir, evodex_types)

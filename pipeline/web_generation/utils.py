@@ -25,5 +25,3 @@ def setup_directories(base_dir, paths):
             dst = os.path.join(base_dir, 'static', static_file)
             if os.path.isfile(src):
                 shutil.copy(src, dst)
-
-    return images_dir, data_dir, pages_dir
