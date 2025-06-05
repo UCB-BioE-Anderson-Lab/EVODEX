@@ -453,6 +453,9 @@ def _identify_changed_mapped_atoms(reaction):
         react_sig = reactant_signatures.get(atom_map)
         prod_sig = product_signatures.get(atom_map)
         if react_sig != prod_sig:
+            # print(f"Changed atom map: {atom_map}")
+            # print(f"  Reactant signature: {react_sig}")
+            # print(f"  Product signature:  {prod_sig}")
             changed_atom_maps.add(atom_map)
 
     # Now return reacting_atoms = (reactants, products), in the same format as before
@@ -463,6 +466,7 @@ def _identify_changed_mapped_atoms(reaction):
         molecule = reaction.GetReactantTemplate(i)
         index_set = set()
         for atom in molecule.GetAtoms():
+            # print(f"Reactant {i}: Atom index {atom.GetIdx()} has atom map {atom.GetAtomMapNum()}")
             if atom.GetAtomMapNum() in changed_atom_maps:
                 index_set.add(atom.GetIdx())
         reacting_atoms[0].append(index_set)
@@ -472,8 +476,11 @@ def _identify_changed_mapped_atoms(reaction):
         molecule = reaction.GetProductTemplate(i)
         index_set = set()
         for atom in molecule.GetAtoms():
+            # print(f"Product {i}: Atom index {atom.GetIdx()} has atom map {atom.GetAtomMapNum()}")
             if atom.GetAtomMapNum() in changed_atom_maps:
                 index_set.add(atom.GetIdx())
         reacting_atoms[1].append(index_set)
+
+    # print(reacting_atoms)
 
     return reacting_atoms[0]

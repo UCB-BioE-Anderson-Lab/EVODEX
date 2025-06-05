@@ -75,7 +75,9 @@ def process_data(input_file, output_file, transformation_function, stage_name, e
                 new_data = transformation_function(row)
                 write_row(writer, new_data)
             except Exception as e:
-                row['error'] = str(e)
+                import traceback
+                error_msg = f"{str(e)}\n{traceback.format_exc()}"
+                row['error'] = error_msg
                 error_log.append({**row, 'stage': stage_name})
                 write_row(writer, row)
 
