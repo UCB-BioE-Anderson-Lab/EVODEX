@@ -1,3 +1,0 @@
-id,smirks,sources
-EVODEX.0-N1,[C:1][C:2](=[O:3])[H:51]>>[H][C:2]([C:1])([O:3][H])[H:51],"EVODEX.0-P2,EVODEX.0-P5"
-EVODEX.0-N2,[H][C:55]([C:53])([O:56][H])[H:92]>>[C:53][C:55](=[O:56])[H:92],"EVODEX.0-P8,EVODEX.0-P10"
