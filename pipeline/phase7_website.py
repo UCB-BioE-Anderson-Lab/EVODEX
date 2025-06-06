@@ -45,9 +45,17 @@ website_root = os.path.join(os.path.dirname(__file__), '..', 'website')
 os.makedirs(website_root, exist_ok=True)
 generate_css.generate_css(website_root)
 
+
 # Ensure images dir exists
 images_dir = os.path.join(website_root, 'images')
 os.makedirs(images_dir, exist_ok=True)
+
+# Copy logo image to images dir
+logo_src = paths['logo_image']
+logo_dest = os.path.join(images_dir, 'evodex_logo.png')
+from shutil import copyfile
+copyfile(logo_src, logo_dest)
+print(f"Copied logo: {logo_src} -> {logo_dest}")
 
 print("Starting Phase 7 Website Generation...")
 print("=======================================")

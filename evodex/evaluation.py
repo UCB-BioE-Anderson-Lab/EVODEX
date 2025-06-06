@@ -196,18 +196,20 @@ def _match_operator(smirks, evodex_type='E'):
 
     # Convert pdt_smiles to a hash
     pdt_hash = get_molecule_hash(pdt_smiles)
+    print(f"Expected product: {pdt_smiles} with hash {pdt_hash}")
 
     # Iterate through potential operators and test
     valid_operators = []
     for operator in potential_operators:
         try:
             id = operator["id"]
-            # print(f"Projecting:  {id} on {sub_smiles}")
+            print(f"Projecting: {id} on {sub_smiles}")
             projected_pdts = project_evodex_operator(id, sub_smiles)
-            # print(f"Projected products: {projected_pdts}")
             for proj_smiles in projected_pdts:
                 proj_hash = get_molecule_hash(proj_smiles)
+                print(f"Projected product: {proj_smiles} with hash {proj_hash}")
                 if proj_hash == pdt_hash:
+                    print("MATCH FOUND!")
                     valid_operators.append(id)
         except Exception as e:
             # print(f"{operator['id']} errored: {e}")
@@ -238,10 +240,18 @@ def _load_evodex_data():
             evodex_data_cache = json.load(json_file)
         return evodex_data_cache
     
-    # Index EVODEX data as JSON files
+    # Index EVODEX data as JSON files, with robust loading for N and C
     e_data = _create_evodex_json('E')
-    n_data = _create_evodex_json('N')
-    c_data = _create_evodex_json('C')
+    n_data = {}
+    c_data = {}
+    try:
+        n_data = _create_evodex_json('N')
+    except FileNotFoundError as e:
+        print(f"Warning: EVODEX-N file not found. N data will be unavailable. {e}")
+    try:
+        c_data = _create_evodex_json('C')
+    except FileNotFoundError as e:
+        print(f"Warning: EVODEX-C file not found. C data will be unavailable. {e}")
 
     # Initialize cache
     evodex_data_cache = {}
@@ -317,7 +327,7 @@ def _create_evodex_json(file_suffix):
 if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-    smirks = "CCCO>>CCC=O"
+    smirks = "CCCO>>CCCOC"
     is_valid_formula = assign_evodex_F(smirks)
     print(f"{smirks} matches: {is_valid_formula}")
 

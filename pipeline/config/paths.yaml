@@ -13,6 +13,9 @@ evodex_f_preliminary: "data/processed/temp_evodex_f_preliminary.csv"
 evodex_f_filtered: "data/processed/temp_evodex_f_filtered.csv"
 evodex_p_filtered: "data/processed/temp_evodex_p_filtered.csv"
 
+# Preliminary bag of all EVODEX-E
+evodex_e_preliminary: "data/processed/temp_evodex_e_preliminary.csv"
+
 # The reaction operators
 evodex_p: "data/processed/EVODEX-P_partial_reactions.csv"
 evodex_e: "data/processed/EVODEX-E_reaction_operators.csv"

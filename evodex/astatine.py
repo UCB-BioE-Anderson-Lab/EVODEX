@@ -68,7 +68,10 @@ def hydrogen_to_astatine_molecule(mol: Chem.Mol, which_mol="") -> Chem.Mol:
     return copy_molecule_with_substitution(mol, {1: 85}, which_mol)
 
 def astatine_to_hydrogen_molecule(mol: Chem.Mol) -> Chem.Mol:
-    return copy_molecule_with_substitution(mol, {85: 1}, which_mol="")
+    for atom in mol.GetAtoms():
+        if atom.GetAtomicNum() == 85:  # Astatine
+            atom.SetAtomicNum(1)  # Hydrogen
+    return mol
 
 def hydrogen_to_astatine_reaction(reaction_smiles: str) -> str:
     reaction = AllChem.ReactionFromSmarts(reaction_smiles, useSmiles=True)
@@ -94,14 +97,33 @@ def astatine_to_hydrogen_reaction(reaction_smiles: str) -> str:
 
     for mol in reaction.GetReactants():
         mol = astatine_to_hydrogen_molecule(mol)
-        reactant_smiles.append(Chem.MolToSmiles(mol, isomericSmiles=True, canonical=False))
+        reactant_smiles.append(Chem.MolToSmiles(mol, isomericSmiles=True))
 
     for mol in reaction.GetProducts():
         mol = astatine_to_hydrogen_molecule(mol)
-        product_smiles.append(Chem.MolToSmiles(mol, isomericSmiles=True, canonical=False))
+        product_smiles.append(Chem.MolToSmiles(mol, isomericSmiles=True))
 
     return '.'.join(reactant_smiles) + ">>" + '.'.join(product_smiles)
 
+
+# DataFrame utility for converting a column of reaction SMILES using astatine_to_hydrogen_reaction
+def convert_dataframe_smiles_column(df, column_name):
+    """
+    Applies astatine_to_hydrogen_reaction to the specified column of a DataFrame.
+    Returns the converted DataFrame and a list of errors (tuples of index, value, and exception).
+    """
+    import pandas as pd
+    errors = []
+    def convert(row):
+        try:
+            return astatine_to_hydrogen_reaction(row)
+        except Exception as e:
+            errors.append((row, e))
+            return None
+    # Copy DataFrame to avoid modifying in place
+    df_converted = df.copy()
+    df_converted[column_name] = df_converted[column_name].apply(convert)
+    return df_converted, errors
 
 # Allow running and testing directly
 if __name__ == "__main__":
