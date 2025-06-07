@@ -123,7 +123,13 @@ pip install -r requirements.txt
 
 ### Running the Pipeline
 
-Run the following modules sequentially:
+You can run the entire pipeline automatically by running:
+
+```bash
+python run_pipeline.py
+```
+
+Alternatively, you can run the pipeline step-by-step. First, download and prepare the raw data file (see [Raw Data File](#raw-data-file) below), then run the following modules sequentially:
 
 ```bash
 python -m pipeline.phase1_data_preparation
@@ -135,7 +141,6 @@ python -m pipeline.phase4_operator_completion
 python -m pipeline.phase5_mass_subset
 python -m pipeline.phase6_synthesis_subset
 python -m pipeline.phase7_website
-python -m pipeline.phase8_publish
 ```
 
 ### Raw Data File
