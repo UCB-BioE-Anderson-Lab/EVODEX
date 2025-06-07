@@ -121,7 +121,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Running the Pipeline
+## Running the Pipeline
 
 You can run the entire pipeline automatically by running:
 
@@ -129,25 +129,9 @@ You can run the entire pipeline automatically by running:
 python run_pipeline.py
 ```
 
-Alternatively, you can run the pipeline step-by-step. First, download and prepare the raw data file (see [Raw Data File](#raw-data-file) below), then run the following modules sequentially:
+Alternatively, you can run the pipeline step-by-step. First, download and prepare the raw data file, then run the modules sequentially.
 
-```bash
-python -m pipeline.phase1_data_preparation
-python -m pipeline.phase2_formula_pruning
-python -m pipeline.phase3a_ero_mining
-python -m pipeline.phase3b_ero_trimming
-python -m pipeline.phase3c_ero_publishing
-python -m pipeline.phase4_operator_completion
-python -m pipeline.phase5_mass_subset
-python -m pipeline.phase6_synthesis_subset
-python -m pipeline.phase7_website
-```
-
-### Raw Data File
-EVODEX.1, the current distribution of operators, was built from the dataset derived from BRENDA discussed in:
-"EnzymeMap: Curation, validation and data-driven prediction of enzymatic reactions" by E. Heid, D. Probst, W. H. Green and G. K. H. Madsen.
-
-To use the full version of the raw data file, download and decompress it as follows:
+To download and prepare the raw data file:
 
 ```python
 import requests
@@ -163,6 +147,20 @@ with open("/content/processed_reactions.csv.gz", "wb") as f:
 with gzip.open("/content/processed_reactions.csv.gz", "rt") as f_in:
     with open("/content/processed_reactions.csv", "wt") as f_out:
         f_out.write(f_in.read())
+```
+
+Then run the following modules sequentially:
+
+```bash
+python -m pipeline.phase1_data_preparation
+python -m pipeline.phase2_formula_pruning
+python -m pipeline.phase3a_ero_mining
+python -m pipeline.phase3b_ero_trimming
+python -m pipeline.phase3c_ero_publishing
+python -m pipeline.phase4_operator_completion
+python -m pipeline.phase5_mass_subset
+python -m pipeline.phase6_synthesis_subset
+python -m pipeline.phase7_website
 ```
 
 ## GitHub Pages Website
