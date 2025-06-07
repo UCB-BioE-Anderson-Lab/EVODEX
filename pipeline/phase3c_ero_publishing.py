@@ -105,7 +105,7 @@ def main():
         writer.writerows(p_updated_rows)
     print("Publishing EVODEX-P to evodex/data...")
     p_df_h, _ = convert_dataframe_smiles_column(pd.DataFrame(p_updated_rows), 'smirks')
-    with open(os.path.join('evodex/data/EVODEX-P_reaction_operators.csv'), 'w', newline='') as outfile:
+    with open(os.path.join('evodex/data/EVODEX-P_partial_reactions.csv'), 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
         writer.writeheader()
         writer.writerows(p_df_h.to_dict(orient='records'))

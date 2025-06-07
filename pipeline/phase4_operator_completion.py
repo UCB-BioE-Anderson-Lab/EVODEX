@@ -29,7 +29,7 @@ def main():
 
     operator_maps = {key: defaultdict(lambda: {'smirks': None, 'sources': set()}) for key in operator_configs}
 
-    with open(paths['evodex_p'], 'r') as infile:
+    with open(paths['evodex_p_phase3c_final'], 'r') as infile:
         reader = csv.DictReader(infile)
         for row in reader:
             evodex_p_id = row['id']
@@ -64,7 +64,7 @@ def main():
 
     # Load EVODEX-E to map E → P sources
     evodex_e_to_p = {}
-    with open(paths['evodex_e'], 'r') as infile:
+    with open(paths['evodex_e_phase3c_final'], 'r') as infile:
         reader = csv.DictReader(infile)
         for row in reader:
             evodex_e_id = row['id']
@@ -99,7 +99,7 @@ def main():
 
         # Load EVODEX-E smirks
         evodex_e_smirks = {}
-        with open(paths['evodex_e'], 'r') as infile:
+        with open(paths['evodex_e_phase3c_final'], 'r') as infile:
             reader = csv.DictReader(infile)
             for row in reader:
                 evodex_e_smirks[row['id']] = row['smirks']
@@ -171,6 +171,31 @@ def main():
     report_path = os.path.join(paths['errors_dir'], 'Phase4_evodex_report.txt')
     with open(report_path, 'w') as report_file:
         report_file.write('\n'.join(report_lines))
+
+    # === Phase 4 Publishing ===
+    print("\n=== Phase 4 Publishing ===")
+
+    from evodex.astatine import convert_dataframe_smiles_column
+    import pandas as pd
+
+    for key in operator_configs:
+        # Determine canonical filename (matches what was written in processed)
+        out_filename = os.path.basename(paths[key])
+        src_path = paths[key]
+        dst_path = os.path.join('evodex', 'data', out_filename)
+
+        print(f"Publishing {out_filename} to evodex/data...")
+
+        # Load processed file
+        df = pd.read_csv(src_path)
+
+        # Convert At → H on smirks column
+        df_h, errors = convert_dataframe_smiles_column(df, 'smirks')
+        if errors:
+            print(f"  [!] {len(errors)} At→H conversion errors encountered.")
+
+        # Write to evodex/data
+        df_h.to_csv(dst_path, index=False)
 
 if __name__ == "__main__":
     main()
