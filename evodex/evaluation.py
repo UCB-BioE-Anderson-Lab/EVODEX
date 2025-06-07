@@ -196,20 +196,20 @@ def _match_operator(smirks, evodex_type='E'):
 
     # Convert pdt_smiles to a hash
     pdt_hash = get_molecule_hash(pdt_smiles)
-    print(f"Expected product: {pdt_smiles} with hash {pdt_hash}")
+    # print(f"Expected product: {pdt_smiles} with hash {pdt_hash}")
 
     # Iterate through potential operators and test
     valid_operators = []
     for operator in potential_operators:
         try:
             id = operator["id"]
-            print(f"Projecting: {id} on {sub_smiles}")
+            # print(f"Projecting: {id} on {sub_smiles}")
             projected_pdts = project_evodex_operator(id, sub_smiles)
             for proj_smiles in projected_pdts:
                 proj_hash = get_molecule_hash(proj_smiles)
-                print(f"Projected product: {proj_smiles} with hash {proj_hash}")
+                # print(f"Projected product: {proj_smiles} with hash {proj_hash}")
                 if proj_hash == pdt_hash:
-                    print("MATCH FOUND!")
+                    # print("MATCH FOUND!")
                     valid_operators.append(id)
         except Exception as e:
             # print(f"{operator['id']} errored: {e}")

@@ -61,7 +61,7 @@ def main():
     retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) > 1}
 
     # Write retained EVODEX-E operators to preliminary file
-    with open(paths['evodex_e_preliminary'], 'w', newline='') as outfile:
+    with open(paths['evodex_e_phase3a_preliminary'], 'w', newline='') as outfile:
         fieldnames = ['id', 'smirks', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -100,6 +100,29 @@ def main():
         report_file.write(f"  median: {median_sources}\n")
 
     print(f"Phase 3a EVODEX-E mining complete. Retained {len(retained_ops)} operators with >1 source.")
+
+    # === Prune EVODEX-P to only retained P entries ===
+    # Build set of all surviving P IDs from retained_ops['sources']
+    surviving_p_ids = set()
+    for data in retained_ops.values():
+        surviving_p_ids.update(data['sources'])
+
+    # Load EVODEX-P filtered entries again
+    p_rows = []
+    with open(paths['evodex_p_filtered'], 'r') as pfile:
+        reader = csv.DictReader(pfile)
+        for row in reader:
+            p_rows.append(row)
+
+    # Write new CSV to paths['evodex_p_phase3a_retained'] with only P rows whose ID is in the surviving set
+    retained_p_rows = [row for row in p_rows if row['id'] in surviving_p_ids]
+    with open(paths['evodex_p_phase3a_retained'], 'w', newline='') as outfile:
+        writer = csv.DictWriter(outfile, fieldnames=p_rows[0].keys())
+        writer.writeheader()
+        writer.writerows(retained_p_rows)
+
+    # Print pruning summary
+    print(f"Pruned EVODEX-P: {len(retained_p_rows)} retained of {len(p_rows)} original entries.")
 
     # After processing all operators, print number of extraction errors recorded
     try:

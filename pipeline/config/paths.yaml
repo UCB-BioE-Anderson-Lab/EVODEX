@@ -1,31 +1,55 @@
+# ==========================================
+# EVODEX Pipeline Paths Configuration
+# ==========================================
+# All intermediate files live in data/processed/
+# Final files copied to evodex/data/
+# ==========================================
+
+# Raw and initial processing
 raw_data: "data/raw/raw_reactions.csv"
 selected_data: "data/processed/selected_reactions.csv"
 filtered_data: "data/processed/filtered_reactions.csv"
 astatine_data: "data/processed/astatine_reactions.csv"
 mapped_data: "data/processed/mapped_reactions.csv"
 
-# Full reactions consolidated
+# Full reactions
 evodex_r_preliminary: "data/processed/temp_evodex_r_preliminary.csv"
 evodex_r: "data/processed/EVODEX-R_full_reactions.csv"
 
+# Phase 2 outputs (filtered P and F)
 evodex_p_preliminary: "data/processed/temp_evodex_p_preliminary.csv"
 evodex_f_preliminary: "data/processed/temp_evodex_f_preliminary.csv"
 evodex_f_filtered: "data/processed/temp_evodex_f_filtered.csv"
 evodex_p_filtered: "data/processed/temp_evodex_p_filtered.csv"
 
-# Preliminary bag of all EVODEX-E
-evodex_e_preliminary: "data/processed/temp_evodex_e_preliminary.csv"
+# Phase 3a outputs
+evodex_e_phase3a_preliminary: "data/processed/evodex_e_phase3a_preliminary.csv"
+evodex_p_phase3a_retained: "data/processed/evodex_p_phase3a_retained.csv"
 
-# The reaction operators
-evodex_p: "data/processed/EVODEX-P_partial_reactions.csv"
-evodex_e: "data/processed/EVODEX-E_reaction_operators.csv"
+# Phase 3b converted H versions (for match_operators support)
+evodex_e_phase3a_preliminary_H: "data/processed/evodex_e_phase3a_preliminary_H.csv"
+evodex_p_phase3a_retained_H: "data/processed/evodex_p_phase3a_retained_H.csv"
+
+# Phase 3b final outputs (At versions)
+evodex_e_phase3b_final: "data/processed/evodex_e_phase3b_final.csv"
+evodex_p_phase3b_final: "data/processed/evodex_p_phase3b_final.csv"
+evodex_f_phase3b_final: "data/processed/evodex_f_phase3b_final.csv"
+evodex_r_phase3b_final: "data/processed/evodex_r_phase3b_final.csv"
+
+# Phase 3c processed outputs (At versions, for future pipeline steps)
+evodex_p_phase3c_final: "data/processed/evodex_p_phase3c_final.csv"
+evodex_r_phase3c_final: "data/processed/evodex_r_phase3c_final.csv"
+evodex_f_phase3c_final: "data/processed/evodex_f_phase3c_final.csv"
+evodex_e_phase3c_final: "data/processed/evodex_e_phase3c_final.csv"
+
+# Other reaction operator placeholders (unused in Phase 3a-3c but reserved)
 evodex_c: "data/processed/EVODEX-C_reaction_operators.csv"
 evodex_n: "data/processed/EVODEX-N_reaction_operators.csv"
 evodex_em: "data/processed/EVODEX-Em_reaction_operators.csv"
 evodex_cm: "data/processed/EVODEX-Cm_reaction_operators.csv"
 evodex_nm: "data/processed/EVODEX-Nm_reaction_operators.csv"
 
-# The atom difference operators
+# Atom difference operators
 evodex_m: "data/processed/EVODEX-M_unique_masses.csv"
 evodex_f: "data/processed/EVODEX-F_unique_formulas.csv"
 
