@@ -34,7 +34,7 @@ def main():
     
     # Step 1: generate evodex_m
     evodex_m_map = {}
-    with open(paths['evodex_f'], 'r') as infile:
+    with open(paths['evodex_f_phase3c_final'], 'r') as infile:
         reader = csv.DictReader(infile)
         for row in reader:
             total_f_rows += 1
@@ -73,7 +73,7 @@ def main():
 
     # Step 2: filter evodex_p for mass-spec compatible ones
     valid_p_ids = set()
-    with open(paths['evodex_p'], 'r') as infile:
+    with open(paths['evodex_p_phase3c_final'], 'r') as infile:
         reader = csv.DictReader(infile)
         for row in reader:
             try:
@@ -108,6 +108,21 @@ def main():
     print_stats("Errors in EVODEX_P", errors_p)
 
     print("Phase 5 complete: Mass subset written.")
+
+    # Publish to evodex/data
+    print("\nPublishing to evodex/data...")
+
+    # EVODEX-M
+    dst_m = os.path.join('evodex', 'data', 'EVODEX-M_unique_masses.csv')
+    with open(paths['evodex_m'], 'r') as src_file, open(dst_m, 'w', newline='') as dst_file:
+        dst_file.write(src_file.read())
+    print(f"Published EVODEX-M to {dst_m}")
+
+    # EVODEX-M_SUBSET
+    dst_m_subset = os.path.join('evodex', 'data', 'EVODEX-M_mass_spec_subset.csv')
+    with open(paths['evodex_m_subset'], 'r') as src_file, open(dst_m_subset, 'w', newline='') as dst_file:
+        dst_file.write(src_file.read())
+    print(f"Published EVODEX-M_SUBSET to {dst_m_subset}")
 
 if __name__ == "__main__":
     main()
