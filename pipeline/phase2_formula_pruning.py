@@ -7,6 +7,7 @@ from evodex.utils import reaction_hash
 from pipeline.config import load_paths
 from pipeline.version import __version__
 import hashlib
+import time
 
 # Phase 2: Formula-Based Pruning
 # This script takes the deduplicated EVODEX-R reactions and computes formula differences to derive EVODEX-F entries.
@@ -170,6 +171,7 @@ def process_split_reactions(input_csv, output_csv, error_csv):
 
 
 def main():
+    start_time = time.time()
     print("Phase 2 formula pruning started...")
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
@@ -290,6 +292,10 @@ def main():
     report_path = os.path.join(paths['errors_dir'], 'Phase2_evodex_report.txt')
     with open(report_path, 'w') as report_file:
         report_file.write('\n'.join(report_lines))
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Phase 2 formula pruning completed in {elapsed_time:.2f} seconds.")
 
 
 if __name__ == "__main__":

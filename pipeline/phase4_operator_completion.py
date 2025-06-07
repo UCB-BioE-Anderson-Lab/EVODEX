@@ -5,6 +5,7 @@ from evodex.operators import extract_operator
 from evodex.utils import reaction_hash
 from pipeline.config import load_paths
 from pipeline.version import __version__
+import time
 
 # Phase 4: Operator Completion
 # This script derives additional operator forms (EVODEX-C, EVODEX-N, EVODEX-Em, EVODEX-Cm, EVODEX-Nm)
@@ -12,6 +13,8 @@ from pipeline.version import __version__
 # settings to the EVODEX-P SMIRKS. The resulting operators are deduplicated by hash and written to output.
 
 def main():
+    start_time = time.time()
+    print("Phase 4 operator completion started...")
     paths = load_paths('pipeline/config/paths.yaml')
 
     operator_configs = {
@@ -196,6 +199,10 @@ def main():
 
         # Write to evodex/data
         df_h.to_csv(dst_path, index=False)
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Phase 4 operator completion completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()

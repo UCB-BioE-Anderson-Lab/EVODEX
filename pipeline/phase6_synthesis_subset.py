@@ -1,6 +1,7 @@
 import csv
 import os
 import shutil
+import time
 from collections import defaultdict
 from evodex.decofactor import contains_cofactor
 from pipeline.config import load_paths
@@ -23,6 +24,9 @@ def ensure_directories(paths: dict):
             os.makedirs(dir_path)
 
 def main():
+    start_time = time.time()
+    print("Phase 6 synthesis subset generation started...")
+
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
 
@@ -99,6 +103,10 @@ def main():
     dst_e_synthesis = os.path.join('evodex', 'data', 'EVODEX-E_synthesis_subset.csv')
     shutil.copyfile(paths['evodex_e_synthesis'], dst_e_synthesis)
     print(f"Published synthesis subset to {dst_e_synthesis}")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Phase 6 synthesis subset generation completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()

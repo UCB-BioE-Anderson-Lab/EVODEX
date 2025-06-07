@@ -1,6 +1,7 @@
 import csv
 import os
 import shutil
+import time
 import pandas as pd
 from pipeline.config import load_paths
 from pipeline.version import __version__
@@ -65,6 +66,8 @@ def update_sources(row_sources, source_id_map):
     return ','.join(updated_sources)
 
 def main():
+    start_time = time.time()
+    print("Phase 3c EVODEX publishing started...")
     print("=== Phase 3c: EVODEX Publishing ===")
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
@@ -187,6 +190,10 @@ def main():
     print(f"Published raw_data_published to {paths['raw_data_published']}")
 
     print("=== Phase 3c publishing complete ===")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Phase 3c EVODEX publishing completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()

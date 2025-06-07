@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 from pathlib import Path
+import time
 
 # Phase 7: Website Generation
 # This phase generates the full EVODEX website. For each operator type (R, P, F, E, C, N, EM, CM, NM, M),
@@ -16,6 +17,8 @@ import pipeline.web_generation.generate_css as generate_css
 from pipeline.config.load_paths import load_paths
 
 paths = load_paths('pipeline/config/paths.yaml')
+start_time = time.time()
+print("Phase 7 website generation started...")
 
 # Define operator types to process
 operator_types = ['R', 'P', 'F', 'E', 'C', 'N', 'Em', 'Cm', 'Nm', 'M']
@@ -86,3 +89,6 @@ for operator_type in operator_types:
 generate_html.generate_html_pages(paths, website_root, os.path.join(website_root, 'pages'), operator_types)
 
 print("\nPhase 7 Website Generation complete.")
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f"Phase 7 website generation completed in {elapsed_time:.2f} seconds.")

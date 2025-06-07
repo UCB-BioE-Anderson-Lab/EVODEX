@@ -4,6 +4,7 @@ from collections import defaultdict
 from evodex.formula import calculate_exact_mass
 from pipeline.config import load_paths
 from pipeline.version import __version__
+import time
 
 # Phase 5: Mass Spec Subset
 # This phase generates EVODEX_M and EVODEX_M_SUBSET tables.
@@ -21,6 +22,9 @@ def print_stats(label, value):
     print(f"{label}: {value:,}")
 
 def main():
+    start_time = time.time()
+    print("Phase 5 mass subset generation started...")
+
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
 
@@ -123,6 +127,10 @@ def main():
     with open(paths['evodex_m_subset'], 'r') as src_file, open(dst_m_subset, 'w', newline='') as dst_file:
         dst_file.write(src_file.read())
     print(f"Published EVODEX-M_SUBSET to {dst_m_subset}")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Phase 5 mass subset generation completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()

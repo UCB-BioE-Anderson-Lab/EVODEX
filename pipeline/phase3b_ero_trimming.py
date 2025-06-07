@@ -1,6 +1,7 @@
 import shutil
 import os
 import csv
+import time
 import pandas as pd
 from pipeline.config import load_paths
 from evodex.evaluation import match_operators
@@ -26,6 +27,8 @@ Outputs (all in data/processed/):
 """
 
 def main():
+    start_time = time.time()
+    print("Phase 3b ERO trimming (dominance pruning) started...")
     # Load paths
     paths = load_paths('pipeline/config/paths.yaml')
     
@@ -186,6 +189,10 @@ def main():
     filtered_r_df = evodex_r_df[evodex_r_df['id'].isin(surviving_r_hashes)].copy()
     filtered_r_df.to_csv(paths['evodex_r_phase3b_final'], index=False)
     print(f"Final pruned EVODEX-R saved to {paths['evodex_r_phase3b_final']}.")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Phase 3b ERO trimming completed in {elapsed_time:.2f} seconds.")
 
 
 if __name__ == "__main__":

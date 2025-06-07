@@ -1,5 +1,6 @@
 import csv
 import os
+import time
 from collections import defaultdict
 from evodex.operators import extract_operator
 from evodex.utils import reaction_hash
@@ -18,6 +19,8 @@ def ensure_directories(paths: dict):
             os.makedirs(dir_path)
 
 def main():
+    start_time = time.time()
+    print("Phase 3a EVODEX-E mining started...")
     print("Starting Phase 3a EVODEX-E mining...")
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
@@ -131,6 +134,10 @@ def main():
     except Exception:
         error_count = 0
     print(f"Number of extraction errors recorded: {error_count}")
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Phase 3a EVODEX-E mining completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()

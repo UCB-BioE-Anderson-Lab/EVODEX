@@ -83,6 +83,9 @@ def process_data(input_file, output_file, transformation_function, stage_name, e
 
 
 def main():
+    start_time = time.time()
+    print("Phase 1 data preparation started...")
+
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
 
@@ -173,6 +176,10 @@ def main():
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(error_log)
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Phase 1 data preparation completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()
