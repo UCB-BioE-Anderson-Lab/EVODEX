@@ -1,5 +1,6 @@
 import csv
 import os
+import shutil
 from collections import defaultdict
 from evodex.decofactor import contains_cofactor
 from pipeline.config import load_paths
@@ -32,13 +33,13 @@ def main():
     evodex_e_full_map = {}
 
     # Load EVODEX-P reactions
-    with open(paths['evodex_p'], 'r') as p_file:
+    with open('evodex/data/EVODEX-P_partial_reactions.csv', 'r') as p_file:
         p_reader = csv.DictReader(p_file)
         for row in p_reader:
             evodex_p_map[row['id']] = row['smirks']
 
     # Load EVODEX-E operators mapping from EVODEX-P IDs
-    with open(paths['evodex_e'], 'r') as e_file:
+    with open(paths['evodex_e_phase3c_final'], 'r') as e_file:
         e_reader = csv.DictReader(e_file)
         for row in e_reader:
             sources = row['sources'].split(',')
@@ -93,6 +94,11 @@ def main():
     print(f"  Total EVODEX-E synthesis operators written: {total_evode_e_written}")
 
     print("Phase 6 complete: Synthesis subset written.")
+
+    # === Publish to evodex/data/ ===
+    dst_e_synthesis = os.path.join('evodex', 'data', 'EVODEX-E_synthesis_subset.csv')
+    shutil.copyfile(paths['evodex_e_synthesis'], dst_e_synthesis)
+    print(f"Published synthesis subset to {dst_e_synthesis}")
 
 if __name__ == "__main__":
     main()
