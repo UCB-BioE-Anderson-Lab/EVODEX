@@ -139,7 +139,7 @@ python -m pipeline.phase8_publish
 ```
 
 ### Raw Data File
-EVODEX.0, the current distribution of operators, was built from the dataset derived from BRENDA discussed in:
+EVODEX.1, the current distribution of operators, was built from the dataset derived from BRENDA discussed in:
 "EnzymeMap: Curation, validation and data-driven prediction of enzymatic reactions" by E. Heid, D. Probst, W. H. Green and G. K. H. Madsen.
 
 To use the full version of the raw data file, download and decompress it as follows:
@@ -158,8 +158,6 @@ with open("/content/processed_reactions.csv.gz", "wb") as f:
 with gzip.open("/content/processed_reactions.csv.gz", "rt") as f_in:
     with open("/content/processed_reactions.csv", "wt") as f_out:
         f_out.write(f_in.read())
-
-The repository includes a partial version of this file containing only selected reactions. Running the pipeline with this file will reproduce the same results as using the full version.
 ```
 
 ## GitHub Pages Website
