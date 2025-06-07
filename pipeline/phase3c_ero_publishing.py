@@ -6,6 +6,35 @@ from pipeline.config import load_paths
 from pipeline.version import __version__
 from evodex.astatine import convert_dataframe_smiles_column
 
+"""
+Phase 3c: EVODEX Publishing to evodex/data
+
+Goal: Convert final Phase 3b outputs to EVODEX.1 format and publish H-converted versions to evodex/data.
+
+Input:
+- evodex_e_phase3b_final (At)
+- evodex_p_phase3b_final (At)
+- evodex_f_phase3b_final (no SMIRKS, no conversion needed)
+- evodex_r_phase3b_final (At)
+
+Steps:
+1. Assign final EVODEX.1 IDs to E, P, R.
+2. Update source references to match assigned EVODEX-P and EVODEX-R IDs.
+3. Write final H-converted E, P, R to:
+    - EVODEX-E_reaction_operators.csv
+    - EVODEX-P_partial_reactions.csv
+    - EVODEX-R_full_reactions.csv
+4. Write EVODEX-F_unique_formulas.csv with updated sources.
+5. Write raw_data_published (selected_reactions.csv) for website (filtered raw reactions used by EVODEX-R).
+
+Outputs (all in evodex/data/):
+- EVODEX-E_reaction_operators.csv
+- EVODEX-P_partial_reactions.csv
+- EVODEX-R_full_reactions.csv
+- EVODEX-F_unique_formulas.csv
+- selected_reactions.csv (raw_data_published)
+"""
+
 def ensure_directories(paths: dict):
     for path in paths.values():
         dir_path = os.path.dirname(path)
@@ -133,6 +162,29 @@ def main():
         writer.writerows(f_updated_rows)
     print("Publishing EVODEX-F to evodex/data...")
     shutil.copyfile(paths['evodex_f_phase3c_final'], os.path.join('evodex/data/EVODEX-F_unique_formulas.csv'))
+
+    # --- Write raw_data_published ---
+    print("Writing raw_data_published (selected_reactions.csv)...")
+
+    # Load EVODEX-R sources
+    r_df_final = pd.read_csv(paths['evodex_r_phase3c_final'], dtype={'sources': str})
+    source_ids = set()
+    for sources_str in r_df_final['sources']:
+        for src in sources_str.split(','):
+            src = src.strip()
+            if src:
+                source_ids.add(src)
+
+    # Load raw_data (not filtered_data), read rxn_idx as string
+    raw_data_df = pd.read_csv(paths['raw_data'], dtype={'rxn_idx': str})
+
+    # Filter rows where rxn_idx is in source_ids
+    raw_data_published_df = raw_data_df[raw_data_df['rxn_idx'].isin(source_ids)].copy()
+
+    # Write to raw_data_published path (keep same columns)
+    raw_data_published_df.to_csv(paths['raw_data_published'], index=False)
+
+    print(f"Published raw_data_published to {paths['raw_data_published']}")
 
     print("=== Phase 3c publishing complete ===")
 

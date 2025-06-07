@@ -22,16 +22,16 @@ operator_types = ['R', 'P', 'F', 'E', 'C', 'N', 'Em', 'Cm', 'Nm', 'M']
 
 # Map operator types to paths.yaml keys
 operator_path_keys = {
-    'R': 'evodex_r',
-    'P': 'evodex_p',
-    'F': 'evodex_f',
-    'E': 'evodex_e',
-    'C': 'evodex_c',
-    'N': 'evodex_n',
-    'Em': 'evodex_em',
-    'Cm': 'evodex_cm',
-    'Nm': 'evodex_nm',
-    'M': 'evodex_m_subset',
+    'R': 'evodex_r_published',
+    'P': 'evodex_p_published',
+    'F': 'evodex_f_published',
+    'E': 'evodex_e_published',
+    'C': 'evodex_c_published',
+    'N': 'evodex_n_published',
+    'Em': 'evodex_em_published',
+    'Cm': 'evodex_cm_published',
+    'Nm': 'evodex_nm_published',
+    'M': 'evodex_m_subset_published',
 }
 
 # Resolve full paths using paths.yaml

@@ -242,20 +242,20 @@ def generate_html_pages(paths, website_root, pages_dir, evodex_types):
 
     images_dir = os.path.join(website_root, 'images')
 
-    evodex_r_df = pd.read_csv(paths['evodex_r'])
-    evodex_p_df = pd.read_csv(paths['evodex_p'])
-    evodex_f_df = pd.read_csv(paths['evodex_f'])
-    evodex_m_df = pd.read_csv(paths['evodex_m'])
-    evodex_e_synthesis_df = pd.read_csv(paths['evodex_e_synthesis'])
-    evodex_m_subset_df = pd.read_csv(paths['evodex_m_subset'])
+    evodex_r_df = pd.read_csv(paths['evodex_r_published'])
+    evodex_p_df = pd.read_csv(paths['evodex_p_published'])
+    evodex_f_df = pd.read_csv(paths['evodex_f_published'])
+    evodex_m_df = pd.read_csv(paths['evodex_m_published'])
+    evodex_e_synthesis_df = pd.read_csv(paths['evodex_e_synthesis_published'])
+    evodex_m_subset_df = pd.read_csv(paths['evodex_m_subset_published'])
 
     evodex_ro_dfs = {}
     evodex_type_dfs = {}
 
     for evodex_type in evodex_types:
         if evodex_type not in ['R', 'P', 'F', 'M']:
-            evodex_ro_dfs[evodex_type] = pd.read_csv(paths[f'evodex_{evodex_type.lower()}'])
-        evodex_type_dfs[evodex_type] = pd.read_csv(paths[f'evodex_{evodex_type.lower()}'])
+            evodex_ro_dfs[evodex_type] = pd.read_csv(paths[f'evodex_{evodex_type.lower()}_published'])
+        evodex_type_dfs[evodex_type] = pd.read_csv(paths[f'evodex_{evodex_type.lower()}_published'])
 
     ro_metadata = {
         'E': {'title': 'Reaction Operator E'},
@@ -279,7 +279,7 @@ def generate_html_pages(paths, website_root, pages_dir, evodex_types):
                 'smirks': row['smirks']
             })
 
-    source_df = pd.read_csv(paths['raw_data'])
+    source_df = pd.read_csv(paths['raw_data_published'])
 
     generate_evodex_r_pages(env, evodex_r_df, source_df, pages_dir)
     generate_evodex_p_pages(env, evodex_p_df, evodex_r_df, evodex_f_df, evodex_m_df, evodex_ro_dfs, ro_metadata, pages_dir)

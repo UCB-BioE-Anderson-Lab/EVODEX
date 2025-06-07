@@ -59,6 +59,21 @@ evodex_e_synthesis: "data/processed/EVODEX-E_synthesis_subset.csv"
 # Mass spec subset
 evodex_m_subset: "data/processed/EVODEX-M_mass_spec_subset.csv"
 
+# Final published included in evodex/data
+evodex_r_published: "evodex/data/EVODEX-R_full_reactions.csv"
+evodex_p_published: "evodex/data/EVODEX-P_partial_reactions.csv"
+evodex_f_published: "evodex/data/EVODEX-F_unique_formulas.csv"
+evodex_e_published: "evodex/data/EVODEX-E_reaction_operators.csv"
+evodex_n_published: "evodex/data/EVODEX-N_reaction_operators.csv"
+evodex_c_published: "evodex/data/EVODEX-C_reaction_operators.csv"
+evodex_em_published: "evodex/data/EVODEX-Em_reaction_operators.csv"
+evodex_nm_published: "evodex/data/EVODEX-Nm_reaction_operators.csv"
+evodex_cm_published: "evodex/data/EVODEX-Cm_reaction_operators.csv"
+evodex_m_published: "evodex/data/EVODEX-M_unique_masses.csv"
+evodex_e_synthesis_published: "evodex/data/EVODEX-E_synthesis_subset.csv"
+evodex_m_subset_published: "evodex/data/EVODEX-M_mass_spec_subset.csv"
+raw_data_published: "evodex/data/selected_reactions.csv"
+
 # Error logs
 errors_dir: "data/errors/"
 
