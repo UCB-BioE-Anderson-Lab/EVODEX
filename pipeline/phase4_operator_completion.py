@@ -6,6 +6,8 @@ from evodex.utils import reaction_hash
 from pipeline.config import load_paths
 from pipeline.version import __version__
 import time
+import sys
+csv.field_size_limit(sys.maxsize)
 
 # Phase 4: Operator Completion
 # This script derives additional operator forms (EVODEX-C, EVODEX-N, EVODEX-Em, EVODEX-Cm, EVODEX-Nm)

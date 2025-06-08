@@ -5,6 +5,8 @@ from evodex.formula import calculate_exact_mass
 from pipeline.config import load_paths
 from pipeline.version import __version__
 import time
+import sys
+csv.field_size_limit(sys.maxsize)
 
 # Phase 5: Mass Spec Subset
 # This phase generates EVODEX_M and EVODEX_M_SUBSET tables.

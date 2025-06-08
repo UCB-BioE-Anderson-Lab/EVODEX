@@ -7,6 +7,8 @@ from pipeline.config import load_paths
 from evodex.evaluation import match_operators
 from evodex.astatine import convert_dataframe_smiles_column
 from pipeline.version import __version__
+import sys
+csv.field_size_limit(sys.maxsize)
 
 """
 Phase 3b: ERO Trimming (Dominance Pruning)

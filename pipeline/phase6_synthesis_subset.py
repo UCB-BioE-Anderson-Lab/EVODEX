@@ -6,6 +6,8 @@ from collections import defaultdict
 from evodex.decofactor import contains_cofactor
 from pipeline.config import load_paths
 from pipeline.version import __version__
+import sys
+csv.field_size_limit(sys.maxsize)
 
 # Phase 6: Synthesis Subset
 # This phase filters EVODEX-E operators to a subset usable for synthesis algorithms.

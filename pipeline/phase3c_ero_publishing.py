@@ -6,6 +6,8 @@ import pandas as pd
 from pipeline.config import load_paths
 from pipeline.version import __version__
 from evodex.astatine import convert_dataframe_smiles_column
+import sys
+csv.field_size_limit(sys.maxsize)
 
 """
 Phase 3c: EVODEX Publishing to evodex/data
