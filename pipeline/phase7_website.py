@@ -3,6 +3,8 @@ import sys
 import csv
 from pathlib import Path
 import time
+import sys
+csv.field_size_limit(sys.maxsize)
 
 # Phase 7: Website Generation
 # This phase generates the full EVODEX website. For each operator type (R, P, F, E, C, N, EM, CM, NM, M),

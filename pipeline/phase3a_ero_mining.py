@@ -6,6 +6,8 @@ from evodex.operators import extract_operator
 from evodex.utils import reaction_hash
 from pipeline.config import load_paths
 from pipeline.version import __version__
+import sys
+csv.field_size_limit(sys.maxsize)
 
 # Phase 3a: EVODEX-E Mining
 #

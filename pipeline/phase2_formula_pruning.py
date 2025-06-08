@@ -8,6 +8,8 @@ from pipeline.config import load_paths
 from pipeline.version import __version__
 import hashlib
 import time
+import sys
+csv.field_size_limit(sys.maxsize)
 
 # Phase 2: Formula-Based Pruning
 # This script takes the deduplicated EVODEX-R reactions and computes formula differences to derive EVODEX-F entries.

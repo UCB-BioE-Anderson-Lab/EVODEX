@@ -8,8 +8,8 @@ from pipeline.config import load_paths
 
 # Define pipeline steps
 PIPELINE_STEPS = [
-    "pipeline.phase1_data_preparation",
-    "pipeline.phase2_formula_pruning",
+    # "pipeline.phase1_data_preparation",
+    # "pipeline.phase2_formula_pruning",
     "pipeline.phase3a_ero_mining",
     "pipeline.phase3b_ero_trimming",
     "pipeline.phase3c_ero_publishing",
@@ -30,49 +30,49 @@ def run_pipeline():
     evodex_data_dir = 'evodex/data'
     website_dir = 'website'
 
-    print("\n--- Clearing data and website folders ---")
+    # print("\n--- Clearing data and website folders ---")
 
-    # Clear data directory
-    os.makedirs(data_dir, exist_ok=True)
-    for filename in os.listdir(data_dir):
-        file_path = os.path.join(data_dir, filename)
-        if os.path.isfile(file_path) and filename.endswith('.csv'):
-            os.remove(file_path)
+    # # Clear data directory
+    # os.makedirs(data_dir, exist_ok=True)
+    # for filename in os.listdir(data_dir):
+    #     file_path = os.path.join(data_dir, filename)
+    #     if os.path.isfile(file_path) and filename.endswith('.csv'):
+    #         os.remove(file_path)
 
-    # Clear evodex/data directory
-    os.makedirs(evodex_data_dir, exist_ok=True)
-    for filename in os.listdir(evodex_data_dir):
-        file_path = os.path.join(evodex_data_dir, filename)
-        if os.path.isfile(file_path) and (filename.endswith('.csv') or filename.endswith('.json')):
-            os.remove(file_path)
+    # # Clear evodex/data directory
+    # os.makedirs(evodex_data_dir, exist_ok=True)
+    # for filename in os.listdir(evodex_data_dir):
+    #     file_path = os.path.join(evodex_data_dir, filename)
+    #     if os.path.isfile(file_path) and (filename.endswith('.csv') or filename.endswith('.json')):
+    #         os.remove(file_path)
 
-    # Clear website directory
-    os.makedirs(website_dir, exist_ok=True)
-    for root, dirs, files in os.walk(website_dir):
-        for filename in files:
-            file_path = os.path.join(root, filename)
-            os.remove(file_path)
+    # # Clear website directory
+    # os.makedirs(website_dir, exist_ok=True)
+    # for root, dirs, files in os.walk(website_dir):
+    #     for filename in files:
+    #         file_path = os.path.join(root, filename)
+    #         os.remove(file_path)
 
-    print("--- Data and website folders cleared ---")
+    # print("--- Data and website folders cleared ---")
 
-    # Step 2: Download and extract raw data
-    raw_dir = os.path.join(data_dir, 'raw')
-    os.makedirs(raw_dir, exist_ok=True)
+    # # Step 2: Download and extract raw data
+    # raw_dir = os.path.join(data_dir, 'raw')
+    # os.makedirs(raw_dir, exist_ok=True)
 
-    print("\n--- Downloading and extracting raw data ---")
-    url = "https://github.com/hesther/enzymemap/blob/main/data/processed_reactions.csv.gz?raw=true"
-    gz_path = os.path.join(raw_dir, "processed_reactions.csv.gz")
-    csv_path = os.path.join(raw_dir, "raw_reactions.csv")
+    # print("\n--- Downloading and extracting raw data ---")
+    # url = "https://github.com/hesther/enzymemap/blob/main/data/processed_reactions.csv.gz?raw=true"
+    # gz_path = os.path.join(raw_dir, "processed_reactions.csv.gz")
+    # csv_path = os.path.join(raw_dir, "raw_reactions.csv")
 
-    r = requests.get(url)
-    with open(gz_path, "wb") as f:
-        f.write(r.content)
+    # r = requests.get(url)
+    # with open(gz_path, "wb") as f:
+    #     f.write(r.content)
 
-    with gzip.open(gz_path, "rt") as f_in:
-        with open(csv_path, "wt") as f_out:
-            f_out.write(f_in.read())
+    # with gzip.open(gz_path, "rt") as f_in:
+    #     with open(csv_path, "wt") as f_out:
+    #         f_out.write(f_in.read())
 
-    print(f"--- Raw data downloaded and extracted to {csv_path} ---")
+    # print(f"--- Raw data downloaded and extracted to {csv_path} ---")
 
     for step in PIPELINE_STEPS:
         print(f"\n--- Starting {step} ---")
