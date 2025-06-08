@@ -22,6 +22,9 @@ evodex_f_preliminary: "data/processed/temp_evodex_f_preliminary.csv"
 evodex_f_filtered: "data/processed/temp_evodex_f_filtered.csv"
 evodex_p_filtered: "data/processed/temp_evodex_p_filtered.csv"
 
+# Phase 3 outputs
+evodex_e_phase3_all: "data/processed/evodex_e_phase3_all.csv"
+
 # Phase 3a outputs
 evodex_e_phase3a_preliminary: "data/processed/evodex_e_phase3a_preliminary.csv"
 evodex_p_phase3a_retained: "data/processed/evodex_p_phase3a_retained.csv"

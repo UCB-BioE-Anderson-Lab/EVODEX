@@ -185,6 +185,8 @@ def main():
 
     # Filter rows where rxn_idx is in source_ids
     raw_data_published_df = raw_data_df[raw_data_df['rxn_idx'].isin(source_ids)].copy()
+    # De-duplicate by rxn_idx so only one row per rxn_idx is kept
+    raw_data_published_df = raw_data_published_df.drop_duplicates(subset='rxn_idx')
 
     # Write to raw_data_published path (keep same columns)
     raw_data_published_df.to_csv(paths['raw_data_published'], index=False)

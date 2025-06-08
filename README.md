@@ -154,7 +154,8 @@ Then run the following modules sequentially:
 ```bash
 python -m pipeline.phase1_data_preparation
 python -m pipeline.phase2_formula_pruning
-python -m pipeline.phase3a_ero_mining
+python -m pipeline.phase3_ero_mining
+python -m pipeline.phase3a_ero_pruning
 python -m pipeline.phase3b_ero_trimming
 python -m pipeline.phase3c_ero_publishing
 python -m pipeline.phase4_operator_completion

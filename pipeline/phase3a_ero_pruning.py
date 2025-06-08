@@ -9,8 +9,8 @@ from pipeline.version import __version__
 import sys
 csv.field_size_limit(sys.maxsize)
 
-# Phase 3a: EVODEX-E Mining
-# This phase extracts EVODEX-E operators from the filtered EVODEX-P set.
+# Phase 3a: EVODEX-E Pruning
+# This phase prunes EVODEX-E operators from the full EVODEX-E set.
 # Operators with >1 sources are retained. Operators with only 1 source are excluded. Up to 5 P's are kept per retained E.
 
 def ensure_directories(paths: dict):
@@ -21,44 +21,25 @@ def ensure_directories(paths: dict):
 
 def main():
     start_time = time.time()
-    print("Phase 3a EVODEX-E mining started...")
+    print("Phase 3a EVODEX-E pruning started...")
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
 
-    # Load EVODEX-P filtered entries and extract operators within error log context
-    p_entries = []
-    error_log_path = os.path.join(paths['errors_dir'], 'phase3a_ero_errors.csv')
-    with open(error_log_path, 'w', newline='') as errorfile:
-        err_writer = csv.DictWriter(errorfile, fieldnames=['id', 'smirks', 'error_message'])
-        err_writer.writeheader()
+    # Load EVODEX-E full entries
+    e_entries = []
+    with open(paths['evodex_e_phase3_all'], 'r') as efile:
+        reader = csv.DictReader(efile)
+        for row in reader:
+            e_entries.append(row)
 
-        with open(paths['evodex_p_filtered'], 'r') as pfile:
-            reader = csv.DictReader(pfile)
-            for row in reader:
-                p_entries.append(row)
-
-        # Extract EVODEX-E operators and record supporting sources
-        operator_map = defaultdict(lambda: {'smirks': None, 'sources': set()})
-        for i, row in enumerate(p_entries, start=1):
-            if i % 100 == 0:
-                print(f"Processing EVODEX-P row {i} for operator extraction...")
-            try:
-                op_smirks = extract_operator(
-                    row['smirks'],
-                    include_stereochemistry=True,
-                    include_sigma=True,
-                    include_pi=True,
-                    include_unmapped_hydrogens=True,
-                    include_unmapped_heavy_atoms=True,
-                    include_static_hydrogens=True
-                )
-                if op_smirks.startswith(">>") or op_smirks.endswith(">>"):
-                    continue
-                op_hash = reaction_hash(op_smirks)
-                operator_map[op_hash]['smirks'] = op_smirks
-                operator_map[op_hash]['sources'].add(row['id'])
-            except Exception as e:
-                err_writer.writerow({'id': row['id'], 'smirks': row['smirks'], 'error_message': str(e)})
+    # Build operator_map from EVODEX-E entries
+    operator_map = defaultdict(lambda: {'smirks': None, 'sources': set()})
+    for row in e_entries:
+        op_hash = row['id']
+        operator_map[op_hash]['smirks'] = row['smirks']
+        if row['sources']:
+            sources_set = set(row['sources'].split(','))
+            operator_map[op_hash]['sources'].update(sources_set)
 
     # Retain operators with >1 sources (operators with only 1 source are excluded)
     retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) > 1}
@@ -121,7 +102,7 @@ def main():
         report_file.write(f"  Operators retained (>1 sources): {num_ops_retained}\n")
         report_file.write(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}\n")
 
-    print(f"Phase 3a EVODEX-E mining complete. Retained {len(retained_ops)} operators with >1 sources. Up to 5 sources retained per operator.")
+    print(f"Phase 3a EVODEX-E pruning complete. Retained {len(retained_ops)} operators with >1 sources. Up to 5 sources retained per operator.")
 
     # === Prune EVODEX-P to only retained P entries ===
     # Build set of surviving P IDs — up to 5 per E
@@ -154,18 +135,10 @@ def main():
 
     print(f"Pruned EVODEX-P: {len(retained_p_rows)} retained of {len(p_rows)} original entries.")
 
-    # Report extraction errors
-    try:
-        with open(error_log_path, 'r') as errfile:
-            error_count = sum(1 for _ in errfile) - 1  # subtract header
-    except Exception:
-        error_count = 0
-    print(f"Number of extraction errors recorded: {error_count}")
-
     # Done
     end_time = time.time()
     elapsed_time = end_time - start_time
-    print(f"Phase 3a EVODEX-E mining completed in {elapsed_time:.2f} seconds.")
+    print(f"Phase 3a EVODEX-E pruning completed in {elapsed_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()
