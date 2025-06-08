@@ -11,7 +11,7 @@ csv.field_size_limit(sys.maxsize)
 
 # Phase 3a: EVODEX-E Mining
 # This phase extracts EVODEX-E operators from the filtered EVODEX-P set.
-# Operators supported by >=5 sources are retained. Exactly 5 P's are kept per retained E.
+# Operators with >1 sources are retained. Operators with only 1 source are excluded. Up to 5 P's are kept per retained E.
 
 def ensure_directories(paths: dict):
     for path in paths.values():
@@ -60,8 +60,8 @@ def main():
             except Exception as e:
                 err_writer.writerow({'id': row['id'], 'smirks': row['smirks'], 'error_message': str(e)})
 
-    # Retain operators supported by >=5 sources
-    retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) >= 5}
+    # Retain operators with >1 sources (operators with only 1 source are excluded)
+    retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) > 1}
 
     # Statistics on retained operators
     import statistics
@@ -71,14 +71,14 @@ def main():
     mean_sources = statistics.mean(num_sources_list) if num_sources_list else 0
     median_sources = statistics.median(num_sources_list) if num_sources_list else 0
 
-    # Retention breakdown
-    num_ops_lacking_5 = sum(1 for v in operator_map.values() if len(v['sources']) < 5)
+    # Retention breakdown (dropping operators with only 1 source, keeping up to 5 sources per retained E)
+    num_ops_excluded = sum(1 for v in operator_map.values() if len(v['sources']) <= 1)
     num_ops_retained = len(retained_ops)
     num_ops_trimmed = sum(1 for v in retained_ops.values() if len(v['sources']) > 5)
 
     print("Operator retention breakdown:")
-    print(f"  Operators lacking 5 sources: {num_ops_lacking_5}")
-    print(f"  Operators retained (>=5 sources): {num_ops_retained}")
+    print(f"  Operators with only 1 source (excluded): {num_ops_excluded}")
+    print(f"  Operators retained (>1 sources): {num_ops_retained}")
     print(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}")
 
     # Sort retained_ops by number of sources (descending)
@@ -88,13 +88,13 @@ def main():
         reverse=True
     )
 
-    # Write retained EVODEX-E operators to preliminary file (trim sources to exactly 5 per operator)
+    # Write retained EVODEX-E operators to preliminary file (trim sources to up to 5 per operator)
     with open(paths['evodex_e_phase3a_preliminary'], 'w', newline='') as outfile:
         fieldnames = ['id', 'smirks', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         for op_hash, data in sorted_retained_ops:
-            selected_sources = sorted(data['sources'])[:5]
+            selected_sources = sorted(data['sources'])[:5] if data['sources'] else []
             writer.writerow({
                 'id': op_hash,
                 'smirks': data['smirks'],
@@ -117,17 +117,17 @@ def main():
         report_file.write(f"  mean: {mean_sources:.2f}\n")
         report_file.write(f"  median: {median_sources}\n")
         report_file.write(f"\nOperator retention breakdown:\n")
-        report_file.write(f"  Operators lacking 5 sources: {num_ops_lacking_5}\n")
-        report_file.write(f"  Operators retained (>=5 sources): {num_ops_retained}\n")
+        report_file.write(f"  Operators with only 1 source (excluded): {num_ops_excluded}\n")
+        report_file.write(f"  Operators retained (>1 sources): {num_ops_retained}\n")
         report_file.write(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}\n")
 
-    print(f"Phase 3a EVODEX-E mining complete. Retained {len(retained_ops)} operators with >=5 sources.")
+    print(f"Phase 3a EVODEX-E mining complete. Retained {len(retained_ops)} operators with >1 sources. Up to 5 sources retained per operator.")
 
     # === Prune EVODEX-P to only retained P entries ===
-    # Build set of surviving P IDs — exactly 5 per E
+    # Build set of surviving P IDs — up to 5 per E
     surviving_p_ids = set()
     for data in retained_ops.values():
-        selected_sources = sorted(data['sources'])[:5]
+        selected_sources = sorted(data['sources'])[:5] if data['sources'] else []
         surviving_p_ids.update(selected_sources)
 
     # Load EVODEX-P again
