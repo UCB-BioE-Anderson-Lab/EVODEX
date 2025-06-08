@@ -33,6 +33,16 @@ def main():
     print("Phase 3b ERO trimming (dominance pruning) started...")
     # Load paths
     paths = load_paths('pipeline/config/paths.yaml')
+
+    # --- Cleanup old EVODEX data JSON files ---
+    json_files = [
+        "evodex/data/evaluation_operator_data.json",
+        "evodex/data/evodex_e_data.json"
+    ]
+    for file in json_files:
+        if os.path.exists(file):
+            os.remove(file)
+    print("Cleaned up old EVODEX data JSON files.")
     
     # === Step 1: Convert required inputs to H ===
     print("Converting EVODEX-E Phase 3a preliminary to H...")

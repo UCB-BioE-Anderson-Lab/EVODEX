@@ -193,6 +193,16 @@ def main():
 
     print(f"Published raw_data_published to {paths['raw_data_published']}")
 
+    # --- Cleanup old EVODEX data JSON files ---
+    json_files = [
+        "evodex/data/evaluation_operator_data.json",
+        "evodex/data/evodex_e_data.json"
+    ]
+    for file in json_files:
+        if os.path.exists(file):
+            os.remove(file)
+    print("Cleaned up old EVODEX data JSON files.")
+
     print("=== Phase 3c publishing complete ===")
 
     end_time = time.time()
