@@ -4,28 +4,28 @@ from evodex.utils import get_molecule_hash
 from evodex.formula import calculate_formula_diff
 from typing import List, Dict
 
-def project_operator(smirks, substrate):
+def project_operator(smirks, substrates):
     """
-    Apply a reaction operator (SMIRKS) to a substrate and return a list of product SMILES.
+    Apply a reaction operator (SMIRKS) to an n-substrate set and return a list of product SMILES sets.
     """
     rxn = AllChem.ReactionFromSmarts(smirks)
     if not rxn or rxn.GetNumReactantTemplates() == 0 or rxn.GetNumProductTemplates() == 0:
         raise ValueError(f"Invalid reaction SMIRKS: {smirks}")
-    
-    substrate_mol = Chem.MolFromSmiles(substrate)
-    if not substrate_mol:
-        raise ValueError(f"Invalid substrate SMILES: {substrate}")
-    
-    substrate_mol = Chem.AddHs(substrate_mol)
-    products = rxn.RunReactants((substrate_mol,))
-    
+
+    substrate_mols = [Chem.MolFromSmiles(s) for s in substrates.split('.')]
+    if not all(substrate_mols):
+        raise ValueError(f"Invalid substrate SMILES in: {substrates}")
+
+    substrate_mols = [Chem.AddHs(m) for m in substrate_mols]
+
+    products = rxn.RunReactants(tuple(substrate_mols))
+
     unique_products = set()
     for product_tuple in products:
-        for product in product_tuple:
-            if product:
-                canonical_smiles = Chem.MolToSmiles(product)
-                unique_products.add(canonical_smiles)
-    
+        product_smiles = [Chem.MolToSmiles(p) for p in product_tuple if p]
+        joined = '.'.join(sorted(product_smiles))  # Sorted for canonical comparison
+        unique_products.add(joined)
+
     return list(unique_products)
 
 def match_projection(ero_smirks, substrate, expected_product):

@@ -11,7 +11,7 @@ csv.field_size_limit(sys.maxsize)
 
 # Phase 3a: EVODEX-E Pruning
 # This phase prunes EVODEX-E operators from the full EVODEX-E set.
-# Operators with >1 sources are retained. Operators with only 1 source are excluded. Up to 5 P's are kept per retained E.
+# Operators with >=5 sources are retained. Operators with fewer than 5 sources are excluded. Up to 5 P's are kept per retained E.
 
 def ensure_directories(paths: dict):
     for path in paths.values():
@@ -41,8 +41,8 @@ def main():
             sources_set = set(row['sources'].split(','))
             operator_map[op_hash]['sources'].update(sources_set)
 
-    # Retain operators with >1 sources (operators with only 1 source are excluded)
-    retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) > 1}
+    # Retain operators with >=5 sources (operators with fewer than 5 sources are excluded)
+    retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) >= 5}
 
     # Statistics on retained operators
     import statistics
@@ -53,13 +53,13 @@ def main():
     median_sources = statistics.median(num_sources_list) if num_sources_list else 0
 
     # Retention breakdown (dropping operators with only 1 source, keeping up to 5 sources per retained E)
-    num_ops_excluded = sum(1 for v in operator_map.values() if len(v['sources']) <= 1)
+    num_ops_excluded = sum(1 for v in operator_map.values() if len(v['sources']) <= 5)
     num_ops_retained = len(retained_ops)
     num_ops_trimmed = sum(1 for v in retained_ops.values() if len(v['sources']) > 5)
 
     print("Operator retention breakdown:")
-    print(f"  Operators with only 1 source (excluded): {num_ops_excluded}")
-    print(f"  Operators retained (>1 sources): {num_ops_retained}")
+    print(f"  Operators with <5 sources (excluded): {num_ops_excluded}")
+    print(f"  Operators retained (>=5 sources): {num_ops_retained}")
     print(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}")
 
     # Sort retained_ops by number of sources (descending)
@@ -99,10 +99,10 @@ def main():
         report_file.write(f"  median: {median_sources}\n")
         report_file.write(f"\nOperator retention breakdown:\n")
         report_file.write(f"  Operators with only 1 source (excluded): {num_ops_excluded}\n")
-        report_file.write(f"  Operators retained (>1 sources): {num_ops_retained}\n")
+        report_file.write(f"  Operators retained (>=5 sources): {num_ops_retained}\n")
         report_file.write(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}\n")
 
-    print(f"Phase 3a EVODEX-E pruning complete. Retained {len(retained_ops)} operators with >1 sources. Up to 5 sources retained per operator.")
+    print(f"Phase 3a EVODEX-E pruning complete. Retained {len(retained_ops)} operators with >=5 sources. Up to 5 sources retained per operator.")
 
     # === Prune EVODEX-P to only retained P entries ===
     # Build set of surviving P IDs — up to 5 per E

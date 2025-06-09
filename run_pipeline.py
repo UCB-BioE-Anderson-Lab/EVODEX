@@ -10,7 +10,7 @@ from pipeline.config import load_paths
 PIPELINE_STEPS = [
     # "pipeline.phase1_data_preparation",
     # "pipeline.phase2_formula_pruning",
-    "pipeline.phase3_ero_mining",
+    # "pipeline.phase3_ero_mining",
     "pipeline.phase3a_ero_pruning",
     "pipeline.phase3b_ero_trimming",
     "pipeline.phase3c_ero_publishing",

@@ -8,6 +8,7 @@ from evodex.formula import calculate_formula_diff
 from evodex.utils import get_molecule_hash
 import json
 from itertools import combinations
+from evodex.projection import project_operator
 
 # Initialize caches
 evodex_f_cache = None
@@ -204,7 +205,7 @@ def _match_operator(smirks, evodex_type='E'):
         try:
             id = operator["id"]
             # print(f"Projecting: {id} on {sub_smiles}")
-            projected_pdts = project_evodex_operator(id, sub_smiles)
+            projected_pdts = project_operator(operator['smirks'], sub_smiles)
             for proj_smiles in projected_pdts:
                 proj_hash = get_molecule_hash(proj_smiles)
                 # print(f"Projected product: {proj_smiles} with hash {proj_hash}")
@@ -216,6 +217,54 @@ def _match_operator(smirks, evodex_type='E'):
             pass
 
     return valid_operators
+
+
+# New function: find_exact_matching_operators
+def find_exact_matching_operators(p_smirks, evodex_type='E'):
+    """
+    Find operators that exactly match the given P reaction.
+
+    Uses formula diff lookup to limit candidates.
+
+    Parameters:
+    p_smirks (str): SMIRKS string of P reaction (substrates>>products)
+    evodex_type (str): Operator type ('E', 'N', 'C')
+
+    Returns:
+    list: List of operator IDs that exactly match P
+    """
+    f_id_list = assign_evodex_F(p_smirks)
+    if not f_id_list:
+        return []
+    f_id = f_id_list[0]
+    # print(f"Matched F ID: {f_id} for P SMIRKS: {p_smirks}")
+
+    evodex_data = _load_evodex_data()
+    if f_id not in evodex_data:
+        return []
+
+    candidate_operators = evodex_data[f_id].get(evodex_type, [])
+    substrates, products = p_smirks.split('>>')
+    products_hash = get_molecule_hash(products)
+
+    exact_matches = []
+    for operator in candidate_operators:
+        op_id = operator['id']
+        op_smirks = operator.get('smirks', 'MISSING')
+        # print(f"Testing operator {op_id} with SMIRKS: {op_smirks}")
+        # print(f"Substrates: {substrates}")
+        # print(f"Products: {products}")
+        try:
+            projected_pdts = project_operator(op_smirks, substrates)
+            for proj_smiles in projected_pdts:
+                proj_hash = get_molecule_hash(proj_smiles)
+                if proj_hash == products_hash:
+                    exact_matches.append(op_id)
+                    break  # One match is enough
+        except Exception as e:
+            pass
+
+    return exact_matches
 
 def _load_evodex_data():
     """
@@ -327,9 +376,16 @@ def _create_evodex_json(file_suffix):
 if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-    smirks = "CCCO>>CCCOC"
-    is_valid_formula = assign_evodex_F(smirks)
-    print(f"{smirks} matches: {is_valid_formula}")
+    # methylation_smiles = "CCCO>>CCCOC"
+    # is_valid_formula = assign_evodex_F(methylation_smiles)
+    # print(f"{methylation_smiles} matches: {is_valid_formula}")
 
-    matching_operators = match_operators(smirks, 'E')
-    print(f"Matching operators for {smirks}: {matching_operators}")
+    # matching_operators = match_operators(methylation_smiles, 'E')
+    # print(f"Matching operators for {methylation_smiles}: {matching_operators}")
+
+    # exact_matches = find_exact_matching_operators(methylation_smiles, 'E')
+    # print(f"Exact matching operators for {methylation_smiles}: {exact_matches}")
+
+    amide_smiles = "CC(=O)NC>>CC(=O)O.NC"
+    exact_matches = find_exact_matching_operators(amide_smiles, 'E')
+    print(f"Exact matching operators for {amide_smiles}: {exact_matches}")

@@ -5,7 +5,7 @@ import time
 import pandas as pd
 import concurrent.futures
 from pipeline.config import load_paths
-from evodex.evaluation import match_operators
+from evodex.evaluation import find_exact_matching_operators
 from evodex.astatine import convert_dataframe_smiles_column
 from pipeline.version import __version__
 import sys
@@ -80,7 +80,7 @@ def main():
         for _, row in evodex_p_h_df.iterrows():
             p_id = row['id']
             smirks = row['smirks']
-            future = executor.submit(match_operators, smirks)
+            future = executor.submit(find_exact_matching_operators, smirks)
             try:
                 matched_ops = future.result(timeout=60)  # 60-second timeout
                 for op_id in matched_ops:
