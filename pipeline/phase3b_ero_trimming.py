@@ -9,7 +9,10 @@ from evodex.evaluation import find_exact_matching_operators
 from evodex.astatine import convert_dataframe_smiles_column
 from pipeline.version import __version__
 import sys
+import psutil
+import tracemalloc
 csv.field_size_limit(sys.maxsize)
+
 
 """
 Phase 3b: ERO Trimming (Dominance Pruning)
@@ -29,8 +32,15 @@ Outputs (all in data/processed/):
 - evodex_r_phase3b_final (At)
 """
 
+# Helper function to log memory usage
+def log_memory_usage(label=""):
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info().rss / (1024 * 1024)
+    print(f"[MEMORY] {label}: {mem:.2f} MB")
+
 def main():
     start_time = time.time()
+    tracemalloc.start()
     print("Phase 3b ERO trimming (dominance pruning) started...")
     # Load paths
     paths = load_paths('pipeline/config/paths.yaml')
@@ -75,22 +85,36 @@ def main():
     print("Running match_operators to build dominance table...")
     evodex_p_h_df = pd.read_csv(paths['evodex_p_phase3a_retained_H'])
 
+    match_table_path = "temp_match_table.csv"
+    with open(match_table_path, "w", newline="") as mt_file:
+        writer = csv.writer(mt_file)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            for _, row in evodex_p_h_df.iterrows():
+                p_id = row['id']
+                smirks = row['smirks']
+                future = executor.submit(find_exact_matching_operators, smirks)
+                try:
+                    matched_ops = future.result(timeout=60)  # 60-second timeout
+                    if len(matched_ops) > 100:
+                        print(f"INFO: P {p_id} matched unusually high number of operators: {len(matched_ops)}")
+                    for op_id in matched_ops:
+                        writer.writerow([op_id, p_id])
+                except concurrent.futures.TimeoutError:
+                    print(f"WARNING: Timeout for P {p_id}. Skipping this reaction.")
+                except Exception as e:
+                    print(f"ERROR processing P {p_id}: {e}. Skipping.")
+                if _ % 1000 == 0:
+                    print(f"[DEBUG] Processed {_} Ps so far")
+                    # Cannot print match_table size here as it's not in memory
+                    log_memory_usage(f"Checkpoint {_}")
+
     match_table = dict()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        for _, row in evodex_p_h_df.iterrows():
-            p_id = row['id']
-            smirks = row['smirks']
-            future = executor.submit(find_exact_matching_operators, smirks)
-            try:
-                matched_ops = future.result(timeout=60)  # 60-second timeout
-                for op_id in matched_ops:
-                    if op_id not in match_table:
-                        match_table[op_id] = set()
-                    match_table[op_id].add(p_id)
-            except concurrent.futures.TimeoutError:
-                print(f"WARNING: Timeout for P {p_id}. Skipping this reaction.")
-            except Exception as e:
-                print(f"ERROR processing P {p_id}: {e}. Skipping.")
+    with open(match_table_path, "r") as f:
+        reader = csv.reader(f)
+        for op_id, p_id in reader:
+            if op_id not in match_table:
+                match_table[op_id] = set()
+            match_table[op_id].add(p_id)
 
     print(f"Total operators matched: {len(match_table)}")
     total_matches = sum(len(pids) for pids in match_table.values())
@@ -149,10 +173,11 @@ def main():
     filtered_e_df = original_e_df[original_e_df['original_hash'].isin(retained_hashes)].copy()
 
     surviving_p_hashes = set()
-    for sources_str in filtered_e_df['sources'].dropna():
-        surviving_p_hashes.update(sources_str.split(','))
-    surviving_p_hashes = sorted(surviving_p_hashes)
-    p_id_map = {p_hash: f"EVODEX.{__version__}-P{idx+1}" for idx, p_hash in enumerate(surviving_p_hashes)}
+    for sources_str in filtered_e_df['sources']:
+        if pd.notna(sources_str):
+            surviving_p_hashes.update(sources_str.split(','))
+
+    p_id_map = {p_hash: f"EVODEX.{__version__}-P{idx+1}" for idx, p_hash in enumerate(sorted(surviving_p_hashes))}
 
     filtered_e_df['id'] = [f"EVODEX.{__version__}-E{idx+1}" for idx in range(len(filtered_e_df))]
     # Remove map_e_sources logic; leave sources as raw hashes
@@ -168,17 +193,15 @@ def main():
     print(f"Final pruned EVODEX-P saved to {paths['evodex_p_phase3b_final']}.")
 
     # Final EVODEX-F
-    evodex_f_df = pd.read_csv(paths['evodex_f_filtered'])
+    def row_is_valid(row):
+        return any(src in surviving_p_hashes for src in row['sources'].split(',')) if pd.notna(row['sources']) else False
 
-    # Define function to check if F row has at least one valid P source
-    def f_row_has_valid_source(sources_str):
-        if pd.isna(sources_str):
-            return False
-        sources = sources_str.split(',')
-        return any(src in surviving_p_hashes for src in sources)
-
-    # Filter rows where F has at least one valid P source
-    filtered_f_df = evodex_f_df[evodex_f_df['sources'].apply(f_row_has_valid_source)].copy()
+    filtered_f_chunks = pd.read_csv(paths['evodex_f_filtered'], chunksize=10000)
+    pruned_rows = []
+    for chunk in filtered_f_chunks:
+        chunk = chunk[chunk.apply(row_is_valid, axis=1)]
+        pruned_rows.append(chunk)
+    filtered_f_df = pd.concat(pruned_rows)
 
     # Prune sources to only surviving_p_hashes
     def prune_f_sources(sources_str):
@@ -195,10 +218,7 @@ def main():
     print(f"Final pruned EVODEX-F saved to {paths['evodex_f_phase3b_final']}.")
 
     # Final EVODEX-R
-    evodex_r_df = pd.read_csv(paths['evodex_r_preliminary'])
-    evodex_r_df['sources'] = evodex_r_df['sources'].astype(str)
-
-    # Gather surviving R hashes from surviving P's sources
+    evodex_r_chunks = pd.read_csv(paths['evodex_r_preliminary'], chunksize=10000)
     original_p_df = pd.read_csv(paths['evodex_p_phase3a_retained'])
     surviving_p_df = original_p_df[original_p_df['id'].isin(surviving_p_hashes)].copy()
     surviving_r_hashes = set()
@@ -206,13 +226,23 @@ def main():
         surviving_r_hashes.update(sources_str.split(','))
     surviving_r_hashes = sorted(surviving_r_hashes)
 
-    filtered_r_df = evodex_r_df[evodex_r_df['id'].isin(surviving_r_hashes)].copy()
+    pruned_r_chunks = []
+    for chunk in evodex_r_chunks:
+        filtered_chunk = chunk[chunk['id'].isin(surviving_r_hashes)]
+        pruned_r_chunks.append(filtered_chunk)
+    filtered_r_df = pd.concat(pruned_r_chunks)
     filtered_r_df.to_csv(paths['evodex_r_phase3b_final'], index=False)
     print(f"Final pruned EVODEX-R saved to {paths['evodex_r_phase3b_final']}.")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Phase 3b ERO trimming completed in {elapsed_time:.2f} seconds.")
+
+    snapshot = tracemalloc.take_snapshot()
+    top_stats = snapshot.statistics('lineno')
+    print("[TOP MEMORY USAGE]")
+    for stat in top_stats[:5]:
+        print(stat)
 
 
 if __name__ == "__main__":
