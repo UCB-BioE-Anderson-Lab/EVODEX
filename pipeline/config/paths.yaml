@@ -29,12 +29,14 @@ evodex_e_phase3_all: "data/processed/evodex_e_phase3_all.csv"
 evodex_e_phase3a_preliminary: "data/processed/evodex_e_phase3a_preliminary.csv"
 evodex_p_phase3a_retained: "data/processed/evodex_p_phase3a_retained.csv"
 
-# Phase 3b converted H versions (for match_operators support)
-evodex_e_phase3a_preliminary_H: "data/processed/evodex_e_phase3a_preliminary_H.csv"
-evodex_p_phase3a_retained_H: "data/processed/evodex_p_phase3a_retained_H.csv"
+# Phase 3b H-converted versions (created and used in Phase 3b)
+evodex_e_phase3b_h_converted: "data/processed/evodex_e_phase3b_h_converted.csv"
+evodex_p_phase3b_h_converted: "data/processed/evodex_p_phase3b_h_converted.csv"
 
-# Phase 3b final outputs (At versions)
+# Phase 3b revised outputs
 evodex_e_phase3b_final: "data/processed/evodex_e_phase3b_final.csv"
+evodex_e_phase3b_validated: "data/processed/evodex_e_phase3b_validated.csv"
+evodex_e_phase3b_retained: "data/processed/evodex_e_phase3b_retained.csv"
 evodex_p_phase3b_final: "data/processed/evodex_p_phase3b_final.csv"
 evodex_f_phase3b_final: "data/processed/evodex_f_phase3b_final.csv"
 evodex_r_phase3b_final: "data/processed/evodex_r_phase3b_final.csv"

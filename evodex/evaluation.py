@@ -2,6 +2,8 @@ import os
 import sys
 import pandas as pd
 from rdkit import Chem
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 from rdkit.Chem import AllChem
 from evodex.synthesis import project_evodex_operator
 from evodex.formula import calculate_formula_diff
@@ -34,6 +36,45 @@ def _add_hydrogens(smirks):
     smirks_with_h = f"{substrate_smiles}>>{product_smiles}"
     return smirks_with_h
 
+def operator_matches_reaction(operator_smirks: str, reaction_smiles: str) -> bool:
+    """
+    Determine if a reaction operator (SMIRKS) produces the product of a given reaction (SMILES).
+
+    Parameters:
+    operator_smirks (str): The reaction operator in SMIRKS format.
+    reaction_smiles (str): A full reaction in SMILES format (substrates>>products).
+
+    Returns:
+    bool: True if the operator can generate the correct product(s) from the substrate(s), else False.
+    """
+    # New input validation and logging
+    if not isinstance(operator_smirks, str) or not operator_smirks.strip():
+        raise ValueError(f"[operator_matches_reaction] Invalid operator_smirks: {operator_smirks}")
+    if not isinstance(reaction_smiles, str) or not reaction_smiles.strip():
+        raise ValueError(f"[operator_matches_reaction] Invalid reaction_smiles: {reaction_smiles}")
+    try:
+        reaction_smiles_with_h = _add_hydrogens(reaction_smiles)
+        # Parse the reaction, remove atom maps, and convert back to SMILES
+        rxn = AllChem.ReactionFromSmarts(reaction_smiles_with_h, useSmiles=True)
+        for i in range(rxn.GetNumReactantTemplates()):
+            for atom in rxn.GetReactantTemplate(i).GetAtoms():
+                atom.SetAtomMapNum(0)
+        for i in range(rxn.GetNumProductTemplates()):
+            for atom in rxn.GetProductTemplate(i).GetAtoms():
+                atom.SetAtomMapNum(0)
+        substrates = '.'.join([Chem.MolToSmiles(rxn.GetReactantTemplate(i)) for i in range(rxn.GetNumReactantTemplates())])
+        expected_products = '.'.join([Chem.MolToSmiles(rxn.GetProductTemplate(i)) for i in range(rxn.GetNumProductTemplates())])
+        expected_hashes = set(get_molecule_hash(p) for p in expected_products.split('.'))
+
+        projected_product_sets = project_operator(operator_smirks, substrates)
+        for product_string in projected_product_sets:
+            projected_hashes = set(get_molecule_hash(p) for p in product_string.split('.'))
+            if projected_hashes == expected_hashes:
+                return True
+        return False
+    except Exception:
+        return False
+    
 def assign_evodex_F(smirks):
     """
     Assign an EVODEX-F ID to a given SMIRKS.

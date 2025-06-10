@@ -1,21 +1,44 @@
 # can be deleted, playground for debugging
 
-from evodex.operators import extract_operator
+from evodex.evaluation import operator_matches_reaction
 
-# Example EVODEX-P SMILES
-# evodex_p_smirks = "[At:14]-[#7:1]=[#6:2](-[#7:3](-[At:15])-[At:16])-[#7:4](-[At:17])-[#6:5](-[At:18])(-[At:19])-[#6:6](-[At:20])(-[At:21])-[#6:7](-[At:22])(-[At:23])-[#6@:8](-[At:24])(-[#7:9](-[At:25])-[At:26])-[#6:10](=[#8:11])-[#8:12]-[At:27]>>[At:14]-[#7:1](-[At])-[#6:2](-[#7:4](-[At:17])-[#6:5](-[At:18])(-[At:19])-[#6:6](-[At:20])(-[At:21])-[#6:7](-[At:22])(-[At:23])-[#6@:8](-[At:24])(-[#7:9](-[At:25])-[At:26])-[#6:10](=[#8:11])-[#8:12]-[At:27])=[#8].[At:15]-[#7:3](-[At:16])-[At]"
-evodex_p_smirks = "[At:33]-[#6:1](-[At:34])(-[At:35])-[#8:2]-[#6:3](=[#8:4])-[#6@:5](-[At:36])(-[#6:6](-[At:37])(-[At:38])-[#6:7]1:[#6:8](-[At:39]):[#6:9](-[At:40]):[#6:10](-[At:41]):[#6:11](-[At:42]):[#6:12]:1-[At:43])-[#7:13](-[At:44])-[#6:14](=[#8:15])-[#6@:16](-[At:45])(-[#6:17](-[At:46])(-[At:47])-[#6:18](=[#8:19])-[#8:20]-[At:48])-[#7:21](-[At:49])-[#6:22](=[#8:23])-[#8:24]-[#6:25](-[At:50])(-[At:51])-[#6:26]1:[#6:27](-[At:52]):[#6:28](-[At:53]):[#6:29](-[At:54]):[#6:30](-[At:55]):[#6:31]:1-[At:56]>>[At:45]-[#6@@:16](-[#6:14](=[#8:15])-[#8]-[At])(-[#6:17](-[At:46])(-[At:47])-[#6:18](=[#8:19])-[#8:20]-[At:48])-[#7:21](-[At:49])-[#6:22](=[#8:23])-[#8:24]-[#6:25](-[At:50])(-[At:51])-[#6:26]1:[#6:27](-[At:52]):[#6:28](-[At:53]):[#6:29](-[At:54]):[#6:30](-[At:55]):[#6:31]:1-[At:56].[At:33]-[#6:1](-[At:34])(-[At:35])-[#8:2]-[#6:3](=[#8:4])-[#6@:5](-[At:36])(-[#6:6](-[At:37])(-[At:38])-[#6:7]1:[#6:8](-[At:39]):[#6:9](-[At:40]):[#6:10](-[At:41]):[#6:11](-[At:42]):[#6:12]:1-[At:43])-[#7:13](-[At:44])-[At]"
+# # Ketone reduction, with hydrogens
+# rxn = "CC(=O)CCCC>>CC(O)CCCC"
+# ro = "[O:45]=[C:46]([C:47])[C:49]>>[H][O:45][C@@:46]([H])([C:47])[C:49]"
+# result = operator_matches_reaction(ro, rxn)
+# print(result)
 
-# Extract ERO operator (EVODEX-E)
-ero_smirks = extract_operator(
-    evodex_p_smirks,
-    include_stereochemistry=True,
-    include_sigma=True,
-    include_pi=True,
-    include_unmapped_hydrogens=True,
-    include_unmapped_heavy_atoms=True,
-    include_static_hydrogens=True
-)
+# # Ketone reduction, with hydrogens, with extra water
+# rxn = "CC(=O)CCCC>>CC(O)CCCC.O"
+# ro = "[O:45]=[C:46]([C:47])[C:49]>>[H][O:45][C@@:46]([H])([C:47])[C:49]"
+# result = operator_matches_reaction(rxn, ro)
+# print(result)
 
-print("EVODEX-E (ERO) SMIRKS:")
-print(ero_smirks)
+
+# Amide formation
+rxn = "CC(=O)O.CN>>CNC(C)=O"
+ro = "[C:1](=[O:2])O.[N:3]>>[C:1](=[O:2])[N:3]"
+result = operator_matches_reaction(ro, rxn)
+print(result)
+
+
+# Amide formation
+rxn = "NC.CC(=O)O>>CNC(C)=O"
+ro = "[C:1](=[O:2])O.[N:3]>>[C:1](=[O:2])[N:3]"
+result = operator_matches_reaction(ro, rxn)
+print(result)
+
+
+# Amide formation
+rxn = "[H]O[C:12]([C@@:10]([C:2]([C:1]([H:62])([H:63])[H:64])([C:3]([H:52])([H:53])[H:54])[C:4]([O:5][P:6](=[O:7])([O:8][H:55])[O:9][H:56])([H:57])[H:58])([O:11][H:59])[H:61])=[O:13].[H][N:15]([C:16]([C:17]([C:18](=[O:19])[O:20][H:65])([H:66])[H:67])([H:68])[H:69])[H:70]>>[C:1]([C:2]([C:3]([H:52])([H:53])[H:54])([C:4]([O:5][P:6](=[O:7])([O:8][H:55])[O:9][H:56])([H:57])[H:58])[C@@:10]([O:11][H:59])([C:12](=[O:13])[N:15]([C:16]([C:17]([C:18](=[O:19])[O:20][H:65])([H:66])[H:67])([H:68])[H:69])[H:70])[H:61])([H:62])([H:63])[H:64]"
+ro = "[C:1](=[O:2])O.[N:3]>>[C:1](=[O:2])[N:3]"
+result = operator_matches_reaction(ro, rxn)
+print(result)
+
+
+
+# Amide formation
+rxn = "[H]O[C:12]([C@@:10]([C:2]([C:1]([H:62])([H:63])[H:64])([C:3]([H:52])([H:53])[H:54])[C:4]([O:5][P:6](=[O:7])([O:8][H:55])[O:9][H:56])([H:57])[H:58])([O:11][H:59])[H:61])=[O:13].[H][N:15]([C:16]([C:17]([C:18](=[O:19])[O:20][H:65])([H:66])[H:67])([H:68])[H:69])[H:70]>>[C:1]([C:2]([C:3]([H:52])([H:53])[H:54])([C:4]([O:5][P:6](=[O:7])([O:8][H:55])[O:9][H:56])([H:57])[H:58])[C@@:10]([O:11][H:59])([C:12](=[O:13])[N:15]([C:16]([C:17]([C:18](=[O:19])[O:20][H:65])([H:66])[H:67])([H:68])[H:69])[H:70])[H:61])([H:62])([H:63])[H:64]"
+ro = "[H][N:13]([C:14])[H:27].[H]O[C:10]([C:8])=[O:11]>>[C:8][C:10](=[O:11])[N:13]([C:14])[H:27]"
+result = operator_matches_reaction(ro, rxn)
+print(result)

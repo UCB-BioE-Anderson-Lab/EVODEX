@@ -1,29 +1,76 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 from evodex.utils import get_molecule_hash
 from evodex.formula import calculate_formula_diff
 from typing import List, Dict
+import itertools
 
-def project_operator(smirks, substrates):
+def project_operator(operator_smirks, substrates):
     """
     Apply a reaction operator (SMIRKS) to an n-substrate set and return a list of product SMILES sets.
     """
-    rxn = AllChem.ReactionFromSmarts(smirks)
-    if not rxn or rxn.GetNumReactantTemplates() == 0 or rxn.GetNumProductTemplates() == 0:
-        raise ValueError(f"Invalid reaction SMIRKS: {smirks}")
 
-    substrate_mols = [Chem.MolFromSmiles(s) for s in substrates.split('.')]
-    if not all(substrate_mols):
-        raise ValueError(f"Invalid substrate SMILES in: {substrates}")
+    # Check type and format of operator_smirks
+    if not isinstance(operator_smirks, str) or '>>' not in operator_smirks:
+        print(f"[project_operator] Invalid operator_smirks: {operator_smirks}")
+        return []
+    # Build reaction from SMIRKS
+    try:
+        substrate_smirks, product_smirks = operator_smirks.split('>>')
+        reactant_templates = substrate_smirks.split('.')
+        num_operator_substrates = len(reactant_templates)
+        rxn = AllChem.ChemicalReaction()
+        for r in reactant_templates:
+            mol = Chem.MolFromSmarts(r)
+            if mol is None:
+                return []
+            rxn.AddReactantTemplate(mol)
 
-    substrate_mols = [Chem.AddHs(m) for m in substrate_mols]
+        product_template = Chem.MolFromSmarts(product_smirks)
+        if product_template is None:
+            return []
+        rxn.AddProductTemplate(product_template)
+    except Exception as e:
+        print(f"Error parsing operator SMIRKS: {e}")
+        return []
 
-    products = rxn.RunReactants(tuple(substrate_mols))
+    # Convert input substrates into molecules
+    smiles_list = substrates.split('.')
+    substrate_mols = []
+    for smi in smiles_list:
+        mol = Chem.AddHs(Chem.MolFromSmiles(smi))
+        if mol is None:
+            return []
+        substrate_mols.append(mol)
+
+    num_input_substrates = len(substrate_mols)
+
+    # Align input substrates with operator requirements
+    if num_operator_substrates == 1 and num_input_substrates == 1:
+        permutations_to_try = [tuple(substrate_mols)]
+    elif num_operator_substrates == num_input_substrates:
+        permutations_to_try = list(itertools.permutations(substrate_mols, num_operator_substrates))
+    elif num_operator_substrates > 1 and num_input_substrates == 1:
+        repeated = [substrate_mols[0]] * num_operator_substrates
+        permutations_to_try = [tuple(repeated)]
+    else:
+        return []
+
+    all_products = []
+    for perm_group in permutations_to_try:
+        try:
+            result = rxn.RunReactants(tuple(perm_group))
+            if result:
+                all_products.extend(result)
+        except Exception as e:
+            pass
 
     unique_products = set()
-    for product_tuple in products:
+    for product_tuple in all_products:
         product_smiles = [Chem.MolToSmiles(p) for p in product_tuple if p]
-        joined = '.'.join(sorted(product_smiles))  # Sorted for canonical comparison
+        joined = '.'.join(sorted(product_smiles))
         unique_products.add(joined)
 
     return list(unique_products)

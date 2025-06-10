@@ -1,249 +1,323 @@
+from rdkit import Chem
 import shutil
+statistics = {}
 import os
 import csv
 import time
 import pandas as pd
-import concurrent.futures
+import psutil
 from pipeline.config import load_paths
-from evodex.evaluation import find_exact_matching_operators
 from evodex.astatine import convert_dataframe_smiles_column
 from pipeline.version import __version__
-import sys
-import psutil
-import tracemalloc
-csv.field_size_limit(sys.maxsize)
+from evodex.evaluation import operator_matches_reaction
 
 
 """
-Phase 3b: ERO Trimming (Dominance Pruning)
+Phase 3b: EVODEX-E validation and trimming
 
-Goal: Perform dominance pruning of EVODEX-E, and trim P, F, and R accordingly.
-
-Input:
-- evodex_e_phase3a_preliminary (At)
-- evodex_p_phase3a_retained (At)
-- evodex_f_filtered (no SMIRKS, no conversion needed)
-- evodex_r (At)
-
-Outputs (all in data/processed/):
-- evodex_e_phase3b_final (At)
-- evodex_p_phase3b_final (At)
-- evodex_f_phase3b_final (no SMIRKS, no conversion)
-- evodex_r_phase3b_final (At)
+[Insert explanation here]
 """
 
-# Helper function to log memory usage
+csv.field_size_limit(10**7)
+
 def log_memory_usage(label=""):
     process = psutil.Process(os.getpid())
     mem = process.memory_info().rss / (1024 * 1024)
     print(f"[MEMORY] {label}: {mem:.2f} MB")
 
-def main():
-    start_time = time.time()
-    tracemalloc.start()
-    print("Phase 3b ERO trimming (dominance pruning) started...")
-    # Load paths
-    paths = load_paths('pipeline/config/paths.yaml')
 
-    # --- Cleanup old EVODEX data JSON files ---
-    json_files = [
-        "evodex/data/evaluation_operator_data.json",
-        "evodex/data/evodex_e_data.json"
-    ]
-    for file in json_files:
-        if os.path.exists(file):
-            os.remove(file)
-    print("Cleaned up old EVODEX data JSON files.")
-    
-    # === Step 1: Convert required inputs to H ===
+def group_by_formula(evodex_e_df, evodex_f_df):
+    # Partition EROs by F
+    # Return dict of F -> list of EROs
+    formula_groups = {}
+    f_source_map = {}
+
+    skipped_fs = 0
+
+    # Build map of F -> set of P hashes
+    for _, row in evodex_f_df.iterrows():
+        f_id = row['id']
+        sources = row.get('sources')
+        if pd.isna(sources) or sources.strip() == "{}":
+            skipped_fs += 1
+            continue
+        f_source_map[f_id] = set(s.strip() for s in sources.split(',') if s.strip())
+
+    f_e_map = {f: [] for f in f_source_map}
+
+    # Map each E to all F groups whose P hashes include any of the E's P hashes
+    for _, e_row in evodex_e_df.iterrows():
+        e_sources = e_row.get('sources')
+        if pd.isna(e_sources):
+            continue
+        e_p_hashes = set(s.strip() for s in e_sources.split(',') if s.strip())
+        for f_id, f_p_hashes in f_source_map.items():
+            if e_p_hashes & f_p_hashes:
+                f_e_map[f_id].append(e_row)
+
+    # Build final group dict and gather stats
+    formula_groups = {f: rows for f, rows in f_e_map.items() if rows}
+    total_fs = len(evodex_f_df)
+    matched_fs = len(formula_groups)
+    total_es = sum(len(v) for v in formula_groups.values())
+    multi_e_fs = sum(1 for v in formula_groups.values() if len(v) > 1)
+
+    # Compute unmatched Es
+    matched_e_ids = {e['id'] for group in formula_groups.values() for e in group}
+    unmatched_e_count = len(evodex_e_df) - len(matched_e_ids)
+    statistics['group_by_formula'] = {
+        'total_f': total_fs,
+        'matched_f': matched_fs,
+        'total_e': total_es,
+        'multi_e_f': multi_e_fs,
+        'skipped_f': skipped_fs,
+        'unmatched_e': unmatched_e_count
+    }
+
+    print(f"[group_by_formula] Total Fs: {total_fs}, Matched Fs: {matched_fs}, Total Es grouped: {total_es}, Fs with >1 E: {multi_e_fs}")
+
+    return formula_groups
+
+def dominance_prune_within_formula(f_group):
+    def count_substrate_atoms(smirks):
+        try:
+            substrate_part = smirks.split(">>")[0]
+            mols = substrate_part.split(".")
+            total_atoms = 0
+            for mol in mols:
+                m = Chem.MolFromSmiles(mol)
+                if m:
+                    total_atoms += m.GetNumAtoms()
+            return total_atoms
+        except Exception as e:
+            print(f"[count_substrate_atoms] Error processing SMIRKS: {smirks} -> {e}")
+            return 0
+
+    survivors = []
+    for i, e1 in enumerate(f_group):
+        smirks1 = e1['smirks']
+        atoms1 = count_substrate_atoms(smirks1)
+        dominated = False
+        for j, e2 in enumerate(f_group):
+            if i == j:
+                continue
+            smirks2 = e2['smirks']
+            atoms2 = count_substrate_atoms(smirks2)
+
+            # Determine which is larger
+            if atoms1 > atoms2:
+                larger, smaller = smirks1, smirks2
+            elif atoms2 > atoms1:
+                larger, smaller = smirks2, smirks1
+            else:
+                # Still compare operators of equal size
+                if operator_matches_reaction(e2['smirks'], e1['smirks']):
+                    dominated = True
+                    break
+                continue
+
+            # Use larger as the reaction_smiles input
+            if operator_matches_reaction(smaller, larger):
+                dominated = True
+                break
+        if not dominated:
+            survivors.append(e1)
+
+    return survivors
+
+def load_and_prepare_data(paths):
+    # Load EVODEX-E Phase 3a preliminary and convert SMIRKS to H
     print("Converting EVODEX-E Phase 3a preliminary to H...")
     evodex_e_df = pd.read_csv(paths['evodex_e_phase3a_preliminary'])
     converted_e_df, conversion_errors_e = convert_dataframe_smiles_column(evodex_e_df, 'smirks')
-    converted_e_df['original_hash'] = evodex_e_df['id']
-    converted_e_df['id'] = [f"EVODEX.{__version__}-E{idx+1}_temp" for idx in range(len(converted_e_df))]
-    converted_e_df.to_csv(paths['evodex_e_phase3a_preliminary_H'], index=False)
-    print(f"Saved: {paths['evodex_e_phase3a_preliminary_H']}")
-    
+    # Filter out rows with null or empty smirks
+    invalid_e_mask = converted_e_df['smirks'].isna() | (converted_e_df['smirks'].str.strip() == "")
+    invalid_e_rows = evodex_e_df[invalid_e_mask]
+    if not invalid_e_rows.empty:
+        os.makedirs("data/errors", exist_ok=True)
+        invalid_e_rows.to_csv("data/errors/evodex_e_conversion_errors.csv", index=False)
+    converted_e_df = converted_e_df[~invalid_e_mask]
+    converted_e_df.to_csv(paths['evodex_e_phase3b_h_converted'], index=False)
+    print(f"Saved: {paths['evodex_e_phase3b_h_converted']}")
+
+    # Load EVODEX-P Phase 3a retained and convert SMIRKS to H
     print("Converting EVODEX-P Phase 3a retained to H...")
     evodex_p_df = pd.read_csv(paths['evodex_p_phase3a_retained'])
     converted_p_df, conversion_errors_p = convert_dataframe_smiles_column(evodex_p_df, 'smirks')
-    converted_p_df.to_csv(paths['evodex_p_phase3a_retained_H'], index=False)
-    print(f"Saved: {paths['evodex_p_phase3a_retained_H']}")
+    invalid_p_mask = converted_p_df['smirks'].isna() | (converted_p_df['smirks'].str.strip() == "")
+    invalid_p_rows = evodex_p_df[invalid_p_mask]
+    if not invalid_p_rows.empty:
+        os.makedirs("data/errors", exist_ok=True)
+        invalid_p_rows.to_csv("data/errors/evodex_p_conversion_errors.csv", index=False)
+    converted_p_df = converted_p_df[~invalid_p_mask]
+    converted_p_df.to_csv(paths['evodex_p_phase3b_h_converted'], index=False)
+    print(f"Saved: {paths['evodex_p_phase3b_h_converted']}")
 
-    # === Step 2: Copy H versions to evodex/data for match_operators ===
-    dst_e = os.path.join('evodex', 'data', 'EVODEX-E_reaction_operators.csv')
-    shutil.copyfile(paths['evodex_e_phase3a_preliminary_H'], dst_e)
-    print(f"Copied to {dst_e}")
+    statistics['conversion'] = {
+        'evodex_e_invalid_count': len(invalid_e_rows),
+        'evodex_p_invalid_count': len(invalid_p_rows)
+    }
 
+    # Copy converted EROs to evodex/data
+    os.makedirs("evodex/data", exist_ok=True)
+    shutil.copyfile(paths['evodex_e_phase3b_h_converted'], "evodex/data/EVODEX-E_reaction_operators.csv")
+    print("Copied EVODEX-E_reaction_operators.csv to evodex/data")
 
-    # Copy EVODEX-F to evodex/data
-    dst_f = os.path.join('evodex', 'data', 'EVODEX-F_unique_formulas.csv')
-    shutil.copyfile(paths['evodex_f_filtered'], dst_f)
-    print(f"Copied to {dst_f}")
+    # Copy filtered F to evodex/data
+    shutil.copyfile(paths['evodex_f_filtered'], "evodex/data/EVODEX-F_unique_formulas.csv")
+    print("Copied EVODEX-F_unique_formulas.csv to evodex/data")
 
-    # === Step 3: Run match_operators to build dominance table ===
-    print("Running match_operators to build dominance table...")
-    evodex_p_h_df = pd.read_csv(paths['evodex_p_phase3a_retained_H'])
+def main():
+    start_time = time.time()
+    print("Phase 3b ERO trimming started...")
+    
+    paths = load_paths('pipeline/config/paths.yaml')
+    raw_evodex_e_df = pd.read_csv(paths['evodex_e_phase3a_preliminary'])
+    statistics['initial'] = {'total_raw_e': len(raw_evodex_e_df)}
+    load_and_prepare_data(paths)
 
-    match_table_path = "temp_match_table.csv"
-    with open(match_table_path, "w", newline="") as mt_file:
-        writer = csv.writer(mt_file)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            for _, row in evodex_p_h_df.iterrows():
-                p_id = row['id']
-                smirks = row['smirks']
-                future = executor.submit(find_exact_matching_operators, smirks)
+    # Load dataframes
+    evodex_e_df = pd.read_csv(paths['evodex_e_phase3b_h_converted'])
+    evodex_f_df = pd.read_csv(paths['evodex_f_filtered'])
+
+    # Step 1: Validate EROs
+    print("[validate_operators] Starting validation...")
+    from evodex.evaluation import operator_matches_reaction
+    evodex_p_df = pd.read_csv(paths['evodex_p_phase3b_h_converted'])
+
+    valid_e_rows = []
+    invalid_e_rows = []
+
+    p_hash_to_smiles = dict(zip(evodex_p_df['id'], evodex_p_df['smirks']))
+
+    for _, row in evodex_e_df.iterrows():
+        op_smirks = row['smirks']
+        source_hashes = [s.strip() for s in str(row.get('sources', '')).split(',') if s.strip()]
+        matched = False
+        last_fail_hash = ''
+        last_fail_smiles = ''
+        failure_type = 'no_match_in_operator_matches_reaction'
+
+        # Check operator SMIRKS validity
+        if not isinstance(op_smirks, str) or not op_smirks.strip():
+            print(f"[validate_operators] Invalid operator SMIRKS in row {row.get('id', 'UNKNOWN')}: {op_smirks}")
+            failure_type = 'invalid_operator_smirks'
+        else:
+            for p_hash in source_hashes:
+                rxn = p_hash_to_smiles.get(p_hash)
+                if not isinstance(rxn, str) or not rxn.strip():
+                    print(f"[validate_operators] Invalid reaction SMIRKS for P hash {p_hash}: {rxn}")
+                    failure_type = 'invalid_reaction_smirks'
+                    last_fail_hash = p_hash
+                    last_fail_smiles = rxn
+                    break
                 try:
-                    matched_ops = future.result(timeout=60)  # 60-second timeout
-                    if len(matched_ops) > 100:
-                        print(f"INFO: P {p_id} matched unusually high number of operators: {len(matched_ops)}")
-                    for op_id in matched_ops:
-                        writer.writerow([op_id, p_id])
-                except concurrent.futures.TimeoutError:
-                    print(f"WARNING: Timeout for P {p_id}. Skipping this reaction.")
+                    if operator_matches_reaction(op_smirks, rxn):
+                        matched = True
+                        break
                 except Exception as e:
-                    print(f"ERROR processing P {p_id}: {e}. Skipping.")
-                if _ % 1000 == 0:
-                    print(f"[DEBUG] Processed {_} Ps so far")
-                    # Cannot print match_table size here as it's not in memory
-                    log_memory_usage(f"Checkpoint {_}")
+                    print(f"[validate_operators] Error matching operator {op_smirks} with reaction {rxn}: {e}")
+                    failure_type = 'error_in_operator_matches_reaction'
+                    last_fail_hash = p_hash
+                    last_fail_smiles = rxn
+                    break
+                last_fail_hash = p_hash
+                last_fail_smiles = rxn
 
-    match_table = dict()
-    with open(match_table_path, "r") as f:
-        reader = csv.reader(f)
-        for op_id, p_id in reader:
-            if op_id not in match_table:
-                match_table[op_id] = set()
-            match_table[op_id].add(p_id)
+        if matched:
+            valid_e_rows.append(row)
+        else:
+            row_copy = row.copy()
+            row_copy['fail_source_hash'] = last_fail_hash
+            row_copy['fail_source_smiles'] = last_fail_smiles
+            row_copy['failure_stage'] = failure_type
+            invalid_e_rows.append(row_copy)
 
-    print(f"Total operators matched: {len(match_table)}")
-    total_matches = sum(len(pids) for pids in match_table.values())
-    print(f"Total matches recorded: {total_matches}")
+    valid_e_df = pd.DataFrame(valid_e_rows)
+    invalid_e_df = pd.DataFrame(invalid_e_rows)
+    invalid_e_df.to_csv("data/errors/evodex_e_validation_rejects.csv", index=False)
+    print(f"[validate_operators] Tested: {len(evodex_e_df)}, Valid: {len(valid_e_df)}, Invalid: {len(invalid_e_df)}")
 
-    # === Extra statistics ===
-    total_e_in_file = len(evodex_e_df)
-    matched_e_ids = set(match_table.keys())
-    unmatched_e_count = total_e_in_file - len(matched_e_ids)
+    statistics['validation'] = {
+        'total_e_initial': len(evodex_e_df),
+        'failed_validation': len(invalid_e_df),
+        'failed_ratio': f"{len(invalid_e_df) / len(evodex_e_df):.2%}" if len(evodex_e_df) else "N/A"
+    }
 
-    print(f"Total EVODEX-E operators in file: {total_e_in_file}")
-    print(f"Number of operators with matches: {len(matched_e_ids)}")
-    print(f"Number of operators with zero matches: {unmatched_e_count}")
+    # Step 2: Group by formula
+    formula_groups = group_by_formula(valid_e_df, evodex_f_df)
 
-    # Sample unmatched E IDs
-    unmatched_e_df = evodex_e_df[~evodex_e_df['id'].isin(matched_e_ids)]
-    if not unmatched_e_df.empty:
-        print("Example unmatched operators (up to 5):")
-        for _, row in unmatched_e_df.head(5).iterrows():
-            print(f"ID: {row['id']}, SMIRKS: {row['smirks']}, Sources: {row['sources']}")
+    # Step 3: Dominance prune within F groups
+    retained_operators = []
+    for f, group in formula_groups.items():
+        if len(group) == 1:
+            retained_operators.extend(group)
+        else:
+            retained = dominance_prune_within_formula(group)
+            retained_operators.extend(retained)
 
-    # === Step 4: Perform dominance pruning ===
-    operator_match_counts = {op_id: len(p_ids) for op_id, p_ids in match_table.items()}
-    sorted_ops = sorted(operator_match_counts.items(), key=lambda x: x[1], reverse=True)
+    # Deduplicate by 'id' before writing
+    retained_operators = list({row['id']: row for row in retained_operators}.values())
 
-    retained_operators = set()
-    explained_p = set()
-    for op_id, count in sorted_ops:
-        p_ids = match_table[op_id]
-        if not p_ids.issubset(explained_p):
-            retained_operators.add(op_id)
-            explained_p.update(p_ids)
+    # Step 4: Save final pruned E, P, F, R
+    # -- Placeholder --
+    print(f"Total retained operators: {len(retained_operators)}")
 
-    print(f"Retained operators after dominance pruning: {len(retained_operators)}")
+    statistics['retained'] = {
+        'total_retained': len(retained_operators),
+        'total_initial': len(valid_e_df),
+        'retained_ratio': f"{len(retained_operators) / len(valid_e_df):.2%}" if len(valid_e_df) else "N/A"
+    }
 
-    total_p_in_file = len(evodex_p_h_df)
-    matched_p_ids = explained_p
-    unmatched_p_count = total_p_in_file - len(matched_p_ids)
-
-    print(f"Total EVODEX-P IDs in file: {total_p_in_file}")
-    print(f"Number of EVODEX-P IDs explained by at least one operator: {len(matched_p_ids)}")
-    print(f"Number of unexplained (orphan) EVODEX-P IDs: {unmatched_p_count}")
-
-    unmatched_p_df = evodex_p_h_df[~evodex_p_h_df['id'].isin(matched_p_ids)]
-    if not unmatched_p_df.empty:
-        print("Example unexplained EVODEX-P IDs (up to 5):")
-        for _, row in unmatched_p_df.head(5).iterrows():
-            print(row['id'])
-
-    # Step 5: Gather surviving P hashes based on sources of retained E operators
-    # Correct: Go back to original E dataframe to extract P hashes
-    evodex_data_e_df = pd.read_csv('evodex/data/EVODEX-E_reaction_operators.csv')
-    temp_to_hash_map = dict(zip(evodex_data_e_df['id'], evodex_data_e_df['original_hash']))
-    retained_hashes = {temp_to_hash_map[op_id] for op_id in retained_operators}
-    original_e_df = pd.read_csv(paths['evodex_e_phase3a_preliminary_H'])
-    filtered_e_df = original_e_df[original_e_df['original_hash'].isin(retained_hashes)].copy()
-
-    surviving_p_hashes = set()
-    for sources_str in filtered_e_df['sources']:
-        if pd.notna(sources_str):
-            surviving_p_hashes.update(sources_str.split(','))
-
-    p_id_map = {p_hash: f"EVODEX.{__version__}-P{idx+1}" for idx, p_hash in enumerate(sorted(surviving_p_hashes))}
-
-    filtered_e_df['id'] = [f"EVODEX.{__version__}-E{idx+1}" for idx in range(len(filtered_e_df))]
-    # Remove map_e_sources logic; leave sources as raw hashes
-    # filtered_e_df['sources'] = filtered_e_df['sources'].apply(map_e_sources)
-    filtered_e_df.to_csv(paths['evodex_e_phase3b_final'], index=False)
+    pruned_df = pd.DataFrame(retained_operators)
+    pruned_df.to_csv(paths['evodex_e_phase3b_final'], index=False)
     print(f"Final pruned EVODEX-E saved to {paths['evodex_e_phase3b_final']}.")
 
-    original_p_df = pd.read_csv(paths['evodex_p_phase3a_retained'])
-    filtered_p_df = original_p_df[original_p_df['id'].isin(surviving_p_hashes)].copy()
-    # Remove id mapping; keep id as hash
-    # filtered_p_df['id'] = filtered_p_df['id'].map(p_id_map)
-    filtered_p_df.to_csv(paths['evodex_p_phase3b_final'], index=False)
-    print(f"Final pruned EVODEX-P saved to {paths['evodex_p_phase3b_final']}.")
+    # Write statistics to file
+    os.makedirs("data/errors", exist_ok=True)
+    with open("data/errors/phase3b_stats.txt", "w") as f:
+        f.write("Phase 3b Statistics Summary\n")
+        f.write("=====================================\n\n")
+        for section, stat in statistics.items():
+            f.write(f"[{section.upper()}]\n")
+            if section == 'initial':
+                f.write(f"{'Total raw EVODEX-E entries loaded from file':>60}: {stat['total_raw_e']}\n")
+            elif section == 'group_by_formula':
+                f.write(f"{'Total EVODEX-F entries loaded from file':>60}: {stat['total_f']}\n")
+                f.write(f"{'EVODEX-F entries matched to at least one ERO':>60}: {stat['matched_f']}\n")
+                f.write(f"{'Total EVODEX-E reaction operators grouped by F':>60}: {stat['total_e']}\n")
+                f.write(f"{'EVODEX-F entries with multiple associated EROs':>60}: {stat['multi_e_f']}\n")
+                f.write(f"{'EVODEX-F entries skipped due to missing P links':>60}: {stat.get('skipped_f', 0)}\n")
+                f.write(f"{'EVODEX-E entries that failed to match any F':>60}: {stat.get('unmatched_e', 0)}\n")
+            elif section == 'conversion':
+                f.write(f"{'EVODEX-E entries dropped during SMIRKS conversion':>60}: {stat['evodex_e_invalid_count']}\n")
+                f.write(f"{'EVODEX-P entries dropped during SMIRKS conversion':>60}: {stat['evodex_p_invalid_count']}\n")
+            elif section == 'validation':
+                f.write(f"{'Total EVODEX-E entries before validation':>60}: {stat['total_e_initial']}\n")
+                f.write(f"{'Number of EVODEX-E entries that failed validation':>60}: {stat['failed_validation']}\n")
+                f.write(f"{'Percentage that failed':>60}: {stat['failed_ratio']}\n")
+            elif section == 'retained':
+                f.write(f"{'Total EVODEX-E operators before pruning':>60}: {stat['total_initial']}\n")
+                f.write(f"{'EVODEX-E operators retained after pruning':>60}: {stat['total_retained']}\n")
+                f.write(f"{'Percentage of EROs retained after pruning':>60}: {stat['retained_ratio']}\n")
+                f.write(f"{'Percentage of original EVODEX-E entries retained':>60}: {100 * stat['total_retained'] / statistics['initial']['total_raw_e']:.2f}%\n")
+            f.write("\n")
+        conversion_losses = statistics['conversion']['evodex_e_invalid_count']
+        validation_losses = statistics['validation']['failed_validation']
+        retained = statistics['retained']['total_retained']
+        pruning_losses = statistics['validation']['total_e_initial'] - validation_losses - retained
 
-    # Final EVODEX-F
-    def row_is_valid(row):
-        return any(src in surviving_p_hashes for src in row['sources'].split(',')) if pd.notna(row['sources']) else False
+        total_recorded = conversion_losses + validation_losses + pruning_losses + retained
+        discrepancy = statistics['initial']['total_raw_e'] - total_recorded
 
-    filtered_f_chunks = pd.read_csv(paths['evodex_f_filtered'], chunksize=10000)
-    pruned_rows = []
-    for chunk in filtered_f_chunks:
-        chunk = chunk[chunk.apply(row_is_valid, axis=1)]
-        pruned_rows.append(chunk)
-    filtered_f_df = pd.concat(pruned_rows)
-
-    # Prune sources to only surviving_p_hashes
-    def prune_f_sources(sources_str):
-        if pd.isna(sources_str):
-            return ''
-        sources = sources_str.split(',')
-        kept = [src for src in sources if src in surviving_p_hashes]
-        return ','.join(kept)
-
-    filtered_f_df['sources'] = filtered_f_df['sources'].apply(prune_f_sources)
-
-    # Save
-    filtered_f_df.to_csv(paths['evodex_f_phase3b_final'], index=False)
-    print(f"Final pruned EVODEX-F saved to {paths['evodex_f_phase3b_final']}.")
-
-    # Final EVODEX-R
-    evodex_r_chunks = pd.read_csv(paths['evodex_r_preliminary'], chunksize=10000)
-    original_p_df = pd.read_csv(paths['evodex_p_phase3a_retained'])
-    surviving_p_df = original_p_df[original_p_df['id'].isin(surviving_p_hashes)].copy()
-    surviving_r_hashes = set()
-    for sources_str in surviving_p_df['sources'].dropna():
-        surviving_r_hashes.update(sources_str.split(','))
-    surviving_r_hashes = sorted(surviving_r_hashes)
-
-    pruned_r_chunks = []
-    for chunk in evodex_r_chunks:
-        filtered_chunk = chunk[chunk['id'].isin(surviving_r_hashes)]
-        pruned_r_chunks.append(filtered_chunk)
-    filtered_r_df = pd.concat(pruned_r_chunks)
-    filtered_r_df.to_csv(paths['evodex_r_phase3b_final'], index=False)
-    print(f"Final pruned EVODEX-R saved to {paths['evodex_r_phase3b_final']}.")
+        f.write("\n[SANITY CHECK]\n")
+        f.write(f"{'Sum of all removed and retained entries':>60}: {total_recorded}\n")
+        f.write(f"{'Discrepancy from raw EVODEX-E total':>60}: {discrepancy}\n")
+        f.write(f"{'Percentage of original EVODEX-E entries retained':>60}: {100 * retained / statistics['initial']['total_raw_e']:.2f}%\n")
+    print("Statistics written to data/errors/phase3b_stats.txt")
 
     end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Phase 3b ERO trimming completed in {elapsed_time:.2f} seconds.")
-
-    snapshot = tracemalloc.take_snapshot()
-    top_stats = snapshot.statistics('lineno')
-    print("[TOP MEMORY USAGE]")
-    for stat in top_stats[:5]:
-        print(stat)
-
+    print(f"Phase 3b completed in {end_time - start_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()
