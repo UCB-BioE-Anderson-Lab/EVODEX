@@ -25,6 +25,12 @@ pip install evodex
 ```
 
 ## Usage
+The following Jupyter notebooks demonstrate the usage of the PyPI distribution for the three primary use cases:
+- [EVODEX Synthesis Demo](https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA)
+- [EVODEX Evaluation Demo](https://colab.research.google.com/drive/1IvoaXjtnu7ZSvot_1Ovq3g-h5IVCdSn4)
+- [EVODEX Mass Spec Demo](https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX)
+
+These notebooks are also available in the `notebooks` section of the repository.
 
 ### Synthesis
 The synthesis module provides tools for predicting reaction products using reaction operators. Below is an example usage:
@@ -182,13 +188,3 @@ If you use EVODEX, please cite our publication:
 
 ## License
 EVODEX is released under the MIT License.
-
----
-
-### Notebooks
-The following Jupyter notebooks demonstrate the usage of the PyPI distribution for the three primary use cases:
-- [EVODEX Synthesis Demo](https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA)
-- [EVODEX Evaluation Demo](https://colab.research.google.com/drive/1IvoaXjtnu7ZSvot_1Ovq3g-h5IVCdSn4)
-- [EVODEX Mass Spec Demo](https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX)
-
-These notebooks are also available in the `notebooks` section of the repository.
