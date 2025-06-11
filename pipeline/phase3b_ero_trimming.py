@@ -95,6 +95,7 @@ def dominance_prune_within_formula(f_group):
 
     survivors = []
     for i, e1 in enumerate(f_group):
+        print(f"[dominance_prune] Processing operator {i+1}/{len(f_group)}: {e1.get('id', 'UNKNOWN')}")
         smirks1 = e1['smirks']
         atoms1 = count_substrate_atoms(smirks1)
         dominated = False
@@ -163,6 +164,7 @@ def load_and_prepare_data(paths):
 def check_match_with_timeout(op_smirks, rxn, timeout=60):
     def match():
         return operator_matches_reaction(op_smirks, rxn)
+    
 
     with ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(match)
@@ -197,7 +199,8 @@ def main():
 
     p_hash_to_smiles = dict(zip(evodex_p_df['id'], evodex_p_df['smirks']))
 
-    for _, row in evodex_e_df.iterrows():
+    for idx, (_, row) in enumerate(evodex_e_df.iterrows()):
+        print(f"[validate_operators] Validating {idx+1}/{len(evodex_e_df)}: {row.get('id', 'UNKNOWN')}")
         op_smirks = row['smirks']
         source_hashes = [s.strip() for s in str(row.get('sources', '')).split(',') if s.strip()]
         matched = False
