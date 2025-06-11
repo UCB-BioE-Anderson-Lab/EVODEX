@@ -11,8 +11,8 @@ This is the EVODEX.1 collection. All IDs start with 'EVODEX.1' and are immutable
     - [Synthesis](#synthesis)
     - [Evaluation](#evaluation)
     - [Mass Spectrometry](#mass-spectrometry)
-3. [Building and Running the Mining Pipeline](#building-and-running-the-mining-pipeline)
-4. [Data](#data)
+3. [Website and Dataset Access](#website-and-dataset-access)
+4. [Building and Running the Mining Pipeline](#building-and-running-the-mining-pipeline)
 5. [Citing EVODEX](#citing-evodex)
 6. [License](#license)
 
@@ -106,6 +106,18 @@ print(predicted_products)
 
 For more detailed usage, refer to the [EVODEX Mass Spec Demo](https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX).
 
+## Website and Dataset Access
+
+A static website for exploring the EVODEX.1 dataset is available here:
+
+🔗 https://ucb-bioe-anderson-lab.github.io/evodex-1-site/
+
+This site provides a browsable, hyperlinked index of all EVODEX.1 operators and includes links to Colab demos and operator definitions.
+
+If you prefer to work offline or programmatically, you can download the full set of operator tables (in CSV format) directly from this directory:
+
+📂 https://github.com/UCB-BioE-Anderson-Lab/EVODEX/tree/main/evodex/data
+
 ## Building and Running the Mining Pipeline
 The mining pipeline allows you to reproduce the full EVODEX operator set from raw data. This is the process we use to generate the operators that ship with the PyPI distribution. Running the mining pipeline is only required if you want to modify the data, change the curation process, or experiment with new reactions.
 
@@ -163,9 +175,6 @@ python -m pipeline.phase5_mass_subset
 python -m pipeline.phase6_synthesis_subset
 python -m pipeline.phase7_website
 ```
-
-## GitHub Pages Website
-Running the mining pipeline generates a browsable web site, which is available at: [EVODEX GitHub Pages](https://ucb-bioe-anderson-lab.github.io/EVODEX/).
 
 ## Citing EVODEX
 If you use EVODEX, please cite our publication:
