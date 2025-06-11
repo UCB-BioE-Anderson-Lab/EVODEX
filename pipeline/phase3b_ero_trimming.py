@@ -11,6 +11,7 @@ from evodex.astatine import convert_dataframe_smiles_column
 from pipeline.version import __version__
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from evodex.evaluation import operator_matches_reaction
+from collections import Counter
 
 """
 Phase 3b: EVODEX-E validation and trimming
@@ -93,40 +94,59 @@ def dominance_prune_within_formula(f_group):
             print(f"[count_substrate_atoms] Error processing SMIRKS: {smirks} -> {e}")
             return 0
 
-    survivors = []
-    for i, e1 in enumerate(f_group):
-        print(f"[dominance_prune] Processing operator {i+1}/{len(f_group)}: {e1.get('id', 'UNKNOWN')}")
-        smirks1 = e1['smirks']
-        atoms1 = count_substrate_atoms(smirks1)
-        dominated = False
-        for j, e2 in enumerate(f_group):
-            if i == j:
-                continue
-            smirks2 = e2['smirks']
-            atoms2 = count_substrate_atoms(smirks2)
+    # Sort operators by ascending substrate atom count
+    f_group = sorted(f_group, key=lambda e: count_substrate_atoms(e['smirks']))
+    non_dominated = []
 
-            # Determine which is larger
-            if atoms1 > atoms2:
-                larger, smaller = smirks1, smirks2
-            elif atoms2 > atoms1:
-                larger, smaller = smirks2, smirks1
-            else:
-            # Still compare operators of equal size
-                if check_match_with_timeout(e2['smirks'], e1['smirks'], timeout=60):
-                    dominated = True
-                    break
+    def parse_substrate_mols(smirks):
+        return [Chem.MolFromSmiles(m) for m in smirks.split(">>")[0].split(".")]
+
+    def count_atoms(mols):
+        atom_counter = Counter()
+        for mol in mols:
+            if mol:
+                for atom in mol.GetAtoms():
+                    atom_counter[atom.GetSymbol()] += 1
+        return atom_counter
+
+    for i, candidate in enumerate(f_group):
+        print(f"[dominance_prune] Processing operator {i+1}/{len(f_group)}: {candidate.get('id', 'UNKNOWN')}")
+        is_dominated = False
+        for nd in non_dominated:
+            nd_mols = parse_substrate_mols(nd['smirks'])
+            cand_mols = parse_substrate_mols(candidate['smirks'])
+
+            # (1) Check number of substrate molecules
+            if len(nd_mols) != len(cand_mols):
                 continue
 
-            # Use larger as the reaction_smiles input
-            if check_match_with_timeout(smaller, larger, timeout=60):
-                dominated = True
+            # (2) Check number of product molecules
+            nd_products = nd['smirks'].split(">>")[1].split(".")
+            cand_products = candidate['smirks'].split(">>")[1].split(".")
+            if len(nd_products) != len(cand_products):
+                continue
+
+            # (3) Compare atom type counts
+            nd_atoms = count_atoms(nd_mols)
+            cand_atoms = count_atoms(cand_mols)
+            atom_subset = all(cand_atoms[atom] <= nd_atoms.get(atom, 0) for atom in cand_atoms)
+            if not atom_subset:
+                continue
+
+            # Only now do the expensive match check
+            if check_match_with_timeout(nd['smirks'], candidate['smirks'], timeout=60):
+                print(f"[dominance_prune] Candidate {candidate.get('id', 'UNKNOWN')} is dominated by {nd.get('id', 'UNKNOWN')}")
+                is_dominated = True
                 break
-        if not dominated:
-            survivors.append(e1)
+        if not is_dominated:
+            non_dominated.append(candidate)
 
-    return survivors
+    return non_dominated
 
 def load_and_prepare_data(paths):
+    if os.path.exists(paths['evodex_e_phase3b_h_converted']) and os.path.exists(paths['evodex_p_phase3b_h_converted']):
+        print("Data already prepared, skipping load_and_prepare_data.")
+        return
     # Load EVODEX-E Phase 3a preliminary and convert SMIRKS to H
     print("Converting EVODEX-E Phase 3a preliminary to H...")
     evodex_e_df = pd.read_csv(paths['evodex_e_phase3a_preliminary'])
@@ -191,75 +211,83 @@ def main():
     evodex_f_df = pd.read_csv(paths['evodex_f_filtered'])
 
     # Step 1: Validate EROs
-    print("[validate_operators] Starting validation...")
-    evodex_p_df = pd.read_csv(paths['evodex_p_phase3b_h_converted'])
+    if os.path.exists(paths['evodex_e_phase3b_validated']):
+        print("Validation output already exists, skipping validation.")
+        valid_e_df = pd.read_csv(paths['evodex_e_phase3b_validated'])
+        evodex_p_df = pd.read_csv(paths['evodex_p_phase3b_h_converted'])
+    else:
+        print("[validate_operators] Starting validation...")
+        evodex_p_df = pd.read_csv(paths['evodex_p_phase3b_h_converted'])
 
-    valid_e_rows = []
-    invalid_e_rows = []
+        valid_e_rows = []
+        invalid_e_rows = []
 
-    p_hash_to_smiles = dict(zip(evodex_p_df['id'], evodex_p_df['smirks']))
+        p_hash_to_smiles = dict(zip(evodex_p_df['id'], evodex_p_df['smirks']))
 
-    for idx, (_, row) in enumerate(evodex_e_df.iterrows()):
-        print(f"[validate_operators] Validating {idx+1}/{len(evodex_e_df)}: {row.get('id', 'UNKNOWN')}")
-        op_smirks = row['smirks']
-        source_hashes = [s.strip() for s in str(row.get('sources', '')).split(',') if s.strip()]
-        matched = False
-        last_fail_hash = ''
-        last_fail_smiles = ''
-        failure_type = 'no_match_in_operator_matches_reaction'
+        for idx, (_, row) in enumerate(evodex_e_df.iterrows()):
+            print(f"[validate_operators] Validating {idx+1}/{len(evodex_e_df)}: {row.get('id', 'UNKNOWN')}")
+            op_smirks = row['smirks']
+            source_hashes = [s.strip() for s in str(row.get('sources', '')).split(',') if s.strip()]
+            matched = False
+            last_fail_hash = ''
+            last_fail_smiles = ''
+            failure_type = 'no_match_in_operator_matches_reaction'
 
-        # Check operator SMIRKS validity
-        if not isinstance(op_smirks, str) or not op_smirks.strip():
-            print(f"[validate_operators] Invalid operator SMIRKS in row {row.get('id', 'UNKNOWN')}: {op_smirks}")
-            failure_type = 'invalid_operator_smirks'
-        else:
-            for p_hash in source_hashes:
-                rxn = p_hash_to_smiles.get(p_hash)
-                if not isinstance(rxn, str) or not rxn.strip():
-                    print(f"[validate_operators] Invalid reaction SMIRKS for P hash {p_hash}: {rxn}")
-                    failure_type = 'invalid_reaction_smirks'
-                    last_fail_hash = p_hash
-                    last_fail_smiles = rxn
-                    break
-                try:
-                    if check_match_with_timeout(op_smirks, rxn, timeout=60):
-                        matched = True
+            # Check operator SMIRKS validity
+            if not isinstance(op_smirks, str) or not op_smirks.strip():
+                print(f"[validate_operators] Invalid operator SMIRKS in row {row.get('id', 'UNKNOWN')}: {op_smirks}")
+                failure_type = 'invalid_operator_smirks'
+            else:
+                for p_hash in source_hashes:
+                    rxn = p_hash_to_smiles.get(p_hash)
+                    if not isinstance(rxn, str) or not rxn.strip():
+                        print(f"[validate_operators] Invalid reaction SMIRKS for P hash {p_hash}: {rxn}")
+                        failure_type = 'invalid_reaction_smirks'
+                        last_fail_hash = p_hash
+                        last_fail_smiles = rxn
                         break
-                except Exception as e:
-                    print(f"[validate_operators] Error matching operator {op_smirks} with reaction {rxn}: {e}")
-                    failure_type = 'error_in_operator_matches_reaction'
+                    try:
+                        if check_match_with_timeout(op_smirks, rxn, timeout=60):
+                            matched = True
+                            break
+                    except Exception as e:
+                        print(f"[validate_operators] Error matching operator {op_smirks} with reaction {rxn}: {e}")
+                        failure_type = 'error_in_operator_matches_reaction'
+                        last_fail_hash = p_hash
+                        last_fail_smiles = rxn
+                        break
                     last_fail_hash = p_hash
                     last_fail_smiles = rxn
-                    break
-                last_fail_hash = p_hash
-                last_fail_smiles = rxn
 
-        if matched:
-            valid_e_rows.append(row)
-        else:
-            row_copy = row.copy()
-            row_copy['fail_source_hash'] = last_fail_hash
-            row_copy['fail_source_smiles'] = last_fail_smiles
-            row_copy['failure_stage'] = failure_type
-            invalid_e_rows.append(row_copy)
+            if matched:
+                valid_e_rows.append(row)
+            else:
+                row_copy = row.copy()
+                row_copy['fail_source_hash'] = last_fail_hash
+                row_copy['fail_source_smiles'] = last_fail_smiles
+                row_copy['failure_stage'] = failure_type
+                invalid_e_rows.append(row_copy)
 
-    valid_e_df = pd.DataFrame(valid_e_rows)
-    invalid_e_df = pd.DataFrame(invalid_e_rows)
-    invalid_e_df.to_csv("data/errors/evodex_e_validation_rejects.csv", index=False)
-    print(f"[validate_operators] Tested: {len(evodex_e_df)}, Valid: {len(valid_e_df)}, Invalid: {len(invalid_e_df)}")
-    # Save validated EROs
-    valid_e_df.to_csv(paths['evodex_e_phase3b_validated'], index=False)
+        valid_e_df = pd.DataFrame(valid_e_rows)
+        invalid_e_df = pd.DataFrame(invalid_e_rows)
+        invalid_e_df.to_csv("data/errors/evodex_e_validation_rejects.csv", index=False)
+        print(f"[validate_operators] Tested: {len(evodex_e_df)}, Valid: {len(valid_e_df)}, Invalid: {len(invalid_e_df)}")
+        # Save validated EROs
+        valid_e_df.to_csv(paths['evodex_e_phase3b_validated'], index=False)
 
-    statistics['validation'] = {
-        'total_e_initial': len(evodex_e_df),
-        'failed_validation': len(invalid_e_df),
-        'failed_ratio': f"{len(invalid_e_df) / len(evodex_e_df):.2%}" if len(evodex_e_df) else "N/A"
-    }
+        statistics['validation'] = {
+            'total_e_initial': len(evodex_e_df),
+            'failed_validation': len(invalid_e_df),
+            'failed_ratio': f"{len(invalid_e_df) / len(evodex_e_df):.2%}" if len(evodex_e_df) else "N/A"
+        }
 
     # Step 2: Group by formula
     formula_groups = group_by_formula(valid_e_df, evodex_f_df)
 
     # Step 3: Dominance prune within F groups
+    if os.path.exists(paths['evodex_e_phase3b_final']):
+        print("Dominance pruning output already exists, skipping pruning.")
+        return
     retained_operators = []
     for f, group in formula_groups.items():
         if len(group) == 1:
@@ -325,7 +353,10 @@ def main():
     with open("data/errors/phase3b_stats.txt", "w") as f:
         f.write("Phase 3b Statistics Summary\n")
         f.write("=====================================\n\n")
-        for section, stat in statistics.items():
+        for section in ['initial', 'group_by_formula', 'conversion', 'validation', 'retained']:
+            stat = statistics.get(section)
+            if not stat:
+                continue
             f.write(f"[{section.upper()}]\n")
             if section == 'initial':
                 f.write(f"{'Total raw EVODEX-E entries loaded from file':>60}: {stat['total_raw_e']}\n")
@@ -347,20 +378,27 @@ def main():
                 f.write(f"{'Total EVODEX-E operators before pruning':>60}: {stat['total_initial']}\n")
                 f.write(f"{'EVODEX-E operators retained after pruning':>60}: {stat['total_retained']}\n")
                 f.write(f"{'Percentage of EROs retained after pruning':>60}: {stat['retained_ratio']}\n")
-                f.write(f"{'Percentage of original EVODEX-E entries retained':>60}: {100 * stat['total_retained'] / statistics['initial']['total_raw_e']:.2f}%\n")
             f.write("\n")
-        conversion_losses = statistics['conversion']['evodex_e_invalid_count']
-        validation_losses = statistics['validation']['failed_validation']
-        retained = statistics['retained']['total_retained']
-        pruning_losses = statistics['validation']['total_e_initial'] - validation_losses - retained
 
-        total_recorded = conversion_losses + validation_losses + pruning_losses + retained
-        discrepancy = statistics['initial']['total_raw_e'] - total_recorded
+        conversion_losses = statistics.get('conversion', {}).get('evodex_e_invalid_count', 0)
+        validation_losses = statistics.get('validation', {}).get('failed_validation', 0)
+        retained = statistics.get('retained', {}).get('total_retained', 0)
+        total_validated = statistics.get('validation', {}).get('total_e_initial', 0)
+        # Compute pruning_losses safely and handle missing stats.
+        if total_validated:
+            pruning_losses = total_validated - retained
+        else:
+            pruning_losses = 0
+        # Avoid double subtracting validation failures
+        total_recorded = conversion_losses + pruning_losses + retained
+        raw_total = statistics.get('initial', {}).get('total_raw_e', 0)
+        discrepancy = raw_total - total_recorded
 
         f.write("\n[SANITY CHECK]\n")
         f.write(f"{'Sum of all removed and retained entries':>60}: {total_recorded}\n")
         f.write(f"{'Discrepancy from raw EVODEX-E total':>60}: {discrepancy}\n")
-        f.write(f"{'Percentage of original EVODEX-E entries retained':>60}: {100 * retained / statistics['initial']['total_raw_e']:.2f}%\n")
+        if raw_total:
+            f.write(f"{'Percentage of original EVODEX-E entries retained':>60}: {100 * retained / raw_total:.2f}%\n")
     print("Statistics written to data/errors/phase3b_stats.txt")
 
     end_time = time.time()
