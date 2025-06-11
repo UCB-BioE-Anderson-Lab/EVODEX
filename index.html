@@ -17,7 +17,32 @@
     </header>
     <main>
         <section>
+            <h2>About EVODEX</h2>
+            <p>
+                EVODEX is a tool for understanding how enzymes transform molecules.
+                It helps researchers figure out which products can be formed from a given starting molecule,
+                determining the mechanistic plausibility of potential transformations,
+                and interpreting biochemical data.
+                This is useful in areas like metabolic engineering, drug discovery,
+                interpreting lab data, and enabling AI to reason about biochemistry.
+            </p>
+            <p>
+                Technically, EVODEX (Enzymatic Validation Operator Differentiation and Extraction)
+                is an open-source framework that abstracts enzymatic reactions derived from the BRENDA database
+                to generate a family of named operators.
+                These include representations of full and partial reactions, mass and formula changes,
+                and mechanistic patterns derived from sigma and pi bonding interactions.
+                Additionally, it provides algorithms for using the operators.
+                For information on using EVODEX, visit
+                <a href="https://github.com/UCB-BioE-Anderson-Lab/EVODEX" target="_blank">our GitHub repository</a>.
+            </p>
+            <p>
+                For more technical information on EVODEX, see our preprint (citation forthcoming).
+            </p>
+        </section>
+        <section>
             <h2>Google Colab Notebooks</h2>
+            <p>These interactive notebooks demonstrate how EVODEX operators can be applied to predict biosynthetic pathways, evaluate proposed reactions, and interpret mass spectrometry data. Each demo walks through real examples using operators mined from enzymatic data.</p>
             <ul>
                 
                 <li><a href="https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA">EVODEX Synthesis Demo</a></li>
@@ -27,6 +52,18 @@
                 <li><a href="https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX">EVODEX Mass Spec Demo</a></li>
                 
             </ul>
+        </section>
+        <section>
+            <h2>EVODEX Operator Glossary</h2>
+            <table>
+                <tr><th>Operator</th><th>Description</th></tr>
+                <tr><td>R</td><td>Full atom-mapped reaction</td></tr>
+                <tr><td>P</td><td>Partial reaction based on shared atom maps</td></tr>
+                <tr><td>F</td><td>Formula difference between reactants/products</td></tr>
+                <tr><td>M</td><td>Mass difference for MS analysis</td></tr>
+                <tr><td>C/N/E</td><td>Core, Nearest-Neighbor, and Electronic operators</td></tr>
+                <tr><td>Cm/Nm/Em</td><td>Matched versions using only mapped atoms</td></tr>
+            </table>
         </section>
         <section>
             <h2>All Operators by Type</h2>
@@ -55,7 +92,15 @@
             </ul>
         </section>
         <section>
-            <h2>Additional Resources</h2>
+            <h2>Focused Subsets for Synthesis and Mass Spectrometry</h2>
+            <p>
+                The synthesis subset includes EVODEX-E operators filtered to remove ubiquitous cofactors simplifying the process of 
+                predicting biosynthetic pathways in a cellular context. The mass spectrometry subset is derived from EVODEX-M and includes 
+                only transformations consistent with mass shifts observed between single ions, that is, where either the substrate or 
+                product consists of a single molecular species. This restricts the set to transformations that would plausibly relate the 
+                masses of two peaks in an LCMS trace through a substrate/product relationship, enabling mechanistic interpretation of 
+                observed mass differences.
+            </p>
             <ul>
                 
                 <li><a href="website/pages/synthesis_subset.html">Synthesis Subset of EVODEX-E</a></li>
@@ -63,6 +108,24 @@
                 <li><a href="website/pages/mass_spec_subset.html">Mass Spectrometry Subset of EVODEX-M</a></li>
                 
             </ul>
+        </section>
+        <section>
+            <h2>Credits and Contact</h2>
+            <p>Developed by the Anderson Lab, Department of Bioengineering, UC Berkeley.<br>
+            For more information, contact: jcanderson@berkeley.edu</p>
+            <p>Please cite our work when using EVODEX. Citation info and DOI will be added here once the associated paper is published.</p>
+            <p>
+                EVODEX was derived from the following resources:
+                <ul>
+                    <li><a href="https://www.brenda-enzymes.org/" target="_blank">BRENDA: The Comprehensive Enzyme Information System</a></li>
+                    <li>
+                        EnzymeMap: Heid E, Probst D, Green WH, Madsen GKH.
+                        <i>EnzymeMap: curation, validation and data-driven prediction of enzymatic reactions.</i>
+                        <a href="https://doi.org/10.1039/d3sc02048g" target="_blank">Chem Sci. 2023;14(48):14229–14242</a>.
+                        PMID: 38098707; PMCID: PMC10718068.
+                    </li>
+                </ul>
+            </p>
         </section>
     </main>
     <footer>

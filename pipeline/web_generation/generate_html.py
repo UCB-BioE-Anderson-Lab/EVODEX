@@ -229,6 +229,7 @@ def generate_synthesis_subset_page(env, evodex_e_synthesis_df, pages_dir):
 def generate_mass_spec_subset_page(env, evodex_m_subset_df, pages_dir):
     template = env.get_template('mass_spec_subset_template.html')
     rows = evodex_m_subset_df.to_dict(orient='records')
+    rows.sort(key=lambda x: int(x['id'].split('-M')[-1]))
     for row in rows:
         row['sources'] = [source.strip() for source in row['sources'].split(',')]
 
