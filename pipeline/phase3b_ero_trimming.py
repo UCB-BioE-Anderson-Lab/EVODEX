@@ -9,6 +9,7 @@ import psutil
 from pipeline.config import load_paths
 from evodex.astatine import convert_dataframe_smiles_column
 from pipeline.version import __version__
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from evodex.evaluation import operator_matches_reaction
 
 """
@@ -109,14 +110,14 @@ def dominance_prune_within_formula(f_group):
             elif atoms2 > atoms1:
                 larger, smaller = smirks2, smirks1
             else:
-                # Still compare operators of equal size
-                if operator_matches_reaction(e2['smirks'], e1['smirks']):
+            # Still compare operators of equal size
+                if check_match_with_timeout(e2['smirks'], e1['smirks'], timeout=60):
                     dominated = True
                     break
                 continue
 
             # Use larger as the reaction_smiles input
-            if operator_matches_reaction(smaller, larger):
+            if check_match_with_timeout(smaller, larger, timeout=60):
                 dominated = True
                 break
         if not dominated:
@@ -159,6 +160,21 @@ def load_and_prepare_data(paths):
         'evodex_p_invalid_count': len(invalid_p_rows)
     }
 
+def check_match_with_timeout(op_smirks, rxn, timeout=60):
+    def match():
+        return operator_matches_reaction(op_smirks, rxn)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(match)
+        try:
+            return future.result(timeout=timeout)
+        except TimeoutError:
+            print(f"[TIMEOUT] Match timed out for operator: {op_smirks}")
+            return False
+        except Exception as e:
+            print(f"[ERROR] Match failed: {e}")
+            return False
+
 def main():
     start_time = time.time()
     print("Phase 3b ERO trimming started...")
@@ -182,7 +198,6 @@ def main():
     p_hash_to_smiles = dict(zip(evodex_p_df['id'], evodex_p_df['smirks']))
 
     for _, row in evodex_e_df.iterrows():
-        print(row['id'])
         op_smirks = row['smirks']
         source_hashes = [s.strip() for s in str(row.get('sources', '')).split(',') if s.strip()]
         matched = False
@@ -204,7 +219,7 @@ def main():
                     last_fail_smiles = rxn
                     break
                 try:
-                    if operator_matches_reaction(op_smirks, rxn):
+                    if check_match_with_timeout(op_smirks, rxn, timeout=60):
                         matched = True
                         break
                 except Exception as e:
