@@ -13,6 +13,7 @@ pytest
 pyyaml
 epam.indigo
 jinja2
+psutil
 
 # Analysis dependencies
 matplotlib==3.9.1

@@ -11,7 +11,6 @@ from evodex.astatine import convert_dataframe_smiles_column
 from pipeline.version import __version__
 from evodex.evaluation import operator_matches_reaction
 
-
 """
 Phase 3b: EVODEX-E validation and trimming
 
@@ -160,8 +159,6 @@ def load_and_prepare_data(paths):
         'evodex_p_invalid_count': len(invalid_p_rows)
     }
 
-    # (Removed copying of files to evodex/data as unnecessary for pipeline)
-
 def main():
     start_time = time.time()
     print("Phase 3b ERO trimming started...")
@@ -177,7 +174,6 @@ def main():
 
     # Step 1: Validate EROs
     print("[validate_operators] Starting validation...")
-    from evodex.evaluation import operator_matches_reaction
     evodex_p_df = pd.read_csv(paths['evodex_p_phase3b_h_converted'])
 
     valid_e_rows = []
@@ -186,6 +182,7 @@ def main():
     p_hash_to_smiles = dict(zip(evodex_p_df['id'], evodex_p_df['smirks']))
 
     for _, row in evodex_e_df.iterrows():
+        print(row['id'])
         op_smirks = row['smirks']
         source_hashes = [s.strip() for s in str(row.get('sources', '')).split(',') if s.strip()]
         matched = False
