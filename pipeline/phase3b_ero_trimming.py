@@ -181,21 +181,30 @@ def load_and_prepare_data(paths):
         'evodex_p_invalid_count': len(invalid_p_rows)
     }
 
-def check_match_with_timeout(op_smirks, rxn, timeout=60):
-    def match():
-        return operator_matches_reaction(op_smirks, rxn)
-    
+from multiprocessing import Process, Queue
 
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(match)
-        try:
-            return future.result(timeout=timeout)
-        except TimeoutError:
-            print(f"[TIMEOUT] Match timed out for operator: {op_smirks}")
-            return False
-        except Exception as e:
-            print(f"[ERROR] Match failed: {e}")
-            return False
+def _match_worker(q, op, rxn):
+    from evodex.evaluation import operator_matches_reaction
+    try:
+        result = operator_matches_reaction(op, rxn)
+        q.put(result)
+    except Exception:
+        q.put(False)
+
+def check_match_with_timeout(op_smirks, rxn, timeout=60):
+    q = Queue()
+    p = Process(target=_match_worker, args=(q, op_smirks, rxn))
+    p.start()
+    p.join(timeout)
+    if p.is_alive():
+        p.terminate()
+        p.join()
+        print(f"[TIMEOUT] Match timed out for operator: {op_smirks}")
+        return False
+    try:
+        return q.get_nowait()
+    except Exception:
+        return False
 
 def main():
     start_time = time.time()
