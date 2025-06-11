@@ -9,14 +9,16 @@ import psutil
 from pipeline.config import load_paths
 from evodex.astatine import convert_dataframe_smiles_column
 from pipeline.version import __version__
-from concurrent.futures import ThreadPoolExecutor, TimeoutError
+from multiprocessing import Process, Queue
 from evodex.evaluation import operator_matches_reaction
 from collections import Counter
 
 """
-Phase 3b: EVODEX-E validation and trimming
-
-[Insert explanation here]
+Phase 3b: EVODEX-E Validation and Trimming
+This phase performs a multi-step refinement of the EVODEX-E reaction operators after initial source-based pruning in Phase 3a.
+First, each operator is validated to ensure it can generate the correct product(s) from at least one linked reaction source (via operator_matches_reaction).
+Next, valid operators are grouped by their associated EVODEX-F formulas, and redundant operators are removed using a dominance pruning strategy.
+Final outputs include validated, deduplicated, and trimmed sets of EVODEX-E, P, F, and R entries.
 """
 
 csv.field_size_limit(10**7)
@@ -98,42 +100,11 @@ def dominance_prune_within_formula(f_group):
     f_group = sorted(f_group, key=lambda e: count_substrate_atoms(e['smirks']))
     non_dominated = []
 
-    def parse_substrate_mols(smirks):
-        return [Chem.MolFromSmiles(m) for m in smirks.split(">>")[0].split(".")]
-
-    def count_atoms(mols):
-        atom_counter = Counter()
-        for mol in mols:
-            if mol:
-                for atom in mol.GetAtoms():
-                    atom_counter[atom.GetSymbol()] += 1
-        return atom_counter
-
     for i, candidate in enumerate(f_group):
         print(f"[dominance_prune] Processing operator {i+1}/{len(f_group)}: {candidate.get('id', 'UNKNOWN')}")
         is_dominated = False
         for nd in non_dominated:
-            nd_mols = parse_substrate_mols(nd['smirks'])
-            cand_mols = parse_substrate_mols(candidate['smirks'])
-
-            # (1) Check number of substrate molecules
-            if len(nd_mols) != len(cand_mols):
-                continue
-
-            # (2) Check number of product molecules
-            nd_products = nd['smirks'].split(">>")[1].split(".")
-            cand_products = candidate['smirks'].split(">>")[1].split(".")
-            if len(nd_products) != len(cand_products):
-                continue
-
-            # (3) Compare atom type counts
-            nd_atoms = count_atoms(nd_mols)
-            cand_atoms = count_atoms(cand_mols)
-            atom_subset = all(cand_atoms[atom] <= nd_atoms.get(atom, 0) for atom in cand_atoms)
-            if not atom_subset:
-                continue
-
-            # Only now do the expensive match check
+            # Check via match
             if check_match_with_timeout(nd['smirks'], candidate['smirks'], timeout=60):
                 print(f"[dominance_prune] Candidate {candidate.get('id', 'UNKNOWN')} is dominated by {nd.get('id', 'UNKNOWN')}")
                 is_dominated = True
@@ -181,13 +152,9 @@ def load_and_prepare_data(paths):
         'evodex_p_invalid_count': len(invalid_p_rows)
     }
 
-from multiprocessing import Process, Queue
-
 def _match_worker(q, op, rxn):
-    from evodex.evaluation import operator_matches_reaction
     try:
-        result = operator_matches_reaction(op, rxn)
-        q.put(result)
+        q.put(operator_matches_reaction(op, rxn))
     except Exception:
         q.put(False)
 

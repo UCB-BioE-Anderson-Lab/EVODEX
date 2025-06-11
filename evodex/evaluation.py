@@ -52,6 +52,39 @@ def operator_matches_reaction(operator_smirks: str, reaction_smiles: str) -> boo
         raise ValueError(f"[operator_matches_reaction] Invalid operator_smirks: {operator_smirks}")
     if not isinstance(reaction_smiles, str) or not reaction_smiles.strip():
         raise ValueError(f"[operator_matches_reaction] Invalid reaction_smiles: {reaction_smiles}")
+
+    # Quick checks on counts and atom types before projection
+    op_sub_mols = [Chem.MolFromSmiles(m) for m in operator_smirks.split(">>")[0].split(".") if Chem.MolFromSmiles(m)]
+    rxn_sub_mols = [Chem.AddHs(Chem.MolFromSmiles(m)) for m in reaction_smiles.split(">>")[0].split(".") if Chem.MolFromSmiles(m)]
+
+    if len(rxn_sub_mols) > len(op_sub_mols):
+        # print("reaction has more substrates than operator expects")
+        return False
+
+    op_prod_mols = operator_smirks.split(">>")[1].split(".")
+    rxn_prod_mols = reaction_smiles.split(">>")[1].split(".")
+    if len(rxn_prod_mols) > len(op_prod_mols):
+        # print("reaction has more products than operator expects")
+        return False
+
+    def count_atoms(mol_list):
+        atom_counts = {}
+        for mol in mol_list:
+            if mol:
+                for atom in mol.GetAtoms():
+                    symbol = atom.GetSymbol()
+                    atom_counts[symbol] = atom_counts.get(symbol, 0) + 1
+        return atom_counts
+
+    op_atom_counts = count_atoms(op_sub_mols)
+    # print("op_atom_counts", op_atom_counts)
+    rxn_atom_counts = count_atoms(rxn_sub_mols)
+    # print("rxn_atom_counts", rxn_atom_counts)
+    for atom, count in op_atom_counts.items():
+        if rxn_atom_counts.get(atom, 0) < count:
+            # print("atom count don't match")
+            return False
+
     try:
         reaction_smiles_with_h = _add_hydrogens(reaction_smiles)
         # Parse the reaction, remove atom maps, and convert back to SMILES
@@ -71,8 +104,11 @@ def operator_matches_reaction(operator_smirks: str, reaction_smiles: str) -> boo
             projected_hashes = set(get_molecule_hash(p) for p in product_string.split('.'))
             if projected_hashes == expected_hashes:
                 return True
+        # print("projections don't match")
         return False
-    except Exception:
+    except Exception as e:
+        # print("error")
+        # print(e)
         return False
     
 def assign_evodex_F(smirks):

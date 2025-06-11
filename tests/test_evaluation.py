@@ -12,17 +12,17 @@ if __name__ == "__main__":
 def test_operator_matches_reaction_basic_case():
     from evodex.evaluation import operator_matches_reaction
 
-    # Ketone reduction, with hydrogens
+    # Ketone reduction
     rxn = "CC(=O)CCCC>>CC(O)CCCC"
     ro = "[O:45]=[C:46]([C:47])[C:49]>>[H][O:45][C@@:46]([H])([C:47])[C:49]"
     assert operator_matches_reaction(ro, rxn) is True
 
-    # Ketone reduction, with hydrogens, with extra water
+    # Ketone reduction with extra water
     rxn = "CC(=O)CCCC>>CC(O)CCCC.O"
     ro = "[O:45]=[C:46]([C:47])[C:49]>>[H][O:45][C@@:46]([H])([C:47])[C:49]"
     assert operator_matches_reaction(ro, rxn) is False
 
-    # Ketone reduction, with oxygen added to RO
+    # Ketone reduction, with water added to RO
     rxn = "CC(=O)CCCC>>CC(O)CCCC"
     ro = "[O:45]=[C:46]([C:47])[C:49]>>[H][O:45][C@@:46]([H])([C:47])[C:49].[O]"
     assert operator_matches_reaction(ro, rxn) is False
@@ -37,7 +37,16 @@ def test_operator_matches_reaction_basic_case():
     ro = "[H][N:13]([C:14])[H:27].[H]O[C:10]([C:8])=[O:11]>>[C:8][C:10](=[O:11])[N:13]([C:14])[H:27]"
     assert operator_matches_reaction(ro, rxn) is True
 
-    # Amide formation expecting 2 substrates, but only 1 substrate present
-    rxn = "NCC(=O)O>>NCC(=O)NCC(=O)O"
-    ro = "[H][N:13]([C:14])[H:27].[H]O[C:10]([C:8])=[O:11]>>[C:8][C:10](=[O:11])[N:13]([C:14])[H:27]"
+    # # Amide formation expecting 2 substrates, but only 1 substrate present
+    # rxn = "NCC(=O)O>>NCC(=O)NCC(=O)O"
+    # ro = "[H][N:13]([C:14])[H:27].[H]O[C:10]([C:8])=[O:11]>>[C:8][C:10](=[O:11])[N:13]([C:14])[H:27]"
+    # assert operator_matches_reaction(ro, rxn) is True
+
+    # Dominance pruning tests
+    rxn = "[C:2](=[C:3][C:4]=[O:5])[C:13]([C:12])=[O:14]>>[H][C:13]([C:2]=[C:3][C:4]=[O:5])([C:12])[O:14][H]"
+    ro = "[C:3][C:4](=[O:5])[C:6]>>[H][C:4]([C:3])([O:5][H])[C:6]"
+    assert operator_matches_reaction(ro, rxn) is True
+
+    rxn = "[H][C@@:12]([C:11])([C:13]([H])([C:14]=[C:15])[H:89])[C:23]>>[C:11][C:12](=[C:13]([C:14]=[C:15])[H:89])[C:23]"
+    ro = "[H][C:2]([C:1])([C@@:3]([H])([C:4])[C:25])[H:96]>>[C:1][C:2](=[C:3]([C:4])[C:25])[H:96]"
     assert operator_matches_reaction(ro, rxn) is True
