@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVODEX Main Index</title>
+    <title>EVODEX.1 Main Index</title>
     <link rel="stylesheet" href="website/styles.css">
 </head>
 <body>
@@ -12,14 +12,14 @@
             <img src="website/images/evodex_logo.png" alt="EVODEX Logo">
         </a>
         <div>
-            <h1>EVODEX Main Index</h1>
+            <h1>EVODEX.1 Main Index</h1>
         </div>
     </header>
     <main>
         <section>
-            <h2>About EVODEX</h2>
+            <h2>About EVODEX.1</h2>
             <p>
-                EVODEX is a tool for understanding how enzymes transform molecules.
+                EVODEX.1 is a version of the EVODEX framework for understanding how enzymes transform molecules.
                 It helps researchers figure out which products can be formed from a given starting molecule,
                 determining the mechanistic plausibility of potential transformations,
                 and interpreting biochemical data.
@@ -27,8 +27,7 @@
                 interpreting lab data, and enabling AI to reason about biochemistry.
             </p>
             <p>
-                Technically, EVODEX (Enzymatic Validation Operator Differentiation and Extraction)
-                is an open-source framework that abstracts enzymatic reactions derived from the BRENDA database
+                Technically, EVODEX.1 is a release of the EVODEX (Enzymatic Validation Operator Differentiation and Extraction) framework that abstracts enzymatic reactions derived from the BRENDA database
                 to generate a family of named operators.
                 These include representations of full and partial reactions, mass and formula changes,
                 and mechanistic patterns derived from sigma and pi bonding interactions.
@@ -37,12 +36,15 @@
                 <a href="https://github.com/UCB-BioE-Anderson-Lab/EVODEX" target="_blank">our GitHub repository</a>.
             </p>
             <p>
+                The “.1” indicates that this is version 1 of EVODEX. All operator identifiers are namespaced with this version number (e.g., EVODEX.1-R12), so they can be uniquely referenced and distinguished from past and future versions.
+            </p>
+            <p>
                 For more technical information on EVODEX, see our preprint (citation forthcoming).
             </p>
         </section>
         <section>
             <h2>Google Colab Notebooks</h2>
-            <p>These interactive notebooks demonstrate how EVODEX operators can be applied to predict biosynthetic pathways, evaluate proposed reactions, and interpret mass spectrometry data. Each demo walks through real examples using operators mined from enzymatic data.</p>
+            <p>These interactive notebooks demonstrate how EVODEX.1 operators can be applied to predict biosynthetic pathways, evaluate proposed reactions, and interpret mass spectrometry data. Each demo walks through real examples using operators mined from the EVODEX.1 dataset.</p>
             <ul>
                 
                 <li><a href="https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA">EVODEX Synthesis Demo</a></li>
@@ -54,7 +56,7 @@
             </ul>
         </section>
         <section>
-            <h2>EVODEX Operator Glossary</h2>
+            <h2>EVODEX.1 Operator Glossary</h2>
             <table>
                 <tr><th>Operator</th><th>Description</th></tr>
                 <tr><td>R</td><td>Full atom-mapped reaction</td></tr>
@@ -67,6 +69,11 @@
         </section>
         <section>
             <h2>All Operators by Type</h2>
+            <p>
+                These links provide a browsable, website-based version of the EVODEX.1 dataset. Each page is internally hyperlinked, allowing you to explore relationships between operators and navigate between related abstractions. If you prefer working offline or programmatically, the full set of operators is also available for download as CSV files in our 
+                <a href="https://github.com/UCB-BioE-Anderson-Lab/EVODEX/tree/main/evodex/data" target="_blank">GitHub data directory</a>.
+                When using EVODEX via PyPI, these operator files are included with the library.
+            </p>
             <ul>
                 
                 <li><a href="website/pages/EVODEX-R_index.html">EVODEX-R</a></li>
@@ -94,6 +101,7 @@
         <section>
             <h2>Focused Subsets for Synthesis and Mass Spectrometry</h2>
             <p>
+                These focused subsets of the EVODEX.1 dataset support specific EVODEX use cases.
                 The synthesis subset includes EVODEX-E operators filtered to remove ubiquitous cofactors simplifying the process of 
                 predicting biosynthetic pathways in a cellular context. The mass spectrometry subset is derived from EVODEX-M and includes 
                 only transformations consistent with mass shifts observed between single ions, that is, where either the substrate or 
