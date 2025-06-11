@@ -1,6 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from rdkit.Chem.inchi import InchiReadWriteError
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 import hashlib
 
 def _is_sp3(atom):

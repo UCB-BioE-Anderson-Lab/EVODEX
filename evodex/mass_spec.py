@@ -2,6 +2,8 @@ import os
 import sys
 from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 import pandas as pd
 import json
 from evodex.synthesis import project_evodex_operator

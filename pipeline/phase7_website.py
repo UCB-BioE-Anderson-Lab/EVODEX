@@ -47,7 +47,11 @@ operator_csv_paths = {
 
 # Output folder
 website_root = os.path.join(os.path.dirname(__file__), '..', 'website')
-os.makedirs(website_root, exist_ok=True)
+# Clear the website_root directory before generation
+import shutil
+if os.path.exists(website_root):
+    shutil.rmtree(website_root)
+os.makedirs(website_root)
 generate_css.generate_css(website_root)
 
 

@@ -12,7 +12,7 @@ PIPELINE_STEPS = [
     # "pipeline.phase2_formula_pruning",
     # "pipeline.phase3_ero_mining",
     # "pipeline.phase3a_ero_pruning",
-    "pipeline.phase3b_ero_trimming",
+    # "pipeline.phase3b_ero_trimming",
     "pipeline.phase3c_ero_publishing",
     "pipeline.phase4_operator_completion",
     "pipeline.phase5_mass_subset",

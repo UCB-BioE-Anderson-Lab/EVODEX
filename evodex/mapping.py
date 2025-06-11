@@ -1,5 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 import copy
 
 def map_atoms(smiles: str) -> str:

@@ -1,6 +1,8 @@
 from typing import Dict, Optional
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 import sys, os
 
 # Exact mass values for elements

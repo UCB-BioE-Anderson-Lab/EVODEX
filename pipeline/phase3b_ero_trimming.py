@@ -153,19 +153,14 @@ def load_and_prepare_data(paths):
     converted_p_df.to_csv(paths['evodex_p_phase3b_h_converted'], index=False)
     print(f"Saved: {paths['evodex_p_phase3b_h_converted']}")
 
+    # Save converted P with H-converted SMIRKS
+
     statistics['conversion'] = {
         'evodex_e_invalid_count': len(invalid_e_rows),
         'evodex_p_invalid_count': len(invalid_p_rows)
     }
 
-    # Copy converted EROs to evodex/data
-    os.makedirs("evodex/data", exist_ok=True)
-    shutil.copyfile(paths['evodex_e_phase3b_h_converted'], "evodex/data/EVODEX-E_reaction_operators.csv")
-    print("Copied EVODEX-E_reaction_operators.csv to evodex/data")
-
-    # Copy filtered F to evodex/data
-    shutil.copyfile(paths['evodex_f_filtered'], "evodex/data/EVODEX-F_unique_formulas.csv")
-    print("Copied EVODEX-F_unique_formulas.csv to evodex/data")
+    # (Removed copying of files to evodex/data as unnecessary for pipeline)
 
 def main():
     start_time = time.time()
@@ -237,6 +232,8 @@ def main():
     invalid_e_df = pd.DataFrame(invalid_e_rows)
     invalid_e_df.to_csv("data/errors/evodex_e_validation_rejects.csv", index=False)
     print(f"[validate_operators] Tested: {len(evodex_e_df)}, Valid: {len(valid_e_df)}, Invalid: {len(invalid_e_df)}")
+    # Save validated EROs
+    valid_e_df.to_csv(paths['evodex_e_phase3b_validated'], index=False)
 
     statistics['validation'] = {
         'total_e_initial': len(evodex_e_df),
@@ -270,8 +267,43 @@ def main():
     }
 
     pruned_df = pd.DataFrame(retained_operators)
+    # Final pruned EROs saved as evodex_e_phase3b_retained
     pruned_df.to_csv(paths['evodex_e_phase3b_final'], index=False)
-    print(f"Final pruned EVODEX-E saved to {paths['evodex_e_phase3b_final']}.")
+
+    # Save deduplicated R reactions used in retained EROs
+    used_p_hashes = set()
+    for _, row in valid_e_df.iterrows():
+        used_p_hashes.update(s.strip() for s in str(row.get('sources', '')).split(',') if s.strip())
+
+    # PRUNE P reactions based on retained E sources
+    evodex_p_pruned_df = evodex_p_df[evodex_p_df['id'].isin(used_p_hashes)].copy()
+    evodex_p_pruned_df.to_csv(paths['evodex_p_phase3b_final'], index=False)
+
+    # PRUNE F entries whose sources include at least one retained P
+    evodex_f_df = pd.read_csv(paths['evodex_f_filtered'])
+    valid_p_ids = used_p_hashes
+    filtered_f_rows = []
+    for _, row in evodex_f_df.iterrows():
+        source_ids = [s.strip() for s in str(row.get('sources', '')).split(',') if s.strip()]
+        retained_sources = [s for s in source_ids if s in valid_p_ids]
+        if retained_sources:
+            row_copy = row.copy()
+            row_copy['sources'] = ",".join(retained_sources)
+            filtered_f_rows.append(row_copy)
+    pruned_f_df = pd.DataFrame(filtered_f_rows)
+    pruned_f_df.to_csv(paths['evodex_f_phase3b_final'], index=False)
+
+    # Now get R hashes used in P
+    used_r_hashes = set()
+    for _, row in evodex_p_pruned_df.iterrows():
+        used_r_hashes.update(s.strip() for s in str(row.get('sources', '')).split(',') if s.strip())
+
+    # Read actual R input file from Phase 3a
+    evodex_r_df = pd.read_csv(paths['evodex_r_preliminary'])
+
+    # PRUNE R reactions based on retained P sources
+    evodex_r_pruned_df = evodex_r_df[evodex_r_df['id'].isin(used_r_hashes)].drop_duplicates(subset='smirks')
+    evodex_r_pruned_df.to_csv(paths['evodex_r_phase3b_final'], index=False)
 
     # Write statistics to file
     os.makedirs("data/errors", exist_ok=True)

@@ -2,6 +2,8 @@ import rdkit
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 from rdkit.Chem import rdChemReactions
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 
 # Function to check if an atom is sp3 hybridized
 def _is_sp3(atom):

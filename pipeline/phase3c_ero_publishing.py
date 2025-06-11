@@ -12,30 +12,20 @@ csv.field_size_limit(sys.maxsize)
 """
 Phase 3c: EVODEX Publishing to evodex/data
 
-Goal: Convert final Phase 3b outputs to EVODEX.1 format and publish H-converted versions to evodex/data.
+Goal: Convert final Phase 3b outputs to EVODEX.1 format and publish cleaned, H-converted versions to evodex/data.
 
-Input:
-- evodex_e_phase3b_final (At)
-- evodex_p_phase3b_final (At)
-- evodex_f_phase3b_final (no SMIRKS, no conversion needed)
-- evodex_r_phase3b_final (At)
+Assumes the following dependency structure:
+  - EVODEX-R is the foundation (source for P)
+  - EVODEX-P uses R as sources
+  - EVODEX-E and F use P as sources
 
-Steps:
-1. Assign final EVODEX.1 IDs to E, P, R.
-2. Update source references to match assigned EVODEX-P and EVODEX-R IDs.
-3. Write final H-converted E, P, R to:
-    - EVODEX-E_reaction_operators.csv
-    - EVODEX-P_partial_reactions.csv
-    - EVODEX-R_full_reactions.csv
-4. Write EVODEX-F_unique_formulas.csv with updated sources.
-5. Write raw_data_published (selected_reactions.csv) for website (filtered raw reactions used by EVODEX-R).
-
-Outputs (all in evodex/data/):
-- EVODEX-E_reaction_operators.csv
-- EVODEX-P_partial_reactions.csv
-- EVODEX-R_full_reactions.csv
-- EVODEX-F_unique_formulas.csv
-- selected_reactions.csv (raw_data_published)
+Processing steps:
+  1. Assign final EVODEX.1 IDs to R → P → E → F in dependency order.
+  2. Replace source hashes using previously assigned ID maps (R→P, P→E/F).
+  3. Publish each EVODEX file with updated IDs and sources.
+  4. Apply At→H conversion for EVODEX-P and R SMIRKS fields.
+  5. Publish raw_data subset used by EVODEX-R.
+  6. Cleanup legacy EVODEX data JSONs.
 """
 
 def ensure_directories(paths: dict):
@@ -56,15 +46,15 @@ def assign_ids(df, prefix):
         new_rows.append(new_row)
     return id_map, new_rows
 
-def update_sources(row_sources, source_id_map):
+def update_sources(row_sources, source_id_map, row_id=None):
     updated_sources = []
     for src in row_sources.split(','):
         src = src.strip()
         if src in source_id_map:
             updated_sources.append(source_id_map[src])
         else:
-            # Optionally log missing source
-            pass
+            print(f"[ERROR] Missing source mapping in row {row_id or 'UNKNOWN'}: '{src}' not found in source_id_map")
+            raise ValueError(f"Unresolved source '{src}' in row {row_id or 'UNKNOWN'}")
     return ','.join(updated_sources)
 
 def main():
@@ -74,49 +64,53 @@ def main():
     paths = load_paths('pipeline/config/paths.yaml')
     ensure_directories(paths)
 
-    # --- Process EVODEX-E ---
-    print("Processing EVODEX-E...")
-    e_df = pd.read_csv(paths['evodex_e_phase3b_final'])
-    e_id_map, e_rows = assign_ids(df=e_df, prefix='E')
-
-    # --- Process EVODEX-P ---
-    print("Processing EVODEX-P...")
-    p_df = pd.read_csv(paths['evodex_p_phase3b_final'])
-    p_id_map, p_rows = assign_ids(df=p_df, prefix='P')
-
-    # Update E sources now that P IDs are known
-    e_updated_rows = []
-    with open(paths['evodex_e_phase3b_final'], 'r') as efile:
-        reader = csv.DictReader(efile)
-        for row in reader:
-            row['sources'] = update_sources(row['sources'], p_id_map)
-            filtered_row = {key: row[key] for key in ['id', 'smirks', 'sources']}
-            e_updated_rows.append(filtered_row)
-
-    # --- Process EVODEX-R ---
+    # --- Process EVODEX-R (first) ---
     print("Processing EVODEX-R...")
     r_df = pd.read_csv(paths['evodex_r_phase3b_final'])
     r_id_map, r_rows = assign_ids(df=r_df, prefix='R')
+
+    # --- Process EVODEX-P (second) ---
+    print("Processing EVODEX-P...")
+    p_df = pd.read_csv(paths['evodex_p_phase3b_final'])
+    p_id_map, p_rows = assign_ids(df=p_df, prefix='P')
 
     # Update P sources now that R IDs are known
     p_updated_rows = []
     with open(paths['evodex_p_phase3b_final'], 'r') as pfile:
         reader = csv.DictReader(pfile)
         for row in reader:
-            row['sources'] = update_sources(row['sources'], r_id_map)
+            row['sources'] = update_sources(row['sources'], r_id_map, row['id'])
             row['id'] = p_id_map[row['id']]
             p_updated_rows.append(row)
 
-    # --- Process EVODEX-F ---
+    # --- Process EVODEX-E (third) ---
+    print("Processing EVODEX-E...")
+    e_df = pd.read_csv(paths['evodex_e_phase3b_final'])
+    e_id_map, e_rows = assign_ids(df=e_df, prefix='E')
+
+    # Update E sources now that P IDs are known
+    e_updated_rows = []
+    with open(paths['evodex_e_phase3b_final'], 'r') as efile:
+        reader = csv.DictReader(efile)
+        for row in reader:
+            original_id = row['id']
+            row['id'] = e_id_map[original_id]
+            row['sources'] = update_sources(row['sources'], p_id_map, row['id'])
+            filtered_row = {key: row[key] for key in ['id', 'smirks', 'sources']}
+            e_updated_rows.append(filtered_row)
+
+    # --- Process EVODEX-F (fourth) ---
     print("Processing EVODEX-F...")
     f_df = pd.read_csv(paths['evodex_f_phase3b_final'])
-    f_id_map, f_rows = assign_ids(df=f_df, prefix='F')
-
-    # Now update F sources (P IDs)
     f_updated_rows = []
-    for row in f_rows:
-        row['sources'] = update_sources(row['sources'], p_id_map)
-        f_updated_rows.append(row)
+    for i, row in enumerate(f_df.itertuples(index=False), start=1):
+        new_id = f"EVODEX.{__version__}-F{i}"
+        updated_sources = update_sources(row.sources, p_id_map, new_id)
+        f_updated_rows.append({
+            'id': new_id,
+            'formula': row.formula,
+            'sources': updated_sources
+        })
 
     # --- Write phase3c_final files and publish ---
 
@@ -161,7 +155,7 @@ def main():
     # EVODEX-F: Write updated rows to phase3c_final and publish unchanged
     print("Writing EVODEX-F phase3c_final file...")
     with open(paths['evodex_f_phase3c_final'], 'w', newline='') as outfile:
-        reader_fieldnames = f_updated_rows[0].keys() if f_updated_rows else ['id', 'smirks', 'sources']
+        reader_fieldnames = f_updated_rows[0].keys() if f_updated_rows else ['id', 'formula', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=reader_fieldnames)
         writer.writeheader()
         writer.writerows(f_updated_rows)

@@ -3,6 +3,8 @@ import os
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import inchi
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 from typing import Set
 from evodex.utils import get_molecule_hash
 

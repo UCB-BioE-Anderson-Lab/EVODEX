@@ -1,5 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 from itertools import combinations
 import logging
 

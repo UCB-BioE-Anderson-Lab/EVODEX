@@ -1,5 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 
 def copy_molecule_with_substitution(mol: Chem.Mol, substitution: dict, which_mol="") -> Chem.Mol:
     # Capture chiral tags BEFORE AddHs
