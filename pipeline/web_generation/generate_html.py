@@ -216,6 +216,7 @@ def generate_main_index_page(env, evodex_types, root_dir, ro_metadata):
 def generate_synthesis_subset_page(env, evodex_e_synthesis_df, pages_dir):
     template = env.get_template('synthesis_subset_template.html')
     rows = evodex_e_synthesis_df.to_dict(orient='records')
+    rows.sort(key=lambda x: int(x['id'].split('-E')[-1]))
     for row in rows:
         row['sources'] = [source.strip() for source in row['sources'].split(',')]
 

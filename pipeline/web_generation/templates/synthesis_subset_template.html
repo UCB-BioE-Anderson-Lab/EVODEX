@@ -6,6 +6,10 @@
     <title>Synthesis Subset of EVODEX-E</title>
     <link rel="stylesheet" href="../styles.css">
     <style>
+        .table-container {
+            overflow-x: auto;
+            width: 100%;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -41,32 +45,34 @@
     <main>
         <section>
             <p>This table lists a subset of EVODEX-E operators optimized for pathway synthesis applications. The subset was created by removing ubiquitous metabolites from all reactions to derive partial reactions, which were then matched with comprehensive EVODEX-P members. This listing focuses on primary reaction changes without including cofactors or other universal metabolites.</p>
-            <p><a href="../data/EVODEX-E_synthesis_subset.csv">Download CSV Version</a></p>
+            <p><a href="https://github.com/UCB-BioE-Anderson-Lab/EVODEX/blob/main/evodex/data/EVODEX-E_synthesis_subset.csv">Download CSV Version</a></p>
             <p><a href="https://github.com/UCB-BioE-Anderson-Lab/EVODEX/blob/main/evodex/data/ubiquitous_metabolites.txt">Download Ubiquitous Metabolites</a></p>
         </section>
         <section>
-            <table>
-                <thead>
-                    <tr>
-                        <th>id</th>
-                        <th>sources</th>
-                        <th>smirks</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in data %}
-                    <tr>
-                        <td><a href="{{ row.id }}.html">{{ row.id }}</a></td>
-                        <td>
-                            {% for source in row.sources %}
-                            <a href="{{ source }}.html">{{ source }}</a>{% if not loop.last %}, {% endif %}
-                            {% endfor %}
-                        </td>
-                        <td class="scrollable">{{ row.smirks }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>id</th>
+                            <th>sources</th>
+                            <th>smirks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data %}
+                        <tr>
+                            <td><a href="{{ row.id }}.html">{{ row.id }}</a></td>
+                            <td class="scrollable">
+                                {% for source in row.sources %}
+                                <a href="{{ source }}.html">{{ source }}</a>{% if not loop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="scrollable">{{ row.smirks }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </section>
     </main>
     <footer>
