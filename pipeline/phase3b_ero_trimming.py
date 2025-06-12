@@ -12,6 +12,9 @@ from pipeline.version import __version__
 from multiprocessing import Process, Queue
 from evodex.evaluation import operator_matches_reaction
 from collections import Counter
+# Additional imports for EVODEX-C grouping
+from evodex.operators import extract_operator
+from evodex.utils import reaction_hash
 
 """
 Phase 3b: EVODEX-E Validation and Trimming
@@ -98,19 +101,40 @@ def dominance_prune_within_formula(f_group):
 
     # Sort operators by ascending substrate atom count
     f_group = sorted(f_group, key=lambda e: count_substrate_atoms(e['smirks']))
-    non_dominated = []
 
-    for i, candidate in enumerate(f_group):
-        print(f"[dominance_prune] Processing operator {i+1}/{len(f_group)}: {candidate.get('id', 'UNKNOWN')}")
-        is_dominated = False
-        for nd in non_dominated:
-            # Check via match
-            if check_match_with_timeout(nd['smirks'], candidate['smirks'], timeout=60):
-                print(f"[dominance_prune] Candidate {candidate.get('id', 'UNKNOWN')} is dominated by {nd.get('id', 'UNKNOWN')}")
-                is_dominated = True
-                break
-        if not is_dominated:
-            non_dominated.append(candidate)
+    # Compute EVODEX-N hash for each operator and group by hash
+    n_hash_to_ops = {}
+    for e in f_group:
+        try:
+            n_repr = extract_operator(
+                e['smirks'],
+                include_stereochemistry=True,
+                include_sigma=True,
+                include_pi=False,
+                include_unmapped_hydrogens=True,
+                include_unmapped_heavy_atoms=True,
+                include_static_hydrogens=True
+            )
+            n_hash = reaction_hash(n_repr)
+            n_hash_to_ops.setdefault(n_hash, []).append(e)
+        except Exception as ex:
+            print(f"[dominance_prune] Failed to extract N for {e.get('id', 'UNKNOWN')}: {ex}")
+
+    non_dominated = []
+    for n_hash, ops in n_hash_to_ops.items():
+        ops = sorted(ops, key=lambda e: count_substrate_atoms(e['smirks']))
+        group_non_dominated = []
+        for i, candidate in enumerate(ops):
+            print(f"[dominance_prune] Processing operator {i+1}/{len(ops)}: {candidate.get('id', 'UNKNOWN')}")
+            is_dominated = False
+            for nd in group_non_dominated:
+                if check_match_with_timeout(nd['smirks'], candidate['smirks'], timeout=60):
+                    print(f"[dominance_prune] Candidate {candidate.get('id', 'UNKNOWN')} is dominated by {nd.get('id', 'UNKNOWN')}")
+                    is_dominated = True
+                    break
+            if not is_dominated:
+                group_non_dominated.append(candidate)
+        non_dominated.extend(group_non_dominated)
 
     return non_dominated
 

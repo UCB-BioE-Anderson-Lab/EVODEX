@@ -53,11 +53,23 @@ def operator_matches_reaction(operator_smirks: str, reaction_smiles: str) -> boo
     if not isinstance(reaction_smiles, str) or not reaction_smiles.strip():
         raise ValueError(f"[operator_matches_reaction] Invalid reaction_smiles: {reaction_smiles}")
 
-    # Quick checks on counts and atom types before projection
-    op_sub_mols = [Chem.MolFromSmiles(m) for m in operator_smirks.split(">>")[0].split(".") if Chem.MolFromSmiles(m)]
-    rxn_sub_mols = [Chem.AddHs(Chem.MolFromSmiles(m)) for m in reaction_smiles.split(">>")[0].split(".") if Chem.MolFromSmiles(m)]
+    # String-based parsing and count checks before loading RDKit Mol objects
+    op_sub_parts = operator_smirks.split(">>")[0].split(".")
+    rxn_sub_parts = reaction_smiles.split(">>")[0].split(".")
+    if len(rxn_sub_parts) != len(op_sub_parts):
+        return False
 
-    if len(rxn_sub_mols) > len(op_sub_mols):
+    op_prod_parts = operator_smirks.split(">>")[1].split(".")
+    rxn_prod_parts = reaction_smiles.split(">>")[1].split(".")
+    if len(rxn_prod_parts) != len(op_prod_parts):
+        return False
+
+    # Now load operator substrate SMARTS patterns and reaction substrate molecules with explicit Hs
+    from itertools import permutations
+    op_sub_smarts = [Chem.MolFromSmarts(m) for m in op_sub_parts if Chem.MolFromSmarts(m)]
+    rxn_sub_mols = [Chem.AddHs(Chem.MolFromSmiles(m)) for m in rxn_sub_parts if Chem.MolFromSmiles(m)]
+
+    if len(rxn_sub_mols) > len(op_sub_smarts):
         # print("reaction has more substrates than operator expects")
         return False
 
@@ -67,23 +79,29 @@ def operator_matches_reaction(operator_smirks: str, reaction_smiles: str) -> boo
         # print("reaction has more products than operator expects")
         return False
 
-    def count_atoms(mol_list):
-        atom_counts = {}
-        for mol in mol_list:
-            if mol:
-                for atom in mol.GetAtoms():
-                    symbol = atom.GetSymbol()
-                    atom_counts[symbol] = atom_counts.get(symbol, 0) + 1
-        return atom_counts
+    # Substructure matching block for substrate parts
+    found_match = False
+    for op_perm in permutations(op_sub_smarts):
+        used_indices = set()
+        all_match = True
+        for op_mol in op_perm:
+            match_found = False
+            for i, rxn_mol in enumerate(rxn_sub_mols):
+                if i in used_indices:
+                    continue
+                if rxn_mol.HasSubstructMatch(op_mol):
+                    used_indices.add(i)
+                    match_found = True
+                    break
+            if not match_found:
+                all_match = False
+                break
+        if all_match:
+            found_match = True
+            break
 
-    op_atom_counts = count_atoms(op_sub_mols)
-    # print("op_atom_counts", op_atom_counts)
-    rxn_atom_counts = count_atoms(rxn_sub_mols)
-    # print("rxn_atom_counts", rxn_atom_counts)
-    for atom, count in op_atom_counts.items():
-        if rxn_atom_counts.get(atom, 0) < count:
-            # print("atom count don't match")
-            return False
+    if not found_match:
+        return False
 
     try:
         reaction_smiles_with_h = _add_hydrogens(reaction_smiles)
