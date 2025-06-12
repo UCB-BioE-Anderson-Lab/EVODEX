@@ -2,16 +2,20 @@ import csv
 import os
 import time
 from collections import defaultdict
-from evodex.operators import extract_operator
-from evodex.utils import reaction_hash
 from pipeline.config import load_paths
 from pipeline.version import __version__
 import sys
 csv.field_size_limit(sys.maxsize)
+from rdkit import Chem
+from rdkit.Chem import AllChem
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 
 # Phase 3a: EVODEX-E Pruning
 # This phase prunes EVODEX-E operators from the full EVODEX-E set.
-# Operators with >=5 sources are retained. Operators with fewer than 5 sources are excluded. Up to 5 P's are kept per retained E.
+# Operators whose reactants lack any atom-mapped atoms are excluded.
+# Among the rest, operators with >=5 sources are retained; others are excluded.
+# Up to 5 P's are kept per retained E.
 
 def ensure_directories(paths: dict):
     for path in paths.values():
@@ -41,6 +45,30 @@ def main():
             sources_set = set(row['sources'].split(','))
             operator_map[op_hash]['sources'].update(sources_set)
 
+    def has_mapped_atoms(op_id, smirks):
+        try:
+            rxn = AllChem.ReactionFromSmarts(smirks)
+            for mol in rxn.GetReactants():
+                if mol is None:
+                    continue
+                for atom in mol.GetAtoms():
+                    if atom.GetAtomMapNum() > 0:
+                        return True
+            print(f"Rejected operator {op_id} — no mapped atoms found.")
+            return False
+        except Exception as e:
+            print(f"Error parsing SMIRKS for operator {op_id}: {e}")
+            return False
+
+    rejected_unmapped = 0
+    filtered_operator_map = {}
+    for k, v in operator_map.items():
+        if v['smirks'] and has_mapped_atoms(k, v['smirks']):
+            filtered_operator_map[k] = v
+        else:
+            rejected_unmapped += 1
+    operator_map = filtered_operator_map
+
     # Retain operators with >=5 sources (operators with fewer than 5 sources are excluded)
     retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) >= 5}
 
@@ -61,6 +89,7 @@ def main():
     print(f"  Operators with <5 sources (excluded): {num_ops_excluded}")
     print(f"  Operators retained (>=5 sources): {num_ops_retained}")
     print(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}")
+    print(f"  Operators rejected for missing mapped atoms: {rejected_unmapped}")
 
     # Sort retained_ops by number of sources (descending)
     sorted_retained_ops = sorted(
@@ -101,6 +130,7 @@ def main():
         report_file.write(f"  Operators with only 1 source (excluded): {num_ops_excluded}\n")
         report_file.write(f"  Operators retained (>=5 sources): {num_ops_retained}\n")
         report_file.write(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}\n")
+        report_file.write(f"  Operators rejected for missing mapped atoms: {rejected_unmapped}\n")
 
     print(f"Phase 3a EVODEX-E pruning complete. Retained {len(retained_ops)} operators with >=5 sources. Up to 5 sources retained per operator.")
 
