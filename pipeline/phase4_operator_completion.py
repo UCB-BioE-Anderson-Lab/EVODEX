@@ -8,6 +8,9 @@ from pipeline.version import __version__
 import time
 import sys
 csv.field_size_limit(sys.maxsize)
+import pandas as pd
+from evodex.astatine import  convert_dataframe_smirks_column_at_to_h
+
 
 # Phase 4: Operator Completion
 # This script derives additional operator forms (EVODEX-C, EVODEX-N, EVODEX-Em, EVODEX-Cm, EVODEX-Nm)
@@ -179,10 +182,7 @@ def main():
 
     # === Phase 4 Publishing ===
     print("\n=== Phase 4 Publishing ===")
-
-    from evodex.astatine import convert_dataframe_smiles_column
-    import pandas as pd
-
+    
     for key in operator_configs:
         # Determine canonical filename (matches what was written in processed)
         out_filename = os.path.basename(paths[key])
@@ -195,7 +195,7 @@ def main():
         df = pd.read_csv(src_path)
 
         # Convert At → H on smirks column
-        df_h, errors = convert_dataframe_smiles_column(df, 'smirks')
+        df_h, errors = convert_dataframe_smirks_column_at_to_h(df, 'smirks')
         if errors:
             print(f"  [!] {len(errors)} At→H conversion errors encountered.")
 

@@ -107,9 +107,8 @@ def astatine_to_hydrogen_reaction(reaction_smiles: str) -> str:
 
     return '.'.join(reactant_smiles) + ">>" + '.'.join(product_smiles)
 
-
 # DataFrame utility for converting a column of reaction SMILES using astatine_to_hydrogen_reaction
-def convert_dataframe_smiles_column(df, column_name):
+def convert_dataframe_smiles_column_at_to_h(df, column_name):
     """
     Applies astatine_to_hydrogen_reaction to the specified column of a DataFrame.
     Returns the converted DataFrame and a list of errors (tuples of index, value, and exception).
@@ -126,6 +125,72 @@ def convert_dataframe_smiles_column(df, column_name):
     df_converted = df.copy()
     df_converted[column_name] = df_converted[column_name].apply(convert)
     return df_converted, errors
+
+# DataFrame utility for converting a column of reaction SMIRKS using astatine_to_hydrogen_reaction
+def convert_dataframe_smirks_column_at_to_h(df, column_name):
+    """
+    Applies astatine_to_hydrogen_molecule to each molecule in a SMIRKS reaction in the specified DataFrame column.
+    Returns the converted DataFrame and a list of errors.
+    """
+    from rdkit.Chem import rdChemReactions
+    errors = []
+
+    def convert(row):
+        try:
+            reactionOperator = rdChemReactions.ReactionFromSmarts(row)
+            new_reaction = rdChemReactions.ChemicalReaction()
+
+            def convert_mol(mol):
+                rw_mol = Chem.RWMol()
+                atom_map = {}
+
+                for atom in mol.GetAtoms():
+                    atomic_num = atom.GetAtomicNum()
+                    new_atom = Chem.Atom(1 if atomic_num == 85 else atomic_num)
+                    new_idx = rw_mol.AddAtom(new_atom)
+                    atom_map[atom.GetIdx()] = new_idx
+
+                    rw_atom = rw_mol.GetAtomWithIdx(new_idx)
+                    rw_atom.SetChiralTag(atom.GetChiralTag())
+                    rw_atom.SetFormalCharge(atom.GetFormalCharge())
+                    rw_atom.SetAtomMapNum(atom.GetAtomMapNum())
+
+                for bond in mol.GetBonds():
+                    begin_idx = bond.GetBeginAtomIdx()
+                    end_idx = bond.GetEndAtomIdx()
+
+                    if begin_idx not in atom_map or end_idx not in atom_map:
+                        continue
+
+                    new_begin = atom_map[begin_idx]
+                    new_end = atom_map[end_idx]
+
+                    rw_mol.AddBond(new_begin, new_end, bond.GetBondType())
+
+                result = rw_mol.GetMol()
+                Chem.SanitizeMol(result)
+                return result
+
+            for i in range(reactionOperator.GetNumReactantTemplates()):
+                mol = reactionOperator.GetReactantTemplate(i)
+                converted = convert_mol(mol)
+                new_reaction.AddReactantTemplate(converted)
+
+            for i in range(reactionOperator.GetNumProductTemplates()):
+                mol = reactionOperator.GetProductTemplate(i)
+                converted = convert_mol(mol)
+                new_reaction.AddProductTemplate(converted)
+
+            smirks = rdChemReactions.ReactionToSmarts(new_reaction)
+            return smirks
+        except Exception as e:
+            errors.append((row, e))
+            return None
+
+    df_converted = df.copy()
+    df_converted[column_name] = df_converted[column_name].apply(convert)
+    return df_converted, errors
+
 
 # Allow running and testing directly
 if __name__ == "__main__":

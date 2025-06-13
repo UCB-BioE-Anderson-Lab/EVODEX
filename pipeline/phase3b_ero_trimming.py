@@ -7,7 +7,7 @@ import time
 import pandas as pd
 import psutil
 from pipeline.config import load_paths
-from evodex.astatine import convert_dataframe_smiles_column
+from evodex.astatine import convert_dataframe_smirks_column_at_to_h, convert_dataframe_smiles_column_at_to_h
 from pipeline.version import __version__
 from multiprocessing import Process, Queue
 from evodex.evaluation import operator_matches_reaction
@@ -145,7 +145,7 @@ def load_and_prepare_data(paths):
     # Load EVODEX-E Phase 3a preliminary and convert SMIRKS to H
     print("Converting EVODEX-E Phase 3a preliminary to H...")
     evodex_e_df = pd.read_csv(paths['evodex_e_phase3a_preliminary'])
-    converted_e_df, conversion_errors_e = convert_dataframe_smiles_column(evodex_e_df, 'smirks')
+    converted_e_df, conversion_errors_e = convert_dataframe_smirks_column_at_to_h(evodex_e_df, 'smirks')
     # Filter out rows with null or empty smirks
     invalid_e_mask = converted_e_df['smirks'].isna() | (converted_e_df['smirks'].str.strip() == "")
     invalid_e_rows = evodex_e_df[invalid_e_mask]
@@ -159,7 +159,7 @@ def load_and_prepare_data(paths):
     # Load EVODEX-P Phase 3a retained and convert SMIRKS to H
     print("Converting EVODEX-P Phase 3a retained to H...")
     evodex_p_df = pd.read_csv(paths['evodex_p_phase3a_retained'])
-    converted_p_df, conversion_errors_p = convert_dataframe_smiles_column(evodex_p_df, 'smirks')
+    converted_p_df, conversion_errors_p = convert_dataframe_smiles_column_at_to_h(evodex_p_df, 'smirks')
     invalid_p_mask = converted_p_df['smirks'].isna() | (converted_p_df['smirks'].str.strip() == "")
     invalid_p_rows = evodex_p_df[invalid_p_mask]
     if not invalid_p_rows.empty:
@@ -178,8 +178,11 @@ def load_and_prepare_data(paths):
 
 def _match_worker(q, op, rxn):
     try:
-        q.put(operator_matches_reaction(op, rxn))
-    except Exception:
+        result = operator_matches_reaction(op, rxn)
+        # print(f"[MATCH WORKER] Result for operator:\n  {op}\nvs reaction:\n  {rxn[:200]}...\n=> {result}")
+        q.put(result)
+    except Exception as e:
+        print(f"[MATCH WORKER] ERROR comparing operator vs reaction: {e}")
         q.put(False)
 
 def check_match_with_timeout(op_smirks, rxn, timeout=60):
@@ -246,8 +249,12 @@ def main():
                         last_fail_hash = p_hash
                         last_fail_smiles = rxn
                         break
+                    # Insert debug print before matching
+                    # print(f"[DEBUG] Checking operator vs reaction:\n  OPERATOR: {op_smirks}\n  REACTION: {rxn}")
                     try:
                         if check_match_with_timeout(op_smirks, rxn, timeout=60):
+                            # Debug print for successful match
+                            # print(f"[DEBUG] SUCCESSFUL MATCH for operator {row.get('id')} with P hash {p_hash}")
                             matched = True
                             break
                     except Exception as e:
@@ -258,6 +265,9 @@ def main():
                         break
                     last_fail_hash = p_hash
                     last_fail_smiles = rxn
+                # After all source_hashes, if still not matched, print debug
+                if not matched:
+                    print(f"[DEBUG] FAILED MATCH for operator {row.get('id')}")
 
             if matched:
                 valid_e_rows.append(row)
@@ -271,7 +281,7 @@ def main():
         valid_e_df = pd.DataFrame(valid_e_rows)
         invalid_e_df = pd.DataFrame(invalid_e_rows)
         invalid_e_df.to_csv("data/errors/evodex_e_validation_rejects.csv", index=False)
-        print(f"[validate_operators] Tested: {len(evodex_e_df)}, Valid: {len(valid_e_df)}, Invalid: {len(invalid_e_df)}")
+        # print(f"[validate_operators] Tested: {len(evodex_e_df)}, Valid: {len(valid_e_df)}, Invalid: {len(invalid_e_df)}")
         # Save validated EROs
         valid_e_df.to_csv(paths['evodex_e_phase3b_validated'], index=False)
 

@@ -5,7 +5,7 @@ import time
 import pandas as pd
 from pipeline.config import load_paths
 from pipeline.version import __version__
-from evodex.astatine import convert_dataframe_smiles_column
+from evodex.astatine import  convert_dataframe_smiles_column_at_to_h
 import sys
 csv.field_size_limit(sys.maxsize)
 
@@ -132,7 +132,7 @@ def main():
         writer.writeheader()
         writer.writerows(p_updated_rows)
     print("Publishing EVODEX-P to evodex/data...")
-    p_df_h, _ = convert_dataframe_smiles_column(pd.DataFrame(p_updated_rows), 'smirks')
+    p_df_h, _ = convert_dataframe_smiles_column_at_to_h(pd.DataFrame(p_updated_rows), 'smirks')
     with open(os.path.join('evodex/data/EVODEX-P_partial_reactions.csv'), 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
         writer.writeheader()
@@ -146,7 +146,7 @@ def main():
         writer.writeheader()
         writer.writerows(r_rows)
     print("Publishing EVODEX-R to evodex/data...")
-    r_df_h, _ = convert_dataframe_smiles_column(pd.DataFrame(r_rows), 'smirks')
+    r_df_h, _ = convert_dataframe_smiles_column_at_to_h(pd.DataFrame(r_rows), 'smirks')
     with open(os.path.join('evodex/data/EVODEX-R_full_reactions.csv'), 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
         writer.writeheader()
