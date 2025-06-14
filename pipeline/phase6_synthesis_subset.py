@@ -62,25 +62,17 @@ def main():
     # Process EVODEX-P reactions, skipping those with cofactors in substrates or products
     for p_id, smirks in evodex_p_map.items():
         try:
-            # === Begin: 1:1 substrate:product constraint ===
-            # This constraint ensures only simple 1:1 reactions are retained.
-            # If you want to allow potentially intramolecular reactions, comment out the block below.
-            try:
-                reactants, products = smirks.split('>>')
-                if len(reactants.split('.')) != 1 or len(products.split('.')) != 1:
-                    continue
-            except ValueError:
-                continue  # Skip malformed SMIRKS
-            # === End: 1:1 substrate:product constraint ===
-
             # Skip if reaction contains any cofactor
             if contains_cofactor(smirks):
                 continue
 
-            # If passed filtering, find associated EVODEX-E IDs
+            # Additional check: skip if EVODEX-E SMIRKS has multiple substrates/products (contains '.')
             evodex_e_ids = evodex_e_map.get(p_id)
             if evodex_e_ids:
                 for eid in evodex_e_ids:
+                    e_smirks = evodex_e_full_map[eid]['smirks']
+                    if '.' in e_smirks:
+                        continue
                     evodex_e_subset.add(eid)
                     evodex_e_sources.setdefault(eid, set()).add(p_id)
 
