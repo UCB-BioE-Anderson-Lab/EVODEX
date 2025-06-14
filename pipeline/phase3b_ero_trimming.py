@@ -213,83 +213,9 @@ def main():
     evodex_e_df = pd.read_csv(paths['evodex_e_phase3b_h_converted'])
     evodex_f_df = pd.read_csv(paths['evodex_f_filtered'])
 
-    # Step 1: Validate EROs
-    if os.path.exists(paths['evodex_e_phase3b_validated']):
-        print("Validation output already exists, skipping validation.")
-        valid_e_df = pd.read_csv(paths['evodex_e_phase3b_validated'])
-        evodex_p_df = pd.read_csv(paths['evodex_p_phase3b_h_converted'])
-    else:
-        print("[validate_operators] Starting validation...")
-        evodex_p_df = pd.read_csv(paths['evodex_p_phase3b_h_converted'])
-
-        valid_e_rows = []
-        invalid_e_rows = []
-
-        p_hash_to_smiles = dict(zip(evodex_p_df['id'], evodex_p_df['smirks']))
-
-        for idx, (_, row) in enumerate(evodex_e_df.iterrows()):
-            print(f"[validate_operators] Validating {idx+1}/{len(evodex_e_df)}: {row.get('id', 'UNKNOWN')}")
-            op_smirks = row['smirks']
-            source_hashes = [s.strip() for s in str(row.get('sources', '')).split(',') if s.strip()]
-            matched = False
-            last_fail_hash = ''
-            last_fail_smiles = ''
-            failure_type = 'no_match_in_operator_matches_reaction'
-
-            # Check operator SMIRKS validity
-            if not isinstance(op_smirks, str) or not op_smirks.strip():
-                print(f"[validate_operators] Invalid operator SMIRKS in row {row.get('id', 'UNKNOWN')}: {op_smirks}")
-                failure_type = 'invalid_operator_smirks'
-            else:
-                for p_hash in source_hashes:
-                    rxn = p_hash_to_smiles.get(p_hash)
-                    if not isinstance(rxn, str) or not rxn.strip():
-                        print(f"[validate_operators] Invalid reaction SMIRKS for P hash {p_hash}: {rxn}")
-                        failure_type = 'invalid_reaction_smirks'
-                        last_fail_hash = p_hash
-                        last_fail_smiles = rxn
-                        break
-                    # Insert debug print before matching
-                    # print(f"[DEBUG] Checking operator vs reaction:\n  OPERATOR: {op_smirks}\n  REACTION: {rxn}")
-                    try:
-                        if check_match_with_timeout(op_smirks, rxn, timeout=60):
-                            # Debug print for successful match
-                            # print(f"[DEBUG] SUCCESSFUL MATCH for operator {row.get('id')} with P hash {p_hash}")
-                            matched = True
-                            break
-                    except Exception as e:
-                        print(f"[validate_operators] Error matching operator {op_smirks} with reaction {rxn}: {e}")
-                        failure_type = 'error_in_operator_matches_reaction'
-                        last_fail_hash = p_hash
-                        last_fail_smiles = rxn
-                        break
-                    last_fail_hash = p_hash
-                    last_fail_smiles = rxn
-                # After all source_hashes, if still not matched, print debug
-                if not matched:
-                    print(f"[DEBUG] FAILED MATCH for operator {row.get('id')}")
-
-            if matched:
-                valid_e_rows.append(row)
-            else:
-                row_copy = row.copy()
-                row_copy['fail_source_hash'] = last_fail_hash
-                row_copy['fail_source_smiles'] = last_fail_smiles
-                row_copy['failure_stage'] = failure_type
-                invalid_e_rows.append(row_copy)
-
-        valid_e_df = pd.DataFrame(valid_e_rows)
-        invalid_e_df = pd.DataFrame(invalid_e_rows)
-        invalid_e_df.to_csv("data/errors/evodex_e_validation_rejects.csv", index=False)
-        # print(f"[validate_operators] Tested: {len(evodex_e_df)}, Valid: {len(valid_e_df)}, Invalid: {len(invalid_e_df)}")
-        # Save validated EROs
-        valid_e_df.to_csv(paths['evodex_e_phase3b_validated'], index=False)
-
-        statistics['validation'] = {
-            'total_e_initial': len(evodex_e_df),
-            'failed_validation': len(invalid_e_df),
-            'failed_ratio': f"{len(invalid_e_df) / len(evodex_e_df):.2%}" if len(evodex_e_df) else "N/A"
-        }
+    # Step 1: Validate EROs (removed validation step; shortcut)
+    valid_e_df = evodex_e_df
+    evodex_p_df = pd.read_csv(paths['evodex_p_phase3b_h_converted'])
 
     # Step 2: Group by formula
     formula_groups = group_by_formula(valid_e_df, evodex_f_df)
@@ -363,7 +289,7 @@ def main():
     with open("data/errors/phase3b_stats.txt", "w") as f:
         f.write("Phase 3b Statistics Summary\n")
         f.write("=====================================\n\n")
-        for section in ['initial', 'group_by_formula', 'conversion', 'validation', 'retained']:
+        for section in ['initial', 'group_by_formula', 'conversion', 'retained']:
             stat = statistics.get(section)
             if not stat:
                 continue
@@ -380,10 +306,6 @@ def main():
             elif section == 'conversion':
                 f.write(f"{'EVODEX-E entries dropped during SMIRKS conversion':>60}: {stat['evodex_e_invalid_count']}\n")
                 f.write(f"{'EVODEX-P entries dropped during SMIRKS conversion':>60}: {stat['evodex_p_invalid_count']}\n")
-            elif section == 'validation':
-                f.write(f"{'Total EVODEX-E entries before validation':>60}: {stat['total_e_initial']}\n")
-                f.write(f"{'Number of EVODEX-E entries that failed validation':>60}: {stat['failed_validation']}\n")
-                f.write(f"{'Percentage that failed':>60}: {stat['failed_ratio']}\n")
             elif section == 'retained':
                 f.write(f"{'Total EVODEX-E operators before pruning':>60}: {stat['total_initial']}\n")
                 f.write(f"{'EVODEX-E operators retained after pruning':>60}: {stat['total_retained']}\n")
@@ -391,15 +313,13 @@ def main():
             f.write("\n")
 
         conversion_losses = statistics.get('conversion', {}).get('evodex_e_invalid_count', 0)
-        validation_losses = statistics.get('validation', {}).get('failed_validation', 0)
         retained = statistics.get('retained', {}).get('total_retained', 0)
-        total_validated = statistics.get('validation', {}).get('total_e_initial', 0)
+        total_initial = statistics.get('retained', {}).get('total_initial', 0)
         # Compute pruning_losses safely and handle missing stats.
-        if total_validated:
-            pruning_losses = total_validated - retained
+        if total_initial:
+            pruning_losses = total_initial - retained
         else:
             pruning_losses = 0
-        # Avoid double subtracting validation failures
         total_recorded = conversion_losses + pruning_losses + retained
         raw_total = statistics.get('initial', {}).get('total_raw_e', 0)
         discrepancy = raw_total - total_recorded

@@ -14,7 +14,7 @@ RDLogger.DisableLog('rdApp.*')
 # Phase 3a: EVODEX-E Pruning
 # This phase prunes EVODEX-E operators from the full EVODEX-E set.
 # Operators whose reactants lack any atom-mapped atoms are excluded.
-# Among the rest, operators with >=5 sources are retained; others are excluded.
+# Among the rest, operators with >=10 sources are retained; others are excluded.
 # Up to 5 P's are kept per retained E.
 
 def ensure_directories(paths: dict):
@@ -69,8 +69,8 @@ def main():
             rejected_unmapped += 1
     operator_map = filtered_operator_map
 
-    # Retain operators with >=5 sources (operators with fewer than 5 sources are excluded)
-    retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) >= 5}
+    # Retain operators with >=10 sources (operators with fewer than 10 sources are excluded)
+    retained_ops = {k: v for k, v in operator_map.items() if len(v['sources']) >= 10}
 
     # Statistics on retained operators
     import statistics
@@ -80,14 +80,14 @@ def main():
     mean_sources = statistics.mean(num_sources_list) if num_sources_list else 0
     median_sources = statistics.median(num_sources_list) if num_sources_list else 0
 
-    # Retention breakdown (dropping operators with only 1 source, keeping up to 5 sources per retained E)
-    num_ops_excluded = sum(1 for v in operator_map.values() if len(v['sources']) <= 5)
+    # Retention breakdown (dropping operators with fewer than 10 sources, keeping up to 5 sources per retained E)
+    num_ops_excluded = sum(1 for v in operator_map.values() if len(v['sources']) < 10)
     num_ops_retained = len(retained_ops)
     num_ops_trimmed = sum(1 for v in retained_ops.values() if len(v['sources']) > 5)
 
     print("Operator retention breakdown:")
-    print(f"  Operators with <5 sources (excluded): {num_ops_excluded}")
-    print(f"  Operators retained (>=5 sources): {num_ops_retained}")
+    print(f"  Operators with <10 sources (excluded): {num_ops_excluded}")
+    print(f"  Operators retained (>=10 sources): {num_ops_retained}")
     print(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}")
     print(f"  Operators rejected for missing mapped atoms: {rejected_unmapped}")
 
@@ -127,12 +127,12 @@ def main():
         report_file.write(f"  mean: {mean_sources:.2f}\n")
         report_file.write(f"  median: {median_sources}\n")
         report_file.write(f"\nOperator retention breakdown:\n")
-        report_file.write(f"  Operators with only 1 source (excluded): {num_ops_excluded}\n")
-        report_file.write(f"  Operators retained (>=5 sources): {num_ops_retained}\n")
+        report_file.write(f"  Operators with <10 sources (excluded): {num_ops_excluded}\n")
+        report_file.write(f"  Operators retained (>=10 sources): {num_ops_retained}\n")
         report_file.write(f"  Operators with >5 sources and thus trimmed to 5: {num_ops_trimmed}\n")
         report_file.write(f"  Operators rejected for missing mapped atoms: {rejected_unmapped}\n")
 
-    print(f"Phase 3a EVODEX-E pruning complete. Retained {len(retained_ops)} operators with >=5 sources. Up to 5 sources retained per operator.")
+    print(f"Phase 3a EVODEX-E pruning complete. Retained {len(retained_ops)} operators with >=10 sources. Up to 5 sources retained per operator.")
 
     # === Prune EVODEX-P to only retained P entries ===
     # Build set of surviving P IDs — up to 5 per E

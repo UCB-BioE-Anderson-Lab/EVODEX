@@ -84,7 +84,9 @@ def main():
         for row in reader:
             try:
                 left, right = row['smirks'].split('>>')
-                if len(left.split('.')) == 1 or len(right.split('.')) == 1:
+                # If you want to include potentially intramolecular reactions, use the line below instead:
+                # if len(left.split('.')) == 1 or len(right.split('.')) == 1:
+                if len(left.split('.')) == 1 and len(right.split('.')) == 1:
                     valid_p_ids.add(row['id'])
             except Exception:
                 errors_p += 1
