@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='evodex',
-    version='1.0.1',
+    version='1.0.2',
     packages=find_packages(include=['evodex', 'evodex.*']),
     install_requires=[
         'rdkit-pypi',
