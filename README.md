@@ -1,6 +1,9 @@
 # EVODEX
 
+
 EVODEX is a Python package that provides tools for the prediction of mechanistically plausible reaction products, validation of reactions, and mass spectrometry interpretation. It can be installed via PyPI for immediate use in Python projects. Alternatively, users can clone the repository to run the full mining pipeline and generate a customized dataset or website.
+
+⚠️ This project depends on a narrow window of compatible package versions. It is strongly recommended to use Python 3.11.13 and avoid newer Python versions unless you are familiar with rebuilding the RDKit dependency stack using Conda.
 
 # Current Release
 This is the EVODEX.1 collection. All IDs start with 'EVODEX.1' and are immutable, ensuring they can be externally referenced without collisions or missing references. Future distributions will be numbered EVODEX.2, EVODEX.3, etc., and may not have reverse compatibility with previous EVODEX.0 IDs. For example, EVODEX.1-E2 may not represent the same SMIRKS as EVODEX.0-E2.
@@ -129,13 +132,15 @@ The mining pipeline allows you to reproduce the full EVODEX operator set from ra
 
 ### Build Environment
 
-- Python >= 3.6 is supported
-- This release was built and tested with: Python 3.12.10
-- It is recommended to use a virtual environment:
+- This release is tested and works with Python **3.11.13**.
+- Using other Python versions (especially ≥ 3.12) may cause installation issues with key dependencies like `rdkit-pypi`, `scipy`, and `pandas`.
+- Do not attempt to upgrade individual packages or change the Python version unless you're using Conda, which is not recommended for this build.
+- For consistency and stability, we recommend using this exact Python version and installing via `venv`.
 
 ```bash
-python3.12 -m venv venv
+/opt/homebrew/bin/python3.11 -m venv venv
 source venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
