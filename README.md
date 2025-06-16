@@ -188,7 +188,7 @@ python -m pipeline.phase7_website
 
 ## Citing EVODEX
 If you use EVODEX, please cite our publication:
-"Extraction of Enzymatic Partial Reaction Operators for Biochemical Analysis and Synthesis" by <insert all authors>, and J. Christopher Anderson.
+TBD.
 
 ## License
 EVODEX is released under the MIT License.
