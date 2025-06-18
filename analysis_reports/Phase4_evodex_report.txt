@@ -1,0 +1,36 @@
+EVODEX Phase 4 Operator Completion Report (version 1)
+=============================================================
+EVODEX_C:
+Total unique EVODEX_C entries: 3
+Min sources per EVODEX_C: 5
+Max sources per EVODEX_C: 5
+Mean sources per EVODEX_C: 5.00
+Median sources per EVODEX_C: 5
+
+EVODEX_N:
+Total unique EVODEX_N entries: 3
+Min sources per EVODEX_N: 5
+Max sources per EVODEX_N: 5
+Mean sources per EVODEX_N: 5.00
+Median sources per EVODEX_N: 5
+
+EVODEX_Em:
+Total unique EVODEX_Em entries: 3
+Min sources per EVODEX_Em: 5
+Max sources per EVODEX_Em: 5
+Mean sources per EVODEX_Em: 5.00
+Median sources per EVODEX_Em: 5
+
+EVODEX_Cm:
+Total unique EVODEX_Cm entries: 3
+Min sources per EVODEX_Cm: 5
+Max sources per EVODEX_Cm: 5
+Mean sources per EVODEX_Cm: 5.00
+Median sources per EVODEX_Cm: 5
+
+EVODEX_Nm:
+Total unique EVODEX_Nm entries: 3
+Min sources per EVODEX_Nm: 5
+Max sources per EVODEX_Nm: 5
+Mean sources per EVODEX_Nm: 5.00
+Median sources per EVODEX_Nm: 5

@@ -1,0 +1,10 @@
+Pipeline Step Timings:
+Step                                                 Time (s)
+------------------------------------------------------------
+pipeline.phase3a_ero_pruning                            27.28
+pipeline.phase3b_ero_trimming                           30.48
+pipeline.phase3c_ero_publishing                         30.20
+pipeline.phase4_operator_completion                     29.41
+pipeline.phase5_mass_subset                             26.46
+pipeline.phase6_synthesis_subset                        27.73
+pipeline.phase7_website                                  3.44

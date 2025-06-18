@@ -1,0 +1,28 @@
+Phase 3b Statistics Summary
+=====================================
+
+[INITIAL]
+                 Total raw EVODEX-E entries loaded from file: 3
+
+[GROUP_BY_FORMULA]
+                     Total EVODEX-F entries loaded from file: 3
+                EVODEX-F entries matched to at least one ERO: 3
+              Total EVODEX-E reaction operators grouped by F: 3
+              EVODEX-F entries with multiple associated EROs: 0
+             EVODEX-F entries skipped due to missing P links: 0
+                 EVODEX-E entries that failed to match any F: 0
+
+[CONVERSION]
+           EVODEX-E entries dropped during SMIRKS conversion: 0
+           EVODEX-P entries dropped during SMIRKS conversion: 0
+
+[RETAINED]
+                     Total EVODEX-E operators before pruning: 3
+                   EVODEX-E operators retained after pruning: 3
+                   Percentage of EROs retained after pruning: 100.00%
+
+
+[SANITY CHECK]
+                     Sum of all removed and retained entries: 3
+                         Discrepancy from raw EVODEX-E total: 0
+            Percentage of original EVODEX-E entries retained: 100.00%

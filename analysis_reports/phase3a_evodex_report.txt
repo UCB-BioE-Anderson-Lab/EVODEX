@@ -1,0 +1,7 @@
+EVODEX-E Operator Extraction Report - Phase 3 Mining
+Number of operators: 4419
+Sources per operator:
+  min: 1
+  max: 5261
+  mean: 8.32
+  median: 1

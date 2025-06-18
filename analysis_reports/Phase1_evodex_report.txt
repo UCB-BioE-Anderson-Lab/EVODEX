@@ -1,0 +1,12 @@
+EVODEX-R Mining Report (version 1)
+============================================
+Total raw reactions: 114
+Valid reactions after sanitization: 114
+Compression rate due to reaction deduplication: 0.00%
+(i.e., only 100.00% of raw reactions are unique after hashing)
+
+Total unique EVODEX-R entries: 19
+Min reactions per EVODEX-R: 1
+Max reactions per EVODEX-R: 69
+Mean reactions per EVODEX-R: 6.00
+Median reactions per EVODEX-R: 1
