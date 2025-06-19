@@ -129,25 +129,25 @@ def operator_matches_reaction(operator_smirks: str, reaction_smiles: str) -> boo
         # print(e)
         return False
     
-def assign_evodex_F(smirks):
+def assign_evodex_F(smiles):
     """
-    Assign an EVODEX-F ID to a given SMIRKS.
+    Assign an EVODEX-F ID to a given reaction SMILES.
 
-    The function first adds hydrogens to both the substrate and product sides of the SMIRKS. 
+    The function first adds hydrogens to both the substrate and product sides of the SMILES. 
     It then calculates the difference in molecular formulas between the substrate and the product.
     This formula difference is used to search a pre-loaded cache of EVODEX-F IDs to find a match.
 
     Parameters:
-    smirks (str): The SMIRKS string representing the reaction.
+    smiles (str): The SMILES string representing the reaction.
 
     Returns:
     str: The EVODEX-F ID, if matched. Returns None if no match is found.
 
     Example:
-    >>> smirks = "CCO>>CC=O"
-    >>> assign_evodex_F(smirks)
+    >>> smiles = "CCO>>CC=O"
+    >>> assign_evodex_F(smiles)
     """
-    smirks_with_h = _add_hydrogens(smirks)
+    smirks_with_h = _add_hydrogens(smiles)
     formula_diff = calculate_formula_diff(smirks_with_h)
     # print("Formula difference:", formula_diff)
     evodex_f = _load_evodex_f()
@@ -197,16 +197,16 @@ def _parse_sources(sources):
     sources = sources.replace('"', '')  # Remove all double quotes
     return sources.split(',')  # Split by commas
 
-def match_operators(smirks, evodex_type='E'):
+def match_operators(smiles, evodex_type='E'):
     """
-    Assign complete-style operators based on a given SMIRKS and EVODEX type.
+    Assign complete-style operators based on a given reaction SMILES and EVODEX type.
 
-    This function splits the reaction SMIRKS into substrates and products,
+    This function splits the reaction SMILES into substrates and products,
     enumerates all possible pairings, and runs a helper method to find
     matching operators for each pairing.
 
     Parameters:
-    smirks (str): The SMIRKS string representing the reaction.
+    smiles (str): The SMILES string representing the reaction, e.g. 'CCO>>CC=O'
     evodex_type (str): The type of EVODEX operator (Electronic 'E', Nearest-Neighbor 'N', 
     or Core 'C', default is 'E').
 
@@ -217,9 +217,9 @@ def match_operators(smirks, evodex_type='E'):
     valid_operators = []
 
     try:
-        # Split the SMIRKS string into substrates and products
-        if '>>' in smirks:
-            substrates, products = smirks.split('>>')
+        # Split the SMILES string into substrates and products
+        if '>>' in smiles:
+            substrates, products = smiles.split('>>')
             substrate_list = substrates.split('.')
             product_list = products.split('.')
 
@@ -240,20 +240,20 @@ def match_operators(smirks, evodex_type='E'):
                 reactant_indices, product_indices = pairing
                 reactant_smiles = '.'.join([substrate_list[i] for i in sorted(reactant_indices)])
                 product_smiles = '.'.join([product_list[i] for i in sorted(product_indices)])
-                pairing_smirks = f"{reactant_smiles}>>{product_smiles}"
-                valid_operators.extend(_match_operator(pairing_smirks, evodex_type))
+                pairing_smiles = f"{reactant_smiles}>>{product_smiles}"
+                valid_operators.extend(_match_operator(pairing_smiles, evodex_type))
 
     except Exception as e:
-        print(f"Error processing SMIRKS {smirks}: {e}")
+        print(f"Error processing SMILES {smiles}: {e}")
     
     return valid_operators
 
-def _match_operator(smirks, evodex_type='E'):
+def _match_operator(smiles, evodex_type='E'):
     """
-    Helper function to assign a complete-style operator based on a given SMIRKS and EVODEX type.
+    Helper function to assign a complete-style operator based on a given SMILES and EVODEX type.
 
     Parameters:
-    smirks (str): The SMIRKS string representing the reaction.
+    smiles (str): The SMILES string representing the reaction.
     evodex_type (str): The type of EVODEX operator (Electronic 'E', Nearest-Neighbor 'N', 
     or Core 'C', default is 'E').
 
@@ -261,8 +261,8 @@ def _match_operator(smirks, evodex_type='E'):
     list: A list of valid operator IDs. Returns an empty list if no matching operators are found.
     """
     # Calculate the formula difference
-    smirks_with_h = _add_hydrogens(smirks)
-    formula_diff = calculate_formula_diff(smirks_with_h)
+    smiles_with_h = _add_hydrogens(smiles)
+    formula_diff = calculate_formula_diff(smiles_with_h)
     # print("Formula difference:", formula_diff)
 
     # Lazy load the operators associated with each formula
@@ -285,10 +285,10 @@ def _match_operator(smirks, evodex_type='E'):
     # Retrieve all operators of the right type associated with the formula difference
     potential_operators = evodex_data[f_id].get(evodex_type, [])
     evodex_ids = [op["id"] for op in potential_operators]
-    # print(f"Potential operator IDs for {smirks} of type {evodex_type}: {evodex_ids}")
+    # print(f"Potential operator IDs for {smiles} of type {evodex_type}: {evodex_ids}")
 
-    # Split the input smirks into substrates and products
-    sub_smiles, pdt_smiles = smirks.split('>>')
+    # Split the input smiles into substrates and products
+    sub_smiles, pdt_smiles = smiles.split('>>')
 
     # Convert pdt_smiles to a hash
     pdt_hash = get_molecule_hash(pdt_smiles)
@@ -315,31 +315,31 @@ def _match_operator(smirks, evodex_type='E'):
 
 
 # New function: find_exact_matching_operators
-def find_exact_matching_operators(p_smirks, evodex_type='E'):
+def find_exact_matching_operators(p_smiles, evodex_type='E'):
     """
     Find operators that exactly match the given P reaction.
 
     Uses formula diff lookup to limit candidates.
 
     Parameters:
-    p_smirks (str): SMIRKS string of P reaction (substrates>>products)
+    p_smiles (str): SMILES string of P reaction (substrates>>products)
     evodex_type (str): Operator type ('E', 'N', 'C')
 
     Returns:
     list: List of operator IDs that exactly match P
     """
-    f_id_list = assign_evodex_F(p_smirks)
+    f_id_list = assign_evodex_F(p_smiles)
     if not f_id_list:
         return []
     f_id = f_id_list[0]
-    # print(f"Matched F ID: {f_id} for P SMIRKS: {p_smirks}")
+    # print(f"Matched F ID: {f_id} for P SMILES: {p_smiles}")
 
     evodex_data = _load_evodex_data()
     if f_id not in evodex_data:
         return []
 
     candidate_operators = evodex_data[f_id].get(evodex_type, [])
-    substrates, products = p_smirks.split('>>')
+    substrates, products = p_smiles.split('>>')
     products_hash = get_molecule_hash(products)
 
     exact_matches = []
