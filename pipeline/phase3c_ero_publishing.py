@@ -43,6 +43,7 @@ def assign_ids(df, prefix):
         id_map[row.id] = new_id
         new_row = row._asdict()
         new_row['id'] = new_id
+        new_row['original_id'] = row.id
         new_rows.append(new_row)
     return id_map, new_rows
 
@@ -79,8 +80,10 @@ def main():
     with open(paths['evodex_p_phase3b_final'], 'r') as pfile:
         reader = csv.DictReader(pfile)
         for row in reader:
-            row['sources'] = update_sources(row['sources'], r_id_map, row['id'])
-            row['id'] = p_id_map[row['id']]
+            original_id = row['id']
+            row['original_id'] = original_id
+            row['sources'] = update_sources(row['sources'], r_id_map, original_id)
+            row['id'] = p_id_map[original_id]
             p_updated_rows.append(row)
 
     # --- Process EVODEX-E (third) ---
@@ -95,8 +98,9 @@ def main():
         for row in reader:
             original_id = row['id']
             row['id'] = e_id_map[original_id]
+            row['original_id'] = original_id
             row['sources'] = update_sources(row['sources'], p_id_map, row['id'])
-            filtered_row = {key: row[key] for key in ['id', 'smirks', 'sources']}
+            filtered_row = {key: row[key] for key in ['id', 'original_id', 'smirks', 'sources']}
             e_updated_rows.append(filtered_row)
 
     # --- Process EVODEX-F (fourth) ---
@@ -108,6 +112,7 @@ def main():
         updated_sources = update_sources(row.sources, p_id_map, new_id)
         f_updated_rows.append({
             'id': new_id,
+            'original_id': row.id,
             'formula': row.formula,
             'sources': updated_sources
         })
@@ -117,7 +122,7 @@ def main():
     # EVODEX-E: Write updated rows as-is to phase3c_final and publish unchanged
     print("Writing EVODEX-E phase3c_final file...")
     with open(paths['evodex_e_phase3c_final'], 'w', newline='') as outfile:
-        fieldnames = ['id', 'smirks', 'sources']
+        fieldnames = ['id', 'original_id', 'smirks', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(e_updated_rows)
@@ -127,35 +132,35 @@ def main():
     # EVODEX-P: Write updated rows to phase3c_final, convert to H for publishing
     print("Writing EVODEX-P phase3c_final file...")
     with open(paths['evodex_p_phase3c_final'], 'w', newline='') as outfile:
-        fieldnames = ['id', 'smirks', 'sources']
+        fieldnames = ['id', 'original_id', 'smirks', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(p_updated_rows)
     print("Publishing EVODEX-P to evodex/data...")
     p_df_h, _ = convert_dataframe_smiles_column_at_to_h(pd.DataFrame(p_updated_rows), 'smirks')
     with open(os.path.join('evodex/data/EVODEX-P_partial_reactions.csv'), 'w', newline='') as outfile:
-        writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
+        writer = csv.DictWriter(outfile, fieldnames=['id', 'original_id', 'smirks', 'sources'])
         writer.writeheader()
         writer.writerows(p_df_h.to_dict(orient='records'))
 
     # EVODEX-R: Write updated rows to phase3c_final, convert to H for publishing
     print("Writing EVODEX-R phase3c_final file...")
     with open(paths['evodex_r_phase3c_final'], 'w', newline='') as outfile:
-        fieldnames = ['id', 'smirks', 'sources']
+        fieldnames = ['id', 'original_id', 'smirks', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(r_rows)
     print("Publishing EVODEX-R to evodex/data...")
     r_df_h, _ = convert_dataframe_smiles_column_at_to_h(pd.DataFrame(r_rows), 'smirks')
     with open(os.path.join('evodex/data/EVODEX-R_full_reactions.csv'), 'w', newline='') as outfile:
-        writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
+        writer = csv.DictWriter(outfile, fieldnames=['id', 'original_id', 'smirks', 'sources'])
         writer.writeheader()
         writer.writerows(r_df_h.to_dict(orient='records'))
 
     # EVODEX-F: Write updated rows to phase3c_final and publish unchanged
     print("Writing EVODEX-F phase3c_final file...")
     with open(paths['evodex_f_phase3c_final'], 'w', newline='') as outfile:
-        reader_fieldnames = f_updated_rows[0].keys() if f_updated_rows else ['id', 'formula', 'sources']
+        reader_fieldnames = f_updated_rows[0].keys() if f_updated_rows else ['id', 'original_id', 'formula', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=reader_fieldnames)
         writer.writeheader()
         writer.writerows(f_updated_rows)

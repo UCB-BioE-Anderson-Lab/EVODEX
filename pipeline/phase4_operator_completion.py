@@ -60,12 +60,12 @@ def main():
         # Sort operators by source count (descending)
         sorted_ops = sorted(data_map.items(), key=lambda item: len(item[1]['sources']), reverse=True)
         with open(out_path, 'w', newline='') as outfile:
-            writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
+            writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources', 'hash'])
             writer.writeheader()
             for idx, (rxn_hash, data) in enumerate(sorted_ops, start=1):
                 op_code = key.split('_')[1]
                 op_id = f"EVODEX.1-{op_code[0].upper()}{op_code[1:]}{idx}"
-                writer.writerow({'id': op_id, 'smirks': data['smirks'], 'sources': ','.join(sorted(data['sources']))})
+                writer.writerow({'id': op_id, 'smirks': data['smirks'], 'sources': ','.join(sorted(data['sources'])), 'hash': rxn_hash})
 
     # Validation: Check for operator fragmentation per EVODEX-E
     print("Validating EVODEX-E → Operator mappings for consistency...")
