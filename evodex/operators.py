@@ -246,8 +246,8 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
     # print("Sigma Atom Indices Products:", [list(indices) for indices in sigma_atom_indices[1]])
 
     # ---------------------- POPULATE PI-BONDED ATOMS ---------------------
-    # Grow the pi shell until it no longer changes
-    pi_atom_indices = _grow_pi_shell(reaction, center_atom_indices)
+    # Grow the pi shell starting from the sigma shell (seed = sigma_atom_indices)
+    pi_atom_indices = _grow_pi_shell(reaction, sigma_atom_indices)
 
     # Display the pi_atom_indices
     # print("Pi Atom Indices:", pi_atom_indices)
