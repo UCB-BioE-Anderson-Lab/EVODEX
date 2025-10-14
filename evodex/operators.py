@@ -54,9 +54,28 @@ def _process_sigma_molecule(molecule, center_atom_indices):
 
 # Helper function to check if an atom is SP2 or SP hybridized
 def _is_sp_or_sp2(atom):
+    """
+    Return True if the atom can participate in a π system.
+    Criteria:
+    - Atom is aromatic (atom-level aromaticity), OR
+    - Atom hybridization is SP or SP2, OR
+    - Any incident bond is double, triple, or aromatic (bond-level aromaticity).
+    """
+    # Aromatic atoms are π-participating by definition in RDKit
+    if atom.GetIsAromatic():
+        return True
+
+    # Hybridization-based check
+    hyb = atom.GetHybridization()
+    if hyb in (Chem.rdchem.HybridizationType.SP2, Chem.rdchem.HybridizationType.SP):
+        return True
+
+    # Fallback: inspect bonds to catch edge cases and ensure aromatic bonds count
     for bond in atom.GetBonds():
-        if bond.GetBondType() in [Chem.rdchem.BondType.DOUBLE, Chem.rdchem.BondType.TRIPLE]:
+        bt = bond.GetBondType()
+        if bt in (Chem.rdchem.BondType.DOUBLE, Chem.rdchem.BondType.TRIPLE, Chem.rdchem.BondType.AROMATIC):
             return True
+
     return False
 
 def _grow_pi_shell(reaction, current_pi_indices):
