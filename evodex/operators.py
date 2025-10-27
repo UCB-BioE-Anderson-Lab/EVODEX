@@ -526,16 +526,16 @@ def _compile_operator(
 
 
 if __name__ == "__main__":
-    # Alcohol methylation
+    # Alcohol Methylation
     # smirks = "[H][O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]>>[C]([H])([H])([H])[O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]"
     
-    # Phenol methylation
+    # Phenol Methylation
     # smirks = '[H][O:2][c:3]1[c:4]([H:5])[c:6]([H:7])[c:8]([H:9])[c:10]([H:11])[c:12]1[H:13]>>[C]([H])([H])([H])[O:2][c:3]1[c:4]([H:5])[c:6]([H:7])[c:8]([H:9])[c:10]([H:11])[c:12]1[H:13]'
     
-    # cis/trans isomerization
+    # cis/trans Isomerization
     # smirks = "[C:1]([H:4])([H:5])([H:6])/[C:2]([H:7])=[C:3]([H:8])/[C:4]([H:9])([H:10])([H:11])>>[C:1]([H:4])([H:5])([H:6])\\[C:2]([H:7])=[C:3]([H:8])/[C:4]([H:9])([H:10])([H:11])"
 
-    # nucleophillic aromatic substitution
+    # Nucleophillic Aromatic Substitution
     smirks = "[C:1]([c:2]1[c:3]([H:12])[c:4]([H:13])[c:5]([F])[c:7]([H:14])[c:8]1[H:15])([H:9])([H:10])[H:11]>>[C:1]([c:2]1[c:3]([H:12])[c:4]([H:13])[c:5]([Cl])[c:7]([H:14])[c:8]1[H:15])([H:9])([H:10])[H:11]"
     # smirks = "[CH3:1][C:2]([CH3:3])=[CH:4][CH2:5][O:24][P:22](=[O:21])([OH:23])[O:25][P:26](=[O:27])([OH:28])[OH:29].[cH:6]1[cH:7][cH:8][cH:9][c:10]2[nH:11][cH:12][c:13]([CH2:14][C@H:15]([NH2:16])[C:17](=[O:18])[OH:19])[c:20]12>>[CH3:1][C:2]([CH3:3])=[CH:4][CH2:5][c:6]1[cH:7][cH:8][cH:9][c:10]2[nH:11][cH:12][c:13]([CH2:14][C@H:15]([NH2:16])[C:17](=[O:18])[OH:19])[c:20]12.[O:21]=[P:22]([OH:23])([OH:24])[O:25][P:26](=[O:27])([OH:28])[OH:29]"
 
