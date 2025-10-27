@@ -64,30 +64,33 @@ def operator_extractor(
     if not include_unmapped:
         unmapped_indices = None
 
-    # Step 7: Compile operator: assemble keep sets, prune others, and emit SMIRKS
+    # Step 7: Strip stereochemistry if requested
+    # Build the reaction used for compilation, stripping stereochemistry if requested
+    reaction_for_compile = reaction
+    if not include_stereochemistry:
+        reaction_for_compile = rdChemReactions.ChemicalReaction()
+        for i in range(reaction.GetNumReactantTemplates()):
+            r = Chem.Mol(reaction.GetReactantTemplate(i))
+            r = _strip_stereochemistry(r)
+            reaction_for_compile.AddReactantTemplate(r)
+        for i in range(reaction.GetNumProductTemplates()):
+            p = Chem.Mol(reaction.GetProductTemplate(i))
+            p = _strip_stereochemistry(p)
+            reaction_for_compile.AddProductTemplate(p)
+        reaction_for_compile.Initialize()
+
+
+    # Step 8: Compile operator: assemble keep sets, prune others, and emit SMIRKS
     out_smirks = _compile_operator(
-        reaction=reaction,
+        reaction=reaction_for_compile,
         reactive_centers=reactive_centers,
         covalent_shell_indices=covalent_shell_indices,
         delocalized_shell_indices=delocalized_shell_indices,
         extended_shell_indices=extended_shell_indices,
         unmapped_indices=unmapped_indices,
-        include_stereochemistry=include_stereochemistry,
     )
 
     return out_smirks
-
-
-# ================================================================
-# Stereochemistry utilities
-# ================================================================
-
-def _strip_stereochemistry(molecule: Chem.Mol) -> Chem.Mol:
-    for atom in molecule.GetAtoms():
-        atom.SetChiralTag(Chem.rdchem.ChiralType.CHI_UNSPECIFIED)
-    for bond in molecule.GetBonds():
-        bond.SetStereo(Chem.rdchem.BondStereo.STEREONONE)
-    return molecule
 
 
 # ================================================================
@@ -380,8 +383,20 @@ def _collect_unmapped_atoms(molecule):
             unmapped_indices.add(atom.GetIdx())
     return unmapped_indices
 
+
 # ================================================================
-# Step 7: compile operator
+# Step 7: Stereochemistry utilities
+# ================================================================
+
+def _strip_stereochemistry(molecule: Chem.Mol) -> Chem.Mol:
+    for atom in molecule.GetAtoms():
+        atom.SetChiralTag(Chem.rdchem.ChiralType.CHI_UNSPECIFIED)
+    for bond in molecule.GetBonds():
+        bond.SetStereo(Chem.rdchem.BondStereo.STEREONONE)
+    return molecule
+
+# ================================================================
+# Step 8: compile operator
 # Assemble keep sets, prune atoms and bonds not kept, and emit SMIRKS
 # ================================================================
 
@@ -393,7 +408,6 @@ def _compile_operator(
     delocalized_shell_indices,
     extended_shell_indices,
     unmapped_indices,
-    include_stereochemistry: bool,
 ):
     """
     Assemble the operator by selecting which atoms to keep, pruning the rest, and
@@ -405,29 +419,12 @@ def _compile_operator(
     - delocalized_shell_indices: conjugation-driven shell grown from σ (included if not None)
     - extended_shell_indices: σ-neighbors of the delocalized shell (included if not None)
     - unmapped_indices: atoms with no map numbers (included if not None)
-    - include_stereochemistry: whether to preserve stereochemistry in output
 
     Shells are included when their corresponding per-template sets are not None.
 
     Output
-    - SMIRKS string of the pruned reaction. If stereochemistry preservation is disabled, the entire reaction is stereo-stripped before any pruning occurs.
+    - SMIRKS string of the pruned reaction.
     """
-
-    # Normalize stereochemistry up front if requested, so detection and pruning
-    # operate on the already-stripped form. This avoids interleaving stereo
-    # changes with atom/bond removals.
-    work_reaction = reaction
-    if not include_stereochemistry:
-        work_reaction = rdChemReactions.ChemicalReaction()
-        for i in range(reaction.GetNumReactantTemplates()):
-            r = Chem.Mol(reaction.GetReactantTemplate(i))
-            r = _strip_stereochemistry(r)
-            work_reaction.AddReactantTemplate(r)
-        for i in range(reaction.GetNumProductTemplates()):
-            p = Chem.Mol(reaction.GetProductTemplate(i))
-            p = _strip_stereochemistry(p)
-            work_reaction.AddProductTemplate(p)
-        work_reaction.Initialize()
 
     # 1) Initialize per-template keep-sets with reactive centers (baseline that is always kept).
     keep_atom_indices = ([], [])
@@ -471,8 +468,8 @@ def _compile_operator(
     remove_atom_indices = ([], [])
 
     # 6a) Reactant-side removals
-    for i in range(work_reaction.GetNumReactantTemplates()):
-        reactant = work_reaction.GetReactantTemplate(i)
+    for i in range(reaction.GetNumReactantTemplates()):
+        reactant = reaction.GetReactantTemplate(i)
         bond_indices_set = set()
         atom_indices_set = set()
         for atom in reactant.GetAtoms():
@@ -484,8 +481,8 @@ def _compile_operator(
         remove_atom_indices[0].append(atom_indices_set)
 
     # 6b) Product-side removals
-    for i in range(work_reaction.GetNumProductTemplates()):
-        product = work_reaction.GetProductTemplate(i)
+    for i in range(reaction.GetNumProductTemplates()):
+        product = reaction.GetProductTemplate(i)
         bond_indices_set = set()
         atom_indices_set = set()
         for atom in product.GetAtoms():
@@ -500,8 +497,8 @@ def _compile_operator(
     new_reaction = rdChemReactions.ChemicalReaction()
 
     # 7a) Rebuild reactant templates with unwanted atoms/bonds pruned
-    for i in range(work_reaction.GetNumReactantTemplates()):
-        reactant = work_reaction.GetReactantTemplate(i)
+    for i in range(reaction.GetNumReactantTemplates()):
+        reactant = reaction.GetReactantTemplate(i)
         editable_reactant = Chem.EditableMol(reactant)
         for bond_idx in remove_bond_indices[0][i]:
             bond = reactant.GetBondWithIdx(bond_idx)
@@ -512,8 +509,8 @@ def _compile_operator(
         new_reaction.AddReactantTemplate(r_mol)
 
     # 7b) Rebuild product templates with unwanted atoms/bonds pruned
-    for i in range(work_reaction.GetNumProductTemplates()):
-        product = work_reaction.GetProductTemplate(i)
+    for i in range(reaction.GetNumProductTemplates()):
+        product = reaction.GetProductTemplate(i)
         editable_product = Chem.EditableMol(product)
         for bond_idx in remove_bond_indices[1][i]:
             bond = product.GetBondWithIdx(bond_idx)
