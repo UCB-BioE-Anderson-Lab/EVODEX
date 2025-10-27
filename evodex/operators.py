@@ -1,382 +1,478 @@
-import rdkit
 from rdkit import Chem
-from rdkit.Chem import AllChem, Draw
 from rdkit.Chem import rdChemReactions
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')
 
-# Function to check if an atom is sp3 hybridized
-def _is_sp3(atom):
-    for bond in atom.GetBonds():
-        if bond.GetBondType() != Chem.BondType.SINGLE:
-            return False
-    return True
+# ================================================================
+# operator_extractor: extract an operator SMIRKS from a reaction SMIRKS
+# ================================================================
 
-# Function to remove stereochemistry from a molecule
-def _remove_stereochemistry(molecule):
+def operator_extractor(
+    smirks: str,
+    include_stereochemistry: bool = True,
+    include_sigma: bool = True,
+    include_pi: bool = True,
+    include_extended: bool = True,
+    include_unmapped: bool = True,
+):
+    """
+    Extract a mechanism-focused operator from a full reaction SMIRKS.
+
+    Steps
+    1. Prepare reaction: parse SMIRKS and initialize (stereochemistry handled at the end).
+    2. Reactive centers (bonding): mapped atoms whose bonding changes between sides (helper also adds directly attached unmapped neighbors for boundary stability).
+    3. Covalent shell (sigma): atoms one σ bond away from reactive centers.
+    4. Delocalized shell (pi): growth across conjugated/unsaturated connectivity; mirrored via atom-map numbers; excludes inductive effects and sp3-only participation.
+    5. Gather unmapped context: record unmapped atoms (agnostic to element).
+    6. Compile operator: assemble keep sets, prune others, and emit SMIRKS.
+    """
+
+    # Step 1: Prepare reaction (parse and initialize; do not strip stereochemistry here)
+    reaction = rdChemReactions.ReactionFromSmarts(smirks)
+    reaction.Initialize()
+
+    # Step 2: Bond-Changing reactive centers (bonding; helper also adds σ-adjacent unmapped neighbors)
+    reactive_centers = _compute_reactive_centers(reaction)
+
+    # Step 3: Covalent shell (σ/covalent shell: radius-1 from reactive centers)
+    if include_sigma:
+        covalent_shell_indices = _compute_covalent_shells(reaction, reactive_centers)
+    else:
+        covalent_shell_indices = None
+
+    # Step 4: Delocalized shell (π/delocalized shell: conjugation-driven; mirrored across map numbers)
+    if include_sigma and include_pi:
+        delocalized_shell_indices = _grow_delocalized_shell(
+            reaction,
+            covalent_shell_indices,
+        )
+    else:
+        delocalized_shell_indices = None
+
+    # Step 5: Extended shell (σ neighbors of delocalized shell, excluding existing covalent/delocalized members)
+    if include_sigma and include_pi and include_extended:
+        extended_shell_indices = _add_extended_shell(
+            reaction,
+            covalent_shell_indices,
+            delocalized_shell_indices,
+        )
+    else:
+        extended_shell_indices = None
+
+    # Step 6: Identify unmapped atoms on reactant and product sides (atoms lacking map numbers)
+    unmapped_indices = _compute_unmapped_sets(reaction)
+    if not include_unmapped:
+        unmapped_indices = None
+
+    # Step 7: Compile operator: assemble keep sets, prune others, and emit SMIRKS
+    out_smirks = _compile_operator(
+        reaction=reaction,
+        reactive_centers=reactive_centers,
+        covalent_shell_indices=covalent_shell_indices,
+        delocalized_shell_indices=delocalized_shell_indices,
+        extended_shell_indices=extended_shell_indices,
+        unmapped_indices=unmapped_indices,
+        include_stereochemistry=include_stereochemistry,
+    )
+
+    return out_smirks
+
+
+# ================================================================
+# Stereochemistry utilities
+# ================================================================
+
+def _strip_stereochemistry(molecule: Chem.Mol) -> Chem.Mol:
     for atom in molecule.GetAtoms():
         atom.SetChiralTag(Chem.rdchem.ChiralType.CHI_UNSPECIFIED)
     for bond in molecule.GetBonds():
         bond.SetStereo(Chem.rdchem.BondStereo.STEREONONE)
     return molecule
 
-# Function to process a molecule and identify static hydrogen atom indices
-def _process_static_hydrogens(molecule, center_atom_indices):
-    static_hydrogen_indices = set()
-    for atom in molecule.GetAtoms():
-        if atom.GetAtomicNum() != 1 and atom.GetAtomicNum() != 85:
-            continue
-        if atom.GetAtomMapNum() == 0:
-            continue
-        if atom.GetIdx() not in center_atom_indices:
-            static_hydrogen_indices.add(atom.GetIdx())
-    return static_hydrogen_indices
 
-# Function to process a molecule and identify center atom indices
-def _extract_center_atom_indices(molecule, center_atom_maps):
-    center_atom_indices = set()
-    for atom in molecule.GetAtoms():
-        atom_map = atom.GetAtomMapNum()
-        if atom_map in center_atom_maps:
-            center_atom_indices.add(atom.GetIdx())
-    return center_atom_indices
+# ================================================================
+# Step 2 helpers: reactive center detection
+# ================================================================
 
-# Function to process a molecule and identify sigma atom indices
-def _process_sigma_molecule(molecule, center_atom_indices):
-    sigma_indices = set()
+def _compute_reactive_centers(reaction):
+    """Return (reactant_sets, product_sets) of reactive centers (bonding changes) by template. Includes directly covalently attached unmapped neighbors for boundary stability; the covalent shell is built in Step 3."""
+    changed_map_numbers = _identify_changed_map_numbers(reaction)
+    reactive_centers = ([], [])
+
+    # Reactants
+    for i in range(reaction.GetNumReactantTemplates()):
+        mol = reaction.GetReactantTemplate(i)
+        indices = set()
+        for atom in mol.GetAtoms():
+            if atom.GetAtomMapNum() in changed_map_numbers:
+                indices.add(atom.GetIdx())
+        reactive_centers[0].append(indices)
+
+    # Products
+    for i in range(reaction.GetNumProductTemplates()):
+        mol = reaction.GetProductTemplate(i)
+        indices = set()
+        for atom in mol.GetAtoms():
+            if atom.GetAtomMapNum() in changed_map_numbers:
+                indices.add(atom.GetIdx())
+        reactive_centers[1].append(indices)
+
+    # Add adjacent unmapped atoms on both sides (symmetric)
+    for i in range(reaction.GetNumReactantTemplates()):
+        mol = reaction.GetReactantTemplate(i)
+        for idx in list(reactive_centers[0][i]):
+            a = mol.GetAtomWithIdx(idx)
+            for n in a.GetNeighbors():
+                if n.GetAtomMapNum() == 0:
+                    reactive_centers[0][i].add(n.GetIdx())
+
+    for i in range(reaction.GetNumProductTemplates()):
+        mol = reaction.GetProductTemplate(i)
+        for idx in list(reactive_centers[1][i]):
+            a = mol.GetAtomWithIdx(idx)
+            for n in a.GetNeighbors():
+                if n.GetAtomMapNum() == 0:
+                    reactive_centers[1][i].add(n.GetIdx())
+
+    return reactive_centers
+
+
+def _identify_changed_map_numbers(reaction):
+    """Return a set of atom-map numbers whose local bonding environment changes.
+
+    For each mapped atom on the reactant and product sides we build a *signature*
+    that captures any feature that could signal a bonding change:
+      - Neighbor identity: (neighbor atomic number, neighbor map number)
+      - Atom chirality: the atom's RDKit `ChiralTag` name
+      - Adjacent bond features for each incident bond:
+          (neighbor map number, bond type, bond stereo, is_aromatic)
+
+    If an atom's signature differs between sides, its map number is included in
+    the result set.
+    """
+
+    def _atom_signature(atom):
+        """Construct a comparison-ready signature for a single atom."""
+        neighbors = set()
+        bond_features = set()
+        chirality = atom.GetChiralTag().name
+
+        for bond in atom.GetBonds():
+            nbr = bond.GetOtherAtom(atom)
+            nbr_map = nbr.GetAtomMapNum()
+
+            # Neighbor identity
+            neighbors.add((nbr.GetAtomicNum(), nbr_map))
+
+            # Bond attributes that affect E/Z and conjugation context
+            btype = int(bond.GetBondType())
+            stereo_enum = bond.GetStereo()
+            stereo = getattr(stereo_enum, 'name', int(stereo_enum))
+            aromatic = bond.GetIsAromatic()
+
+            # Key by neighbor map number to keep it deterministic
+            bond_features.add((nbr_map, btype, stereo, aromatic))
+
+        return {
+            'neighbors': neighbors,
+            'chirality': chirality,
+            'bond_features': bond_features,
+        }
+
+    def _signatures_for(mol):
+        """Map: atom map number -> atom signature (only for mapped atoms)."""
+        out = {}
+        for atom in mol.GetAtoms():
+            amap = atom.GetAtomMapNum()
+            if amap > 0:
+                out[amap] = _atom_signature(atom)
+        return out
+
+    # Build signatures for all templates on each side
+    reactant_sigs, product_sigs = {}, {}
+    for i in range(reaction.GetNumReactantTemplates()):
+        rtpl = reaction.GetReactantTemplate(i)
+        reactant_sigs.update(_signatures_for(rtpl))
+    for i in range(reaction.GetNumProductTemplates()):
+        ptpl = reaction.GetProductTemplate(i)
+        product_sigs.update(_signatures_for(ptpl))
+
+    # Compare signatures; any difference means a bonding change
+    changed = set()
+    for amap in set(reactant_sigs) | set(product_sigs):
+        if reactant_sigs.get(amap) != product_sigs.get(amap):
+            changed.add(amap)
+    return changed
+
+
+# ================================================================
+# Step 3 helper: covalent (sigma) shell
+# ================================================================
+
+def _compute_covalent_shells(reaction, reactive_centers):
+    """Return (reactant_sets, product_sets) of covalent-shell atoms (σ) by template.
+    Thin wrapper that aggregates per-molecule results from `_collect_covalent_shell`.
+    """
+    covalent_shell_indices = ([], [])
+    # Reactants
+    for i in range(reaction.GetNumReactantTemplates()):
+        reactant = reaction.GetReactantTemplate(i)
+        covalent_shell_indices[0].append(
+            _collect_covalent_shell(reactant, reactive_centers[0][i])
+        )
+    # Products
+    for i in range(reaction.GetNumProductTemplates()):
+        product = reaction.GetProductTemplate(i)
+        covalent_shell_indices[1].append(
+            _collect_covalent_shell(product, reactive_centers[1][i])
+        )
+    return covalent_shell_indices
+
+def _collect_covalent_shell(molecule, reactive_center_indices):
+    """Return covalent-shell atoms (σ): those one bond from any reactive center in the given molecule."""
+    covalent_shell_indices = set()
     for atom in molecule.GetAtoms():
         atom_idx = atom.GetIdx()
         for neighbor in atom.GetNeighbors():
             neighbor_idx = neighbor.GetIdx()
-            if neighbor_idx in center_atom_indices:
-                sigma_indices.add(atom_idx)
-    return sigma_indices
+            if neighbor_idx in reactive_center_indices:
+                covalent_shell_indices.add(atom_idx)
+    return covalent_shell_indices
 
-# Helper function to check if an atom is SP2 or SP hybridized
-def _is_sp_or_sp2(atom):
-    """
-    Return True if the atom can participate in a π system.
-    Criteria:
-    - Atom is aromatic (atom-level aromaticity), OR
-    - Atom hybridization is SP or SP2, OR
-    - Any incident bond is double, triple, or aromatic (bond-level aromaticity).
-    """
-    # Aromatic atoms are π-participating by definition in RDKit
-    if atom.GetIsAromatic():
-        return True
 
-    # Hybridization-based check
-    hyb = atom.GetHybridization()
-    if hyb in (Chem.rdchem.HybridizationType.SP2, Chem.rdchem.HybridizationType.SP):
-        return True
+# ================================================================
+# Step 4 helpers: delocalized (pi) growth
+# ================================================================
 
-    # Fallback: inspect bonds to catch edge cases and ensure aromatic bonds count
+def _grow_delocalized_shell(reaction, covalent_shell_indices):
+    """Build the delocalized shell (π): iterative growth from the σ shell across conjugation/unsaturation; mirrored via atom-map numbers; excludes inductive and sp3-only participation by design of _is_conjugation_capable."""
+
+    def _state_key(atom_sets):
+        return (
+            tuple(frozenset(s) for s in atom_sets[0]),
+            tuple(frozenset(s) for s in atom_sets[1]),
+        )
+
+    def _expand_molecule(mol, covalent_shell_atoms, mapped_ids):
+        delocalized_atoms = set()
+        for idx in covalent_shell_atoms:
+            atom = mol.GetAtomWithIdx(idx)
+            if _is_conjugation_capable(atom):
+                delocalized_atoms.add(idx)
+
+                amap = atom.GetAtomMapNum()
+                if amap > 0:
+                    mapped_ids.add(amap)
+
+                for nbr in atom.GetNeighbors():
+                    if _is_conjugation_capable(nbr):
+                        delocalized_atoms.add(nbr.GetIdx())
+
+        for atom in mol.GetAtoms():
+            if atom.GetAtomMapNum() in mapped_ids:
+                delocalized_atoms.add(atom.GetIdx())
+
+        return delocalized_atoms
+
+    prev = (
+        [set(s) for s in covalent_shell_indices[0]],
+        [set(s) for s in covalent_shell_indices[1]],
+    )
+
+    while True:
+        mapped_ids = set()
+        new_reactant_sets, new_product_sets = [], []
+
+        for i in range(reaction.GetNumReactantTemplates()):
+            mol = reaction.GetReactantTemplate(i)
+            new_reactant_sets.append(_expand_molecule(mol, prev[0][i], mapped_ids))
+
+        for i in range(reaction.GetNumProductTemplates()):
+            mol = reaction.GetProductTemplate(i)
+            new_product_sets.append(_expand_molecule(mol, prev[1][i], mapped_ids))
+
+        for i in range(reaction.GetNumReactantTemplates()):
+            mol = reaction.GetReactantTemplate(i)
+            for atom in mol.GetAtoms():
+                if atom.GetAtomMapNum() in mapped_ids:
+                    new_reactant_sets[i].add(atom.GetIdx())
+        for i in range(reaction.GetNumProductTemplates()):
+            mol = reaction.GetProductTemplate(i)
+            for atom in mol.GetAtoms():
+                if atom.GetAtomMapNum() in mapped_ids:
+                    new_product_sets[i].add(atom.GetIdx())
+
+        if _state_key((new_reactant_sets, new_product_sets)) == _state_key(prev):
+            return (new_reactant_sets, new_product_sets)
+
+        prev = (new_reactant_sets, new_product_sets)
+
+
+def _is_conjugation_capable(atom):
+    """Return True if any bond is not single (proxy for conjugation/aromaticity). Intentionally ignores purely inductive pathways and sp3-only participation."""
     for bond in atom.GetBonds():
-        bt = bond.GetBondType()
-        if bt in (Chem.rdchem.BondType.DOUBLE, Chem.rdchem.BondType.TRIPLE, Chem.rdchem.BondType.AROMATIC):
+        if bond.GetBondType() != Chem.BondType.SINGLE:
             return True
-
     return False
 
-def _grow_pi_shell(reaction, current_pi_indices):
-    new_pi_indices = ([], [])
-    flagged_atom_maps = set()
+# ================================================================
+# Step 5 helper: extended shell (sigma neighbors of delocalized shell)
+# ================================================================
 
-    # Helper function to process a molecule
-    def process_molecule(molecule, current_indices):
-        pi_set = set()
-        for atom_idx in current_indices:
-            atom = molecule.GetAtomWithIdx(atom_idx)
-            if not _is_sp_or_sp2(atom):
-                continue
-            pi_set.add(atom_idx)
-            for neighbor in atom.GetNeighbors():
-                if _is_sp_or_sp2(neighbor):
-                    pi_set.add(neighbor.GetIdx())
-            if atom.GetAtomMapNum() > 0:
-                flagged_atom_maps.add(atom.GetAtomMapNum())
-        return pi_set
+def _add_extended_shell(reaction, covalent_shell_indices, delocalized_shell_indices):
+    """Return (reactant_sets, product_sets) of atoms that are σ-neighbors of any delocalized-shell atom,
+    excluding atoms already in the covalent or delocalized shells.
+    """
+    extended = ([], [])
 
-    # Process reactants
+    # Reactants
     for i in range(reaction.GetNumReactantTemplates()):
-        molecule = reaction.GetReactantTemplate(i)
-        pi_set = process_molecule(molecule, current_pi_indices[0][i])
-        new_pi_indices[0].append(pi_set)
+        mol = reaction.GetReactantTemplate(i)
+        cov = set(covalent_shell_indices[0][i])
+        dloc = set(delocalized_shell_indices[0][i])
+        add = set()
+        for idx in dloc:
+            a = mol.GetAtomWithIdx(idx)
+            for nbr in a.GetNeighbors():
+                nidx = nbr.GetIdx()
+                if nidx not in cov and nidx not in dloc:
+                    add.add(nidx)
+        extended[0].append(add)
 
-    # Process products
+    # Products
     for i in range(reaction.GetNumProductTemplates()):
-        molecule = reaction.GetProductTemplate(i)
-        pi_set = process_molecule(molecule, current_pi_indices[1][i])
-        new_pi_indices[1].append(pi_set)
+        mol = reaction.GetProductTemplate(i)
+        cov = set(covalent_shell_indices[1][i])
+        dloc = set(delocalized_shell_indices[1][i])
+        add = set()
+        for idx in dloc:
+            a = mol.GetAtomWithIdx(idx)
+            for nbr in a.GetNeighbors():
+                nidx = nbr.GetIdx()
+                if nidx not in cov and nidx not in dloc:
+                    add.add(nidx)
+        extended[1].append(add)
 
-    # Include flagged atoms based on atom map values
-    def include_flagged_atoms(molecule, pi_set):
-        for atom in molecule.GetAtoms():
-            if atom.GetAtomMapNum() in flagged_atom_maps:
-                pi_set.add(atom.GetIdx())
+    return extended
 
+# ================================================================
+# Step 6 helper: unmapped atoms
+# ================================================================
+
+def _compute_unmapped_sets(reaction):
+    """Return (reactant_sets, product_sets) of unmapped atom indices by template."""
+    unmapped_indices = ([], [])
+    # Reactants
     for i in range(reaction.GetNumReactantTemplates()):
-        molecule = reaction.GetReactantTemplate(i)
-        include_flagged_atoms(molecule, new_pi_indices[0][i])
-
+        reactant = reaction.GetReactantTemplate(i)
+        unmapped_indices[0].append(_collect_unmapped_atoms(reactant))
+    # Products
     for i in range(reaction.GetNumProductTemplates()):
-        molecule = reaction.GetProductTemplate(i)
-        include_flagged_atoms(molecule, new_pi_indices[1][i])
+        product = reaction.GetProductTemplate(i)
+        unmapped_indices[1].append(_collect_unmapped_atoms(product))
+    return unmapped_indices
 
-    # Check if the new pi indices are the same as the current ones
-    if sorted([sorted(list(s)) for s in new_pi_indices[0]]) == sorted([sorted(list(s)) for s in current_pi_indices[0]]) and \
-       sorted([sorted(list(s)) for s in new_pi_indices[1]]) == sorted([sorted(list(s)) for s in current_pi_indices[1]]):
-        return new_pi_indices
-    else:
-        return _grow_pi_shell(reaction, new_pi_indices)
-
-# Function to augment pi atom indices with conjugated atoms
-# JCA Note:  I'm not sure this step is needed, though ChatGPT thinks it is.
-def _augment_pi_indices(molecule, pi_atom_indices):
+def _collect_unmapped_atoms(molecule):
+    """Return set of unmapped atom indices for a molecule (element-agnostic)."""
+    unmapped_indices = set()
     for atom in molecule.GetAtoms():
-        atom_idx = atom.GetIdx()
-        if atom_idx in pi_atom_indices:
-            for neighbor in atom.GetNeighbors():
-                if _is_sp_or_sp2(neighbor):
-                    pi_atom_indices.add(neighbor.GetIdx())
-    return pi_atom_indices
+        if atom.GetAtomMapNum() == 0:
+            unmapped_indices.add(atom.GetIdx())
+    return unmapped_indices
 
-# Function to process a molecule and identify unmapped hydrogen and heavy atom indices
-def _process_unmapped_atoms(molecule):
-    unmapped_hydrogen_indices = set()
-    unmapped_heavy_indices = set()
-    for atom in molecule.GetAtoms():
-        atom_map = atom.GetAtomMapNum()
-        if atom_map != 0:
-            continue
-        atomic_number = atom.GetAtomicNum()
-        if atomic_number == 1 or atomic_number == 85:
-            unmapped_hydrogen_indices.add(atom.GetIdx())
-        else:
-            unmapped_heavy_indices.add(atom.GetIdx())
-    return unmapped_hydrogen_indices, unmapped_heavy_indices
+# ================================================================
+# Step 7: compile operator
+# Assemble keep sets, prune atoms and bonds not kept, and emit SMIRKS
+# ================================================================
 
-# Main function to process the reaction
-def extract_operator(smirks: str, include_stereochemistry: bool = False, include_sigma: bool = True, include_pi: bool = True, include_unmapped_hydrogens: bool = True, include_unmapped_heavy_atoms: bool = True, include_static_hydrogens: bool = False):
+def _compile_operator(
+    *,
+    reaction,
+    reactive_centers,
+    covalent_shell_indices,
+    delocalized_shell_indices,
+    extended_shell_indices,
+    unmapped_indices,
+    include_stereochemistry: bool,
+):
+    """
+    Assemble the operator by selecting which atoms to keep, pruning the rest, and
+    emitting a compact SMIRKS.
 
-    # ==================================================================
-    #                   REACTION STEREOCHEMISTRY AND PREP
-    # ==================================================================
+    Inputs (summarized)
+    - reactive_centers: atoms whose bonding changed (per template, reactants/products)
+    - covalent_shell_indices: atoms one σ bond from the centers (included if not None)
+    - delocalized_shell_indices: conjugation-driven shell grown from σ (included if not None)
+    - extended_shell_indices: σ-neighbors of the delocalized shell (included if not None)
+    - unmapped_indices: atoms with no map numbers (included if not None)
+    - include_stereochemistry: whether to preserve stereochemistry in output
 
-    # Parse the reaction SMARTS
-    reaction = rdChemReactions.ReactionFromSmarts(smirks)
+    Shells are included when their corresponding per-template sets are not None.
 
-    # Remove stereochemistry if requested
+    Output
+    - SMIRKS string of the pruned reaction. If stereochemistry preservation is disabled, the entire reaction is stereo-stripped before any pruning occurs.
+    """
+
+    # Normalize stereochemistry up front if requested, so detection and pruning
+    # operate on the already-stripped form. This avoids interleaving stereo
+    # changes with atom/bond removals.
+    work_reaction = reaction
     if not include_stereochemistry:
-        # print("Removing Stereochemistry")
-
-        # Create a new reaction object
-        new_reaction = rdChemReactions.ChemicalReaction()
-
-        # Process reactants
+        work_reaction = rdChemReactions.ChemicalReaction()
         for i in range(reaction.GetNumReactantTemplates()):
-            reactant = reaction.GetReactantTemplate(i)
-            reactant = _remove_stereochemistry(reactant)
-            new_reaction.AddReactantTemplate(reactant)
-
-        # Process products
+            r = Chem.Mol(reaction.GetReactantTemplate(i))
+            r = _strip_stereochemistry(r)
+            work_reaction.AddReactantTemplate(r)
         for i in range(reaction.GetNumProductTemplates()):
-            product = reaction.GetProductTemplate(i)
-            product = _remove_stereochemistry(product)
-            new_reaction.AddProductTemplate(product)
+            p = Chem.Mol(reaction.GetProductTemplate(i))
+            p = _strip_stereochemistry(p)
+            work_reaction.AddProductTemplate(p)
+        work_reaction.Initialize()
 
-        smirks = rdChemReactions.ReactionToSmarts(new_reaction)
-        reaction = rdChemReactions.ReactionFromSmarts(smirks)
-
-    # Do some cleanup and internal calculation
-    reaction.Initialize()
-
-    # ==================================================================
-    #                       LABEL AND COLLECT ATOMS SETS
-    # ==================================================================
-
-    # ---------------------- POPULATE CENTER ATOMS ---------------------
-    # Identify reacting mapped atoms using our custom method
-    reacting_atoms = _identify_changed_mapped_atoms(reaction)
-    
-    # Identify the atom maps of the reacting mapped atoms
-    center_atom_maps = set()
-    for i, atom_indices in enumerate(reacting_atoms):
-        reactant = reaction.GetReactantTemplate(i)
-        for atom_idx in atom_indices:
-            atom = reactant.GetAtomWithIdx(atom_idx)
-            atom_map = atom.GetAtomMapNum()
-            center_atom_maps.add(atom_map)
-
-    # Create a tuple of lists of sets called center_atom_indices
-    center_atom_indices = ([], [])
-
-    # Iterate through reactants and add to the first list in the tuple
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        center_atom_indices[0].append(_extract_center_atom_indices(reactant, center_atom_maps))
-
-    # Iterate through products and add to the second list in the tuple
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        center_atom_indices[1].append(_extract_center_atom_indices(product, center_atom_maps))
-
-    # Augment center_atom_indices with unmapped-and-adjacent atoms for reactants
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        for atom_idx in reacting_atoms[i]:
-            atom = reactant.GetAtomWithIdx(atom_idx)
-            for neighbor in atom.GetNeighbors():
-                if neighbor.GetAtomMapNum() == 0:
-                    center_atom_indices[0][i].add(neighbor.GetIdx())
-
-    # Augment center_atom_indices with unmapped-and-adjacent atoms for products
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        for atom in product.GetAtoms():
-            atom_map = atom.GetAtomMapNum()
-            if atom_map in center_atom_maps:
-                for neighbor in atom.GetNeighbors():
-                    if neighbor.GetAtomMapNum() == 0:
-                        center_atom_indices[1][i].add(neighbor.GetIdx())
-
-    # Print the final center_atom_indices for reactants and products
-    # print("Final Center Atom Indices Reactants:", [list(indices) for indices in center_atom_indices[0]])
-    # print("Final Center Atom Indices Products:", [list(indices) for indices in center_atom_indices[1]])
-
-    # ic(center_atom_indices)
-
-    # ---------------------- POPULATE SIGMA-BONDED ATOMS ---------------------
-    # Create a tuple of lists of sets called sigma_atom_indices
-    sigma_atom_indices = ([], [])
-
-    # Iterate through reactants and add to the first list in the tuple
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        sigma_atom_indices[0].append(_process_sigma_molecule(reactant, center_atom_indices[0][i]))
-
-    # Iterate through products and add to the second list in the tuple
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        sigma_atom_indices[1].append(_process_sigma_molecule(product, center_atom_indices[1][i]))
-
-    # Print the final sigma_atom_indices for reactants and products
-    # print("Sigma Atom Indices Reactants:", [list(indices) for indices in sigma_atom_indices[0]])
-    # print("Sigma Atom Indices Products:", [list(indices) for indices in sigma_atom_indices[1]])
-
-    # ---------------------- POPULATE PI-BONDED ATOMS ---------------------
-    # Grow the pi shell starting from the sigma shell (seed = sigma_atom_indices)
-    pi_atom_indices = _grow_pi_shell(reaction, sigma_atom_indices)
-
-    # Display the pi_atom_indices
-    # print("Pi Atom Indices:", pi_atom_indices)
-
-    # Process reactants and products to augment pi_atom_indices
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        pi_atom_indices[0][i] = _augment_pi_indices(reactant, pi_atom_indices[0][i])
-
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        pi_atom_indices[1][i] = _augment_pi_indices(product, pi_atom_indices[1][i])
-
-    # Print the final pi_atom_indices for reactants and products
-    # print("Final Pi Atom Indices Reactants:", [list(indices) for indices in pi_atom_indices[0]])
-    # print("Final Pi Atom Indices Products:", [list(indices) for indices in pi_atom_indices[1]])
-
-    # ---------------------- POPULATE UNMAPPED ATOMS ---------------------
-    # Initialize unmapped_hydrogen_indices and unmapped_heavy_indices with the same structure as pi_atom_indices
-    unmapped_hydrogen_indices = ([], [])
-    unmapped_heavy_indices = ([], [])
-
-    # Iterate through reactants and add to the first list in the tuples
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        hydrogen_indices, heavy_indices = _process_unmapped_atoms(reactant)
-        unmapped_hydrogen_indices[0].append(hydrogen_indices)
-        unmapped_heavy_indices[0].append(heavy_indices)
-
-    # Iterate through products and add to the second list in the tuples
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        hydrogen_indices, heavy_indices = _process_unmapped_atoms(product)
-        unmapped_hydrogen_indices[1].append(hydrogen_indices)
-        unmapped_heavy_indices[1].append(heavy_indices)
-
-    # Display the final unmapped_hydrogen_indices and unmapped_heavy_indices
-    # ic(unmapped_hydrogen_indices)
-    # ic(unmapped_heavy_indices)
-
-    # ---------------------- POPULATE STATIC HYDROGENS ---------------------
-    # Initialize static_hydrogen_indices with the same structure as other indices lists
-    static_hydrogen_indices = ([], [])
-
-    # Iterate through reactants and add to the first list in the tuples
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
-        static_hydrogens = _process_static_hydrogens(reactant, center_atom_indices[0][i])
-        static_hydrogen_indices[0].append(static_hydrogens)
-
-    # Iterate through products and add to the second list in the tuples
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
-        static_hydrogens = _process_static_hydrogens(product, center_atom_indices[1][i])
-        static_hydrogen_indices[1].append(static_hydrogens)
-
-    # Display the final static_hydrogen_indices
-    # ic(static_hydrogen_indices)
-
-    # ==================================================================
-    #                       EXTRACT THE OPERATOR
-    # ==================================================================
-
-    # Start by duplicating center_atom_indices as keep_atom_indices
+    # 1) Initialize per-template keep-sets with reactive centers (baseline that is always kept).
     keep_atom_indices = ([], [])
+    for i in range(len(reactive_centers[0])):
+        keep_atom_indices[0].append(set(reactive_centers[0][i]))
+    for i in range(len(reactive_centers[1])):
+        keep_atom_indices[1].append(set(reactive_centers[1][i]))
 
-    for i in range(len(center_atom_indices[0])):
-        keep_atom_indices[0].append(set(center_atom_indices[0][i]))
+    # 2) Include the covalent (σ) shell if present
+    if covalent_shell_indices is not None:
+        for i in range(len(covalent_shell_indices[0])):
+            keep_atom_indices[0][i].update(covalent_shell_indices[0][i])
+        for i in range(len(covalent_shell_indices[1])):
+            keep_atom_indices[1][i].update(covalent_shell_indices[1][i])
 
-    for i in range(len(center_atom_indices[1])):
-        keep_atom_indices[1].append(set(center_atom_indices[1][i]))
+    # 3) Include the delocalized (π) shell if present
+    if delocalized_shell_indices is not None:
+        for i in range(len(delocalized_shell_indices[0])):
+            keep_atom_indices[0][i].update(delocalized_shell_indices[0][i])
+        for i in range(len(delocalized_shell_indices[1])):
+            keep_atom_indices[1][i].update(delocalized_shell_indices[1][i])
 
-    # Add or remove indices according to the logic
-    if include_sigma:
-        for i in range(len(sigma_atom_indices[0])):
-            keep_atom_indices[0][i].update(sigma_atom_indices[0][i])
-        for i in range(len(sigma_atom_indices[1])):
-            keep_atom_indices[1][i].update(sigma_atom_indices[1][i])
+    # 4) Include the extended shell (σ neighbors of π shell) if present
+    if extended_shell_indices is not None:
+        for i in range(len(extended_shell_indices[0])):
+            keep_atom_indices[0][i].update(extended_shell_indices[0][i])
+        for i in range(len(extended_shell_indices[1])):
+            keep_atom_indices[1][i].update(extended_shell_indices[1][i])
 
-    if include_pi:
-        for i in range(len(pi_atom_indices[0])):
-            keep_atom_indices[0][i].update(pi_atom_indices[0][i])
-        for i in range(len(pi_atom_indices[1])):
-            keep_atom_indices[1][i].update(pi_atom_indices[1][i])
+    # 5) Include unmapped atoms (appear on only one side) if present.
+    if unmapped_indices is not None:
+        for i in range(len(unmapped_indices[0])):
+            keep_atom_indices[0][i].update(unmapped_indices[0][i])
+        for i in range(len(unmapped_indices[1])):
+            keep_atom_indices[1][i].update(unmapped_indices[1][i])
 
-    if include_unmapped_hydrogens:
-        for i in range(len(unmapped_hydrogen_indices[0])):
-            keep_atom_indices[0][i].update(unmapped_hydrogen_indices[0][i])
-        for i in range(len(unmapped_hydrogen_indices[1])):
-            keep_atom_indices[1][i].update(unmapped_hydrogen_indices[1][i])
-
-    if include_unmapped_heavy_atoms:
-        for i in range(len(unmapped_heavy_indices[0])):
-            keep_atom_indices[0][i].update(unmapped_heavy_indices[0][i])
-        for i in range(len(unmapped_heavy_indices[1])):
-            keep_atom_indices[1][i].update(unmapped_heavy_indices[1][i])
-
-    if not include_static_hydrogens:
-        for i in range(len(static_hydrogen_indices[0])):
-            keep_atom_indices[0][i].difference_update(static_hydrogen_indices[0][i])
-        for i in range(len(static_hydrogen_indices[1])):
-            keep_atom_indices[1][i].difference_update(static_hydrogen_indices[1][i])
-
-    # Create remove_bond_indices and remove_atom_indices
+    # 6) Compute which atoms/bonds to remove per template.
+    #    Any atom not present in the keep-set is marked for deletion and all of
+    #    its incident bonds are marked for removal.
     remove_bond_indices = ([], [])
     remove_atom_indices = ([], [])
 
-    # Process reactants
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
+    # 6a) Reactant-side removals
+    for i in range(work_reaction.GetNumReactantTemplates()):
+        reactant = work_reaction.GetReactantTemplate(i)
         bond_indices_set = set()
         atom_indices_set = set()
         for atom in reactant.GetAtoms():
@@ -387,9 +483,9 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         remove_bond_indices[0].append(bond_indices_set)
         remove_atom_indices[0].append(atom_indices_set)
 
-    # Process products
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
+    # 6b) Product-side removals
+    for i in range(work_reaction.GetNumProductTemplates()):
+        product = work_reaction.GetProductTemplate(i)
         bond_indices_set = set()
         atom_indices_set = set()
         for atom in product.GetAtoms():
@@ -400,108 +496,56 @@ def extract_operator(smirks: str, include_stereochemistry: bool = False, include
         remove_bond_indices[1].append(bond_indices_set)
         remove_atom_indices[1].append(atom_indices_set)
 
-    # Remove bonds and atoms from the reaction
+    # 7) Construct a new reaction from pruned templates
     new_reaction = rdChemReactions.ChemicalReaction()
 
-    # Process reactants
-    for i in range(reaction.GetNumReactantTemplates()):
-        reactant = reaction.GetReactantTemplate(i)
+    # 7a) Rebuild reactant templates with unwanted atoms/bonds pruned
+    for i in range(work_reaction.GetNumReactantTemplates()):
+        reactant = work_reaction.GetReactantTemplate(i)
         editable_reactant = Chem.EditableMol(reactant)
         for bond_idx in remove_bond_indices[0][i]:
             bond = reactant.GetBondWithIdx(bond_idx)
             editable_reactant.RemoveBond(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
         for atom_idx in sorted(remove_atom_indices[0][i], reverse=True):
             editable_reactant.RemoveAtom(atom_idx)
-        new_reaction.AddReactantTemplate(editable_reactant.GetMol())
+        r_mol = editable_reactant.GetMol()
+        new_reaction.AddReactantTemplate(r_mol)
 
-    # Process products
-    for i in range(reaction.GetNumProductTemplates()):
-        product = reaction.GetProductTemplate(i)
+    # 7b) Rebuild product templates with unwanted atoms/bonds pruned
+    for i in range(work_reaction.GetNumProductTemplates()):
+        product = work_reaction.GetProductTemplate(i)
         editable_product = Chem.EditableMol(product)
         for bond_idx in remove_bond_indices[1][i]:
             bond = product.GetBondWithIdx(bond_idx)
             editable_product.RemoveBond(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
         for atom_idx in sorted(remove_atom_indices[1][i], reverse=True):
             editable_product.RemoveAtom(atom_idx)
-        new_reaction.AddProductTemplate(editable_product.GetMol())
+        p_mol = editable_product.GetMol()
+        new_reaction.AddProductTemplate(p_mol)
 
-    # Convert to SMIRKS
-    smirks = rdChemReactions.ReactionToSmarts(new_reaction)
-    return smirks
+    return rdChemReactions.ReactionToSmarts(new_reaction)
 
 
-# Helper function to identify changed mapped atoms between reactants and products
-# Returns (reactants, products) tuple of lists of sets of atom indices (matching original GetReactingAtoms behavior)
-def _identify_changed_mapped_atoms(reaction):
-    def get_atom_signature(atom):
-        signature = {
-            'neighbors': set(),
-            'chirality': atom.GetChiralTag().name
-        }
-        for bond in atom.GetBonds():
-            neighbor = bond.GetOtherAtom(atom)
-            neighbor_atomic_num = neighbor.GetAtomicNum()
-            neighbor_atom_map = neighbor.GetAtomMapNum()
-            # bond_order = bond.GetBondTypeAsDouble()
-            signature['neighbors'].add((neighbor_atomic_num, neighbor_atom_map))
-        return signature
+if __name__ == "__main__":
+    # Alcohol methylation
+    # smirks = "[H][O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]>>[C]([H])([H])([H])[O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]"
+    
+    # Phenol methylation
+    # smirks = '[H][O:2][c:3]1[c:4]([H:5])[c:6]([H:7])[c:8]([H:9])[c:10]([H:11])[c:12]1[H:13]>>[C]([H])([H])([H])[O:2][c:3]1[c:4]([H:5])[c:6]([H:7])[c:8]([H:9])[c:10]([H:11])[c:12]1[H:13]'
+    
+    # cis/trans isomerization
+    # smirks = "[C:1]([H:4])([H:5])([H:6])/[C:2]([H:7])=[C:3]([H:8])/[C:4]([H:9])([H:10])([H:11])>>[C:1]([H:4])([H:5])([H:6])\\[C:2]([H:7])=[C:3]([H:8])/[C:4]([H:9])([H:10])([H:11])"
 
-    def build_signature_dict(molecule):
-        signature_dict = {}
-        for atom in molecule.GetAtoms():
-            atom_map = atom.GetAtomMapNum()
-            if atom_map > 0:
-                signature_dict[atom_map] = get_atom_signature(atom)
-        return signature_dict
+    # nucleophillic aromatic substitution
+    smirks = "[C:1]([c:2]1[c:3]([H:12])[c:4]([H:13])[c:5]([F])[c:7]([H:14])[c:8]1[H:15])([H:9])([H:10])[H:11]>>[C:1]([c:2]1[c:3]([H:12])[c:4]([H:13])[c:5]([Cl])[c:7]([H:14])[c:8]1[H:15])([H:9])([H:10])[H:11]"
+    # smirks = "[CH3:1][C:2]([CH3:3])=[CH:4][CH2:5][O:24][P:22](=[O:21])([OH:23])[O:25][P:26](=[O:27])([OH:28])[OH:29].[cH:6]1[cH:7][cH:8][cH:9][c:10]2[nH:11][cH:12][c:13]([CH2:14][C@H:15]([NH2:16])[C:17](=[O:18])[OH:19])[c:20]12>>[CH3:1][C:2]([CH3:3])=[CH:4][CH2:5][c:6]1[cH:7][cH:8][cH:9][c:10]2[nH:11][cH:12][c:13]([CH2:14][C@H:15]([NH2:16])[C:17](=[O:18])[OH:19])[c:20]12.[O:21]=[P:22]([OH:23])([OH:24])[O:25][P:26](=[O:27])([OH:28])[OH:29]"
 
-    # Build signature dicts
-    reactant_signatures = {}
-    for i in range(reaction.GetNumReactantTemplates()):
-        molecule = reaction.GetReactantTemplate(i)
-        sigs = build_signature_dict(molecule)
-        reactant_signatures.update(sigs)
-
-    product_signatures = {}
-    for i in range(reaction.GetNumProductTemplates()):
-        molecule = reaction.GetProductTemplate(i)
-        sigs = build_signature_dict(molecule)
-        product_signatures.update(sigs)
-
-    # Compare signatures
-    changed_atom_maps = set()
-    all_atom_maps = set(reactant_signatures.keys()).union(product_signatures.keys())
-    for atom_map in all_atom_maps:
-        react_sig = reactant_signatures.get(atom_map)
-        prod_sig = product_signatures.get(atom_map)
-        if react_sig != prod_sig:
-            # print(f"Changed atom map: {atom_map}")
-            # print(f"  Reactant signature: {react_sig}")
-            # print(f"  Product signature:  {prod_sig}")
-            changed_atom_maps.add(atom_map)
-
-    # Now return reacting_atoms = (reactants, products), in the same format as before
-    reacting_atoms = ([], [])
-
-    # Reactants
-    for i in range(reaction.GetNumReactantTemplates()):
-        molecule = reaction.GetReactantTemplate(i)
-        index_set = set()
-        for atom in molecule.GetAtoms():
-            # print(f"Reactant {i}: Atom index {atom.GetIdx()} has atom map {atom.GetAtomMapNum()}")
-            if atom.GetAtomMapNum() in changed_atom_maps:
-                index_set.add(atom.GetIdx())
-        reacting_atoms[0].append(index_set)
-
-    # Products
-    for i in range(reaction.GetNumProductTemplates()):
-        molecule = reaction.GetProductTemplate(i)
-        index_set = set()
-        for atom in molecule.GetAtoms():
-            # print(f"Product {i}: Atom index {atom.GetIdx()} has atom map {atom.GetAtomMapNum()}")
-            if atom.GetAtomMapNum() in changed_atom_maps:
-                index_set.add(atom.GetIdx())
-        reacting_atoms[1].append(index_set)
-
-    # print(reacting_atoms)
-
-    return reacting_atoms[0]
+    result = operator_extractor(
+        smirks,
+        include_stereochemistry=True,
+        include_sigma=True,
+        include_pi=True,
+        include_extended=True,
+        include_unmapped=True,
+    )
+    print(result)

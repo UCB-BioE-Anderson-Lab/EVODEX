@@ -1,5 +1,3 @@
-
-
 from evodex.operators import extract_operator
 
 if __name__ == "__main__":
@@ -19,14 +17,14 @@ if __name__ == "__main__":
     operator = extract_operator(smirks)
     print("dibutenyl alcohol",operator)
 
-    smirks = "[c:7]1[c:6][c:5][c:4][c:3][c:2]1[O:1]>>[c:7]1[c:6][c:5][c:4][c:3][c:2]1[O:1][C]"
+    smirks = "[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[O:1]>>[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[O:1][C]"
     operator = extract_operator(smirks)
     print("phenol",operator)
 
-    smirks = "[c:7]1[c:6][c:5][c:4][c:3][c:2]1[C:8][O:1]>>[c:7]1[c:6][c:5][c:4][c:3][c:2]1[C:8][O:1][C]"
+    smirks = "[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[C:8][O:1]>>[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[C:8][O:1][C]"
     operator = extract_operator(smirks)
     print("benzyl alcohol",operator)
 
-    smirks = "[c:7]1[c:6][c:5][c:4][c:3][c:2]1[C:8][C:9][O:1]>>[c:7]1[c:6][c:5][c:4][c:3][c:2]1[C:8][C:9][O:1][C]"
+    smirks = "[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[C:8][C:9][O:1]>>[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[C:8][C:9][O:1][C]"
     operator = extract_operator(smirks)
     print("phenethyl alcohol",operator)
