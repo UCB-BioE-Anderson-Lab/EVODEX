@@ -20,11 +20,13 @@ def operator_extractor(
 
     Steps
     1. Prepare reaction: parse SMIRKS and initialize (stereochemistry handled at the end).
-    2. Reactive centers (bonding): mapped atoms whose bonding changes between sides (helper also adds directly attached unmapped neighbors for boundary stability).
+    2. Reactive centers (bonding): mapped atoms whose bonding changes between sides; helper also adds directly attached unmapped neighbors for boundary stability.
     3. Covalent shell (sigma): atoms one σ bond away from reactive centers.
     4. Delocalized shell (pi): growth across conjugated/unsaturated connectivity; mirrored via atom-map numbers; excludes inductive effects and sp3-only participation.
-    5. Gather unmapped context: record unmapped atoms (agnostic to element).
-    6. Compile operator: assemble keep sets, prune others, and emit SMIRKS.
+    5. Extended shell: σ neighbors of the delocalized shell, excluding atoms already in covalent/delocalized shells.
+    6. Identify unmapped atoms: collect atoms lacking map numbers on both sides.
+    7. Strip stereochemistry (optional): if disabled, remove all stereo from a copy of the reaction.
+    8. Compile operator: assemble keep sets, prune others, and emit SMIRKS.
     """
 
     # Step 1: Prepare reaction (parse and initialize; do not strip stereochemistry here)
@@ -426,48 +428,48 @@ def _compile_operator(
     - SMIRKS string of the pruned reaction.
     """
 
-    # 1) Initialize per-template keep-sets with reactive centers (baseline that is always kept).
+    # 8.1) Initialize per-template keep-sets with reactive centers (always kept)
     keep_atom_indices = ([], [])
     for i in range(len(reactive_centers[0])):
         keep_atom_indices[0].append(set(reactive_centers[0][i]))
     for i in range(len(reactive_centers[1])):
         keep_atom_indices[1].append(set(reactive_centers[1][i]))
 
-    # 2) Include the covalent (σ) shell if present
+    # 8.2) Include the covalent (σ) shell if present
     if covalent_shell_indices is not None:
         for i in range(len(covalent_shell_indices[0])):
             keep_atom_indices[0][i].update(covalent_shell_indices[0][i])
         for i in range(len(covalent_shell_indices[1])):
             keep_atom_indices[1][i].update(covalent_shell_indices[1][i])
 
-    # 3) Include the delocalized (π) shell if present
+    # 8.3) Include the delocalized (π) shell if present
     if delocalized_shell_indices is not None:
         for i in range(len(delocalized_shell_indices[0])):
             keep_atom_indices[0][i].update(delocalized_shell_indices[0][i])
         for i in range(len(delocalized_shell_indices[1])):
             keep_atom_indices[1][i].update(delocalized_shell_indices[1][i])
 
-    # 4) Include the extended shell (σ neighbors of π shell) if present
+    # 8.4) Include the extended shell (σ neighbors of π shell) if present
     if extended_shell_indices is not None:
         for i in range(len(extended_shell_indices[0])):
             keep_atom_indices[0][i].update(extended_shell_indices[0][i])
         for i in range(len(extended_shell_indices[1])):
             keep_atom_indices[1][i].update(extended_shell_indices[1][i])
 
-    # 5) Include unmapped atoms (appear on only one side) if present.
+    # 8.5) Include unmapped atoms (appear on only one side) if present
     if unmapped_indices is not None:
         for i in range(len(unmapped_indices[0])):
             keep_atom_indices[0][i].update(unmapped_indices[0][i])
         for i in range(len(unmapped_indices[1])):
             keep_atom_indices[1][i].update(unmapped_indices[1][i])
 
-    # 6) Compute which atoms/bonds to remove per template.
-    #    Any atom not present in the keep-set is marked for deletion and all of
-    #    its incident bonds are marked for removal.
+    # 8.6) Compute removal sets per template
+    #       Any atom not in the keep-set is marked for deletion and all incident bonds
+    #       are marked for removal.
     remove_bond_indices = ([], [])
     remove_atom_indices = ([], [])
 
-    # 6a) Reactant-side removals
+    # 8.6a) Reactant-side removals
     for i in range(reaction.GetNumReactantTemplates()):
         reactant = reaction.GetReactantTemplate(i)
         bond_indices_set = set()
@@ -480,7 +482,7 @@ def _compile_operator(
         remove_bond_indices[0].append(bond_indices_set)
         remove_atom_indices[0].append(atom_indices_set)
 
-    # 6b) Product-side removals
+    # 8.6b) Product-side removals
     for i in range(reaction.GetNumProductTemplates()):
         product = reaction.GetProductTemplate(i)
         bond_indices_set = set()
@@ -493,10 +495,10 @@ def _compile_operator(
         remove_bond_indices[1].append(bond_indices_set)
         remove_atom_indices[1].append(atom_indices_set)
 
-    # 7) Construct a new reaction from pruned templates
+    # 8.7) Construct a new reaction from pruned templates
     new_reaction = rdChemReactions.ChemicalReaction()
 
-    # 7a) Rebuild reactant templates with unwanted atoms/bonds pruned
+    # 8.7a) Rebuild reactant templates with unwanted atoms/bonds pruned
     for i in range(reaction.GetNumReactantTemplates()):
         reactant = reaction.GetReactantTemplate(i)
         editable_reactant = Chem.EditableMol(reactant)
@@ -508,7 +510,7 @@ def _compile_operator(
         r_mol = editable_reactant.GetMol()
         new_reaction.AddReactantTemplate(r_mol)
 
-    # 7b) Rebuild product templates with unwanted atoms/bonds pruned
+    # 8.7b) Rebuild product templates with unwanted atoms/bonds pruned
     for i in range(reaction.GetNumProductTemplates()):
         product = reaction.GetProductTemplate(i)
         editable_product = Chem.EditableMol(product)
