@@ -1,7 +1,7 @@
-Alkene,R,K_2(M-1s-1),k_rel
-ethylene,C=C,1.46E-15,1
-propene,CC=C,2.38E-09,1.60E+06
-1-hexene,CCCCC=C,4.32E-09,3.00E+06
-styrene,c1ccccc1C=C,2.40E-07,1.60E+08
-2-methylbut-2-ene,C(C)(C)=CC,2.14E-04,1.50E+11
-isobutene,C(C)(C)=C,3.71E-04,2.50E+11
+Alkene,smiles,k_rel
+ethylene,C=C,1
+propene,CC=C,1.60E+06
+1-hexene,CCCCC=C,3.00E+06
+styrene,c1ccccc1C=C,1.60E+08
+2-methylbut-2-ene,C(C)(C)=CC,1.50E+11
+isobutene,C(C)(C)=C,2.50E+11

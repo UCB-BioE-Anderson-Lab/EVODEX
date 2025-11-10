@@ -1,5 +1,6 @@
 - table_id: steric_sn2
   description: "Relative SN2 rates for primary alkyl bromides with ethanol."
+  reaction_template: "[C:1][Br]>>[C:1][O]CC"
   reactivity_type: "k_rel"
   units: "relative rate (dimensionless)"
   context: "All substrates are primary bromides and electronically similar, yet show large rate differences. Increasing β‑branching slows reaction dramatically because steric hindrance blocks backside attack. Neopentyl bromide is nearly unreactive, illustrating that steric effects, not electronics, control these SN2 rates."
@@ -9,6 +10,7 @@
 
 - table_id: alcohol_pka
   description: "Ionization constants (pKa) of substituted primary alcohols."
+  reaction_template: "[OH:1]>>[O-:1]"
   reactivity_type: "pKa"
   units: "dimensionless"
   context: "This table summarizes pKa values for substituted primary alcohols. Electron-withdrawing α-substituents (e.g., CF₃, CCl₃) lower pKa by inductive stabilization of the alkoxide. π systems such as allyl and propargyl show little effect because the alkoxide is not conjugated with the π system, so resonance does not stabilize the anion. The trend indicates that alcohol acidity is governed mainly by through-bond inductive effects."
@@ -18,6 +20,7 @@
 
 - table_id: resonance_stabilized_sn2
   description: "Relative SN2 rates for alkyl, allylic, and benzylic bromides with ethanol."
+  reaction_template: "[C:1][Br]>>[C:1][O]CC"
   reactivity_type: 'k'
   units: "relative rate (dimensionless)"
   context: "This table extends the same study used in steric_sn2, but focuses on the effect of π conjugation on SN2 reactivity. Primary, non-conjugated bromides (ethyl, n-propyl) define the baseline, whereas allyl and benzyl bromides react tens-to-hundreds-fold faster because resonance delocalizes negative charge developed in the SN2 transition state into the adjacent π system."
@@ -27,15 +30,17 @@
 
 - table_id: alpha_substituent_effects_sn2
   description: "α-Substituent effects on iodide displacement from α-substituted chlorides."
+  reaction_template: "[C:1][Cl]>>[C:1][I]"
   reactivity_type: "k_rel"
   units: "relative rate (dimensionless)"
   context: "This table shows that π-accepting α-substituents (carbonyl, nitrile, sulfonyl) greatly accelerate SN2 at the α-carbon. Conjugation between the adjacent π system and the C–X σ* orbital lowers the LUMO and allows developing negative charge in the transition state to delocalize. As a result, α-halo carbonyls (phenacyl chloride, chloroacetone) react 10³–10⁵ times faster than unactivated alkyl chlorides, with nitriles and esters strongly activating and sulfones modestly so."
-  source_ref: "march_4ed"
+  source_ref: "carey_sundberg_volA_3ed"
   source_page: 296
   provenance_type: "verbatim_reproduction"
 
 - table_id: 2chloro5nitropyrimidine_snar
   description: "Second-order rate constants for SNAr substitution of 2-chloro-5-nitropyrimidine by amines in water at 25 °C."
+  reaction_template: "[N:2][C:1]>>O=[N+]([O-])c1cnc([N:2][C:1])nc1"
   reactivity_type: "k_2"
   units: "1/M·s"
   context: "Reactivity depends mainly on nucleophile strength for this highly activated heteroaryl chloride. Secondary amines such as piperidine are far more reactive than primary amines, while benzylic substitution and α-carboxylation show little special effect. Unlike SN2 at aliphatic carbon, resonance or benzylic stabilization of the amine does not provide an advantage; the rate trend is controlled largely by basicity and inductive effects."
@@ -45,8 +50,9 @@
 
 - table_id: alkene_hydration
   description: "Rates of Hydration of Some Alkenes in Aqueous Sulfuric Acid."
-  reactivity_type: ["k_2", "k_rel"]
-  units: ["1/M·s", "relative rate (dimensionless)"]
+  reaction_template: "[C:1]=[C:2]>>[C:1](O)[C:2]"
+  reactivity_type: "k_rel"
+  units: "relative rate (dimensionless)"
   context: "This table summarizes experimental rate constants for acid-catalyzed hydration of representative alkenes in aqueous sulfuric acid, illustrating how substituents influence carbocation stability and thus reactivity. The mechanism proceeds through protonation of the alkene to form a carbocation intermediate, followed by rapid capture by water. The rate-determining step is protonation, so factors that stabilize the carbocation accelerate the reaction. Increasing alkyl substitution on the carbocation-bearing carbon markedly enhances the rate by hyperconjugation and inductive electron donation, while conjugated (benzylic) systems provide additional π-delocalization stabilization. The observed rates span many orders of magnitude, reflecting these substituent effects. The data and accompanying discussion confirm that hydration under these conditions follows specific acid catalysis via discrete carbocation intermediates rather than concerted addition, with the overall order of reactivity correlating with the degree of carbocation stabilization."
   source_ref: "carey_sundberg_volA_3ed"
   source_page: 349
@@ -54,6 +60,7 @@
 
 - table_id: styrene_hydration
   description: "Hammett series: effect of para-substituents on the rate of acid-catalyzed hydration of styrenes in 3.5 M HClO₄ at 25°C."
+  reaction_template: "[C:1]=[C:2]>>[C:1](O)[C:2]"
   reactivity_type: "k"
   units: "k × 10⁸ (s⁻¹)"
   context: "This table reports a Hammett substituent series for the acid-catalyzed hydration of para-substituted styrenes. The reaction proceeds through benzylic carbocation intermediates stabilized by resonance with the aromatic ring. Electron-donating substituents accelerate the rate by increasing electron density and stabilizing the carbocation, whereas electron-withdrawing substituents slow the reaction. The data span over four orders of magnitude and illustrate the basis of the σ⁺/ρ⁺ correlation, showing that resonance donation and withdrawal dominate over simple inductive effects in determining the effective stabilization of the delocalized carbocation intermediate."
@@ -63,6 +70,7 @@
   
 - table_id: alkene_bromination
   description: "Relative reactivity of alkenes toward bromination."
+  reaction_template: "[C:1]=[C:2]>>[C:1]([Br])[C:2][Br]"
   reactivity_type: "k_rel"
   units: "relative rate (dimensionless)"
   context: "This table compares the relative rates of bromine addition to alkenes, demonstrating how alkyl substitution affects reactivity through stabilization of positive charge that develops during electrophilic attack. More substituted alkenes react faster because alkyl groups stabilize this developing carbocation character by hyperconjugation and inductive effects. The trend parallels that observed for acid-catalyzed hydration, since both reactions proceed through π-bond protonation or polarization steps that generate similar charge distribution at the reactive carbons in the transition state."
@@ -72,6 +80,7 @@
 
 - table_id: ketone_reduction
   description: "Rates of reduction of aldehydes and ketones by sodium borohydride"
+  reaction_template: "[C:1]=[O:2]>>[C:1][O:2]"
   reactivity_type: "k_2"
   units: "k_2 x 10E4 (1/M·s)"
   context: "This table presents rate constants for the reduction of aldehydes and ketones by sodium borohydride, highlighting how electronic factors govern carbonyl electrophilicity. Aldehydes react much faster than ketones because they possess less electron donation to the carbonyl carbon, leaving it more positively polarized and more susceptible to hydride attack. In ketones, alkyl substituents donate electron density inductively, reducing the partial positive charge on the carbonyl carbon and slowing reduction. Aromatic conjugation, as in acetophenone and benzophenone, further stabilizes the carbonyl by π delocalization, decreasing its reactivity. Overall, these rates demonstrate that electron-withdrawing environments enhance, and electron-donating environments suppress, nucleophilic addition to carbonyls."
@@ -81,15 +90,17 @@
 
 - table_id: trifluoroacetanilide_methanolysis
   description: "Hammett analysis of substituent effects on the methanolysis of trifluoroacetanilides."
+  reaction_template: "[N:1]C(=O)C(F)(F)(F)>>[N:1]"
   reactivity_type: "k_2"
   units: "1/M·s"
   context: "This table reports second-order rate constants for methoxide-promoted methanolysis of trifluoroacetanilides bearing various ring substituents on the aniline moiety. Electron-withdrawing groups (e.g. m-NO₂, m-Br, m-Cl) stabilize the anilide leaving group by delocalizing developing negative charge during collapse of the tetrahedral intermediate, increasing the rate. Electron-donating groups destabilize the leaving group and slow the reaction. The trend reflects a Hammett-type dependence controlled by leaving-group stabilization in the elimination step."
-  source_ref: "carey_sundberg_volB_3ed"
+  source_ref: "carey_sundberg_volA_3ed"
   source_page: 495
   provenance_type: "verbatim_reproduction"
 
 - table_id: pnpa_amine_amide_formation
   description: "Second-order rate constants for amide formation of p-nitrophenyl acetate (PNPA) with amines."
+  reaction_template: "[N:1]>>[N:1]C(=O)C"
   reactivity_type: "k_2"
   units: "1/M·min"
   context: "Alkyl amines show no chain-length effect from ethyl to propyl. Inductive withdrawal at the α-carbon depresses nucleophilicity: converting propylamine → glycine slows ~6.2×, while CF3 substitution (trifluoroethylamine) lowers rate by ~2.3×10^4 vs ethylamine. Aromatic heterocycles vary: aniline is ~8.7×10^4 slower than ethylamine, imidazole is moderately reactive (only ~27× slower than ethylamine), and pyridines are weak; electron-withdrawing substitution conjugated to the ring (nicotinamide) suppresses rate by ~70× relative to unsubstituted pyridine."
@@ -99,6 +110,7 @@
 
 - table_id: peroxide_radical_abstraction
   description: "Relative rates of hydrogen abstraction during autoxidation of alkenes by peroxyl radicals at 30 °C."
+  reaction_template: "[C:1]=[C:2]>>[C:1][C:2]OO"
   reactivity_type: "k_rel"
   units: "relative rate (dimensionless)"
   context: "Peroxyl radicals abstract allylic and doubly allylic C–H bonds far more rapidly than non-conjugated alkenes because conjugation stabilizes the resulting carbon radical. The trend matches biological autoxidation and lipoxygenase catalysis, where allylic radical stabilization controls selectivity."
@@ -108,23 +120,20 @@
 
 - table_id: aryl_bromination
   description: "Relative rates of electrophilic aromatic bromination of benzene derivatives."
+  reaction_template: "c1ccccc1>>c1ccccc1Br"
   reactivity_type: "k"
   units: "1/M·s"
   context: "This table reports relative rates of bromination for para-substituted benzene derivatives, illustrating the strong activating influence of electron-donating substituents. Electron-donating groups stabilize the σ-complex intermediate formed during electrophilic attack by delocalizing positive charge into the ring, greatly accelerating substitution. Methyl (inductive) and especially methoxy or hydroxy (resonance) groups show dramatic rate enhancement compared to unsubstituted benzene, while dimethylamino provides an even stronger resonance donation. The comparable reactivity of OH and OCH₃ highlights that both groups donate through resonance to a similar extent."
-  source_ref: "carey_sundberg_volB_3ed"
+  source_ref: "carey_sundberg_volA_3ed"
   source_page: 588
   provenance_type: "verbatim_reproduction"
 
 - table_id: cyclopentadiene_diels_alder
   description: "Relative reactivity toward cyclopentadiene in the Diels-Alder reaction."
+  reaction_template: "[C:1]=[C:2]>>C1=CC2C[C:1][C:2]1C2"
   reactivity_type: "k"
   units: "relative rate (dimensionless)"
   context: "This table compares the relative reactivities of substituted alkenes (dienophiles) in Diels–Alder reactions with cyclopentadiene. Electron-withdrawing substituents such as –CN, –COOR, and –C=O greatly accelerate the reaction by lowering the alkene’s LUMO and stabilizing charge buildup in the polarized transition state. The rates span many orders of magnitude, showing how substituents can dramatically alter diene–dienophile reactivity. Geometric isomers (cis/trans) and modestly activated esters display smaller effects, but the overall trend highlights the dominant role of π-acceptor substituents in promoting Diels–Alder cycloadditions."
   source_ref: "carey_sundberg_volB_3ed"
   source_page: 631
   provenance_type: "verbatim_reproduction"
-
-
-
-
-
