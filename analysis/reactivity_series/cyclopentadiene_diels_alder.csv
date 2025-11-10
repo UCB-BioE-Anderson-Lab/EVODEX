@@ -1,0 +1,11 @@
+substrate,smiles,k
+tetracyanoethylene,N#CC(C#N)=C(C#N)C#N,4.30E+07
+"1,1-dicyanoethylene",C=C(C#N)C#N,4.50E+05
+maleic anhydride,O=C1C=CC(=O)O1,5.60E+04
+p-benzoquinone,O=C1C=CC(=O)C=C1,9.00E+03
+maleonitrile,N#C/C=C\C#N,9.10E+01
+fumaronitrile,N#C/C=C/C#N,8.10E+01
+dimethyl fumarate,COC(=O)/C=C/C(=O)OC,7.40E+01
+dimethyl maleate,COC(=O)/C=C\C(=O)OC,6.00E-01
+methyl acrylate,C=CC(=O)OC,1.20E+00
+acrylonitrile,C=CC#N,1.00E+00

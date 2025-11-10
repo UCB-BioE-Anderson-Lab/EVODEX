@@ -1,0 +1,7 @@
+substrate,smiles,k
+alkyl,CCCCCl,1
+sulfone,c1ccccc1S(=O)(=O)CCl,0.25
+ester,CCOC(=O)CCl,1.70E+03
+nitrile,N#CCCl,3.00E+03
+chloroacetone,CC(=O)CCl,3.50E+04
+phenacyl chloride,c1ccccc1C(=O)CCl,3.20E+04

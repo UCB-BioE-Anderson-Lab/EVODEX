@@ -1,0 +1,9 @@
+substrate,smiles,k_rel
+ethylene,C=C,0.01
+"3,3-dimethyl-1-butene",C(C)(C)CC=C,0.27
+1-butene,CCC=C,1
+trans-2-butene,C/C=C/C,17.5
+cis-2-butene,C/C=C\C,27
+2-methylpropene,CC(C)=C,57
+2-methyl-2-butene,CC(C)=CC,1380
+"2,3-dimethyl-2-butene",CC(C)=C(C)C,19000

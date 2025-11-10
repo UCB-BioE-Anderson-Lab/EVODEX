@@ -1,0 +1,6 @@
+Alkene,R,k x 10E8 (sec-1)
+p-methoxy,c1ccc(OC)cc1C=C,48800
+p-methyl,c1ccc(C)cc1C=C,16400
+styrene,c1ccc([H])cc1C=C,811
+p-chloro,c1ccc(Cl)cc1C=C,318
+p-nitro,c1ccc(N(=O)O)cc1C=C,1.44

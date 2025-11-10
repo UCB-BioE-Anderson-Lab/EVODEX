@@ -1,0 +1,11 @@
+substrate,smiles,pKa
+"2,2,2-trichloroethanol",ClC(Cl)(Cl)CO,12.24
+"2,2,2-trifluoroethanol",FC(F)(F)CO,12.37
+"2,2-dichloroethanol",ClC(Cl)CO,12.89
+propargyl alcohol,C#CCO,13.55
+2-chloroethanol,ClCCO,14.31
+2-methoxyethanol,COCCO,14.8
+ethylene glycol,OCCO,15.1
+methanol,CO,15.5
+allyl alcohol,C=CCO,15.5
+ethanol,CCO,15.9
