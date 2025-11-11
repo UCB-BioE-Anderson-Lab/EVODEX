@@ -1,5 +1,5 @@
 substrate,smiles,k
-H,c1ccccc1,2.70E-06
+H,c1ccccc1[H],2.70E-06
 CH3,c1ccccc1C,1.50E-02
 OCH3,c1ccccc1OC,9.80E+03
 OH,c1ccccc1O,4.00E+04

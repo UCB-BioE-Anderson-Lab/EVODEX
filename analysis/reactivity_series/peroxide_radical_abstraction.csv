@@ -5,9 +5,9 @@ hept-3-ene,CC/C=C/CCC,54
 1-octene,C=CCCCCCC,6.2
 cyclopentene,C1=CCCC1,280
 cyclohexene,C1=CCCCC1,230
-1,3-cyclohexadiene,C1=CCCC=C1,10000
-1,4-pentadiene,C=CCC=C,42
+1_3-cyclohexadiene,C1=CCCC=C1,10000
+1_4-pentadiene,C=CCC=C,42
 methyl octadecadienoate,CCCCCCCCC=CCCC=CCCCCC(=O)OC,2100
 methyl linolenate,CC/C=C/C/C=C/C/C=C/CCCCCCCC(=O)OC,3900
-1,4-cyclohexadiene,C1=CCC=CC1,3900
-2,5-dimethyl-3-hexene,CC(C)C=CC(C)C,540
+1_4-cyclohexadiene,C1=CCC=CC1,3900
+2_5-dimethyl-3-hexene,CC(C)C=CC(C)C,540

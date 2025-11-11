@@ -98,12 +98,22 @@
   source_page: 495
   provenance_type: "verbatim_reproduction"
 
-- table_id: pnpa_amine_amide_formation
+- table_id: pnpa_amine_amide_formation_a
   description: "Second-order rate constants for amide formation of p-nitrophenyl acetate (PNPA) with amines."
-  reaction_template: "[N:1]>>[N:1]C(=O)C"
+  reaction_template: "[n,N:1]>>[n,N:1]C(=O)C"
   reactivity_type: "k_2"
   units: "1/M·min"
   context: "Alkyl amines show no chain-length effect from ethyl to propyl. Inductive withdrawal at the α-carbon depresses nucleophilicity: converting propylamine → glycine slows ~6.2×, while CF3 substitution (trifluoroethylamine) lowers rate by ~2.3×10^4 vs ethylamine. Aromatic heterocycles vary: aniline is ~8.7×10^4 slower than ethylamine, imidazole is moderately reactive (only ~27× slower than ethylamine), and pyridines are weak; electron-withdrawing substitution conjugated to the ring (nicotinamide) suppresses rate by ~70× relative to unsubstituted pyridine."
+  source_ref: "Jencks_1968"
+  source_page: 2624
+  provenance_type: "verbatim_reproduction"
+
+- table_id: pnpa_amine_amide_formation_b
+  description: "Second-order rate constants for amide formation of p-nitrophenyl acetate (PNPA) with amines."
+  reaction_template: "[n,N:1]>>[n,N+:1]C(=O)C"
+  reactivity_type: "k_2"
+  units: "1/M·min"
+  context: "(continuation of part a)"
   source_ref: "Jencks_1968"
   source_page: 2624
   provenance_type: "verbatim_reproduction"
@@ -120,7 +130,7 @@
 
 - table_id: aryl_bromination
   description: "Relative rates of electrophilic aromatic bromination of benzene derivatives."
-  reaction_template: "c1ccccc1>>c1ccccc1Br"
+  reaction_template: "[c:1]([*:7])1[cH:2][c:3][cH:4][c:5][cH:6]1>>[c:1]([*:7])1[cH:2][c:3][c:4](Br)[c:5][cH:6]1"
   reactivity_type: "k"
   units: "1/M·s"
   context: "This table reports relative rates of bromination for para-substituted benzene derivatives, illustrating the strong activating influence of electron-donating substituents. Electron-donating groups stabilize the σ-complex intermediate formed during electrophilic attack by delocalizing positive charge into the ring, greatly accelerating substitution. Methyl (inductive) and especially methoxy or hydroxy (resonance) groups show dramatic rate enhancement compared to unsubstituted benzene, while dimethylamino provides an even stronger resonance donation. The comparable reactivity of OH and OCH₃ highlights that both groups donate through resonance to a similar extent."
@@ -130,7 +140,7 @@
 
 - table_id: cyclopentadiene_diels_alder
   description: "Relative reactivity toward cyclopentadiene in the Diels-Alder reaction."
-  reaction_template: "[C:1]=[C:2]>>C1=CC2C[C:1][C:2]1C2"
+  reaction_template: "[C:1]=[C:2]>>C1=CC2[C:1][C:2]C1C2"
   reactivity_type: "k"
   units: "relative rate (dimensionless)"
   context: "This table compares the relative reactivities of substituted alkenes (dienophiles) in Diels–Alder reactions with cyclopentadiene. Electron-withdrawing substituents such as –CN, –COOR, and –C=O greatly accelerate the reaction by lowering the alkene’s LUMO and stabilizing charge buildup in the polarized transition state. The rates span many orders of magnitude, showing how substituents can dramatically alter diene–dienophile reactivity. Geometric isomers (cis/trans) and modestly activated esters display smaller effects, but the overall trend highlights the dominant role of π-acceptor substituents in promoting Diels–Alder cycloadditions."

@@ -1,7 +1,7 @@
 substrate,smiles,k_CH3OH
-m-NO2,c1cc(N(=O)O)ccc1N(C)C(=O)C(F)(F)(F),5.75
-m-Br,c1cc(Cl)ccc1N(C)C(=O)C(F)(F)(F),0.524
-m-Cl,c1cc(Br)ccc1N(C)C(=O)C(F)(F)(F),0.513
+m-NO2,c1ccc([N+](=O)[O-])cc1N(C)C(=O)C(F)(F)(F),5.75
+m-Br,c1cc(Br)ccc1N(C)C(=O)C(F)(F)(F),0.524
+m-Cl,c1cc(Cl)ccc1N(C)C(=O)C(F)(F)(F),0.513
 m-OCH3,c1cc(OC)ccc1N(C)C(=O)C(F)(F)(F),0.11
 H,c1ccccc1N(C)C(=O)C(F)(F)(F),0.104
 m-CH3,c1cc(C)ccc1N(C)C(=O)C(F)(F)(F),0.0833
