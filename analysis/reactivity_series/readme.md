@@ -32,7 +32,7 @@ Each entry in `tables_manifest.yaml` specifies:
 ## 2. Processing Workflow
 
 ### 2.1 Data Projection
-`run_reactivity_series.py`
+`1_project.py`
 
 Reads the YAML tables and generates substrate–product pairs by applying each `reaction_template` to all listed substrates.
 
@@ -41,7 +41,7 @@ Reads the YAML tables and generates substrate–product pairs by applying each `
 ---
 
 ### 2.2 Deterministic Atom Mapping
-`twinmap.py`
+`2_atommap.py`
 
 Transfers atom-mapping numbers from the operator to the substrate and product:
 - Operator atoms define the initial mapping.
@@ -54,7 +54,7 @@ Transfers atom-mapping numbers from the operator to the substrate and product:
 ---
 
 ### 2.3 Hydrogen Mapping
-`hydrogen_mapping.py`
+`3_hmap.py`
 
 Converts mapped pairs into EVODEX-P format involving:
 - Hydrogen restoration
@@ -65,7 +65,7 @@ Converts mapped pairs into EVODEX-P format involving:
 **Output:** Fully-mapped SMIRKS data for operator extraction.
 
 ### 2.4 Operator Extraction
-`operator_extraction.py`
+`4_ops.py`
 
 Calculates the reaction operators for each reaction for:
 - EVODEX-A, B, C, D, E
@@ -74,7 +74,7 @@ Calculates the reaction operators for each reaction for:
 **Output:** Operator SMIRKS in JSON
 
 ### 2.5 Graphics Generation
-`graphics_builder.py`
+`5_svg.py`
 
 For each table, generates an SVG for inclusion in the analysis writeup with:
 - Rendering of the original template reaction operator
