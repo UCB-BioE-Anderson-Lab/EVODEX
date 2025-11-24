@@ -1,7 +1,0 @@
-row,label,substrate_smiles,product_index,product_smiles,product_smiles_explicit_h,image
-0,alkyl,CCCCCl,0,CCCCI,[H][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[I],alpha_substituent_effects_sn2/000_alkyl_p00.png
-1,sulfone,O=S(=O)(CCl)c1ccccc1,0,O=S(=O)(CI)c1ccccc1,[H][c]1[c]([H])[c]([H])[c]([S](=[O])(=[O])[C]([H])([H])[I])[c]([H])[c]1[H],alpha_substituent_effects_sn2/001_sulfone_p00.png
-2,ester,CCOC(=O)CCl,0,CCOC(=O)CI,[H][C]([H])([I])[C](=[O])[O][C]([H])([H])[C]([H])([H])[H],alpha_substituent_effects_sn2/002_ester_p00.png
-3,nitrile,N#CCCl,0,N#CCI,[H][C]([H])([I])[C]#[N],alpha_substituent_effects_sn2/003_nitrile_p00.png
-4,chloroacetone,CC(=O)CCl,0,CC(=O)CI,[H][C]([H])([H])[C](=[O])[C]([H])([H])[I],alpha_substituent_effects_sn2/004_chloroacetone_p00.png
-5,phenacyl chloride,O=C(CCl)c1ccccc1,0,O=C(CI)c1ccccc1,[H][c]1[c]([H])[c]([H])[c]([C](=[O])[C]([H])([H])[I])[c]([H])[c]1[H],alpha_substituent_effects_sn2/005_phenacyl_chloride_p00.png

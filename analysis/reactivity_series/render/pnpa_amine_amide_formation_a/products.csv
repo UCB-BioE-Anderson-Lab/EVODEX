@@ -1,8 +1,0 @@
-row,label,substrate_smiles,product_index,product_smiles,product_smiles_explicit_h,image
-0,ethylamine,CCN,0,CCNC(C)=O,[H][N]([C](=[O])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[H],pnpa_amine_amide_formation_a/000_ethylamine_p00.png
-1,propylamine,CCCN,0,CCCNC(C)=O,[H][N]([C](=[O])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H],pnpa_amine_amide_formation_a/001_propylamine_p00.png
-2,glycine,NCC(=O)O,0,CC(=O)NCC(=O)O,[H][O][C](=[O])[C]([H])([H])[N]([H])[C](=[O])[C]([H])([H])[H],pnpa_amine_amide_formation_a/002_glycine_p00.png
-3,trifluoroethylamine,NCC(F)(F)F,0,CC(=O)NCC(F)(F)F,[H][N]([C](=[O])[C]([H])([H])[H])[C]([H])([H])[C]([F])([F])[F],pnpa_amine_amide_formation_a/003_trifluoroethylamine_p00.png
-4,aniline,Nc1ccccc1,0,CC(=O)Nc1ccccc1,[H][c]1[c]([H])[c]([H])[c]([N]([H])[C](=[O])[C]([H])([H])[H])[c]([H])[c]1[H],pnpa_amine_amide_formation_a/004_aniline_p00.png
-5,imidazole,c1c[nH]cn1,0,CC(=O)n1ccnc1,[H][c]1[n][c]([H])[n]([C](=[O])[C]([H])([H])[H])[c]1[H],pnpa_amine_amide_formation_a/005_imidazole_p00.png
-5,imidazole,c1c[nH]cn1,1,CC(=O)n1cc[nH]c1,[H][c]1[c]([H])[n]([C](=[O])[C]([H])([H])[H])[c]([H])[n]1[H],pnpa_amine_amide_formation_a/005_imidazole_p01.png

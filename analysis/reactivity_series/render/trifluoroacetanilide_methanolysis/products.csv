@@ -1,7 +1,0 @@
-row,label,substrate_smiles,product_index,product_smiles,product_smiles_explicit_h,image
-0,m-NO2,CN(C(=O)C(F)(F)F)c1cccc([N+](=O)[O-])c1,0,CNc1cccc([N+](=O)[O-])c1,[H][c]1[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]([N+](=[O])[O-])[c]1[H],trifluoroacetanilide_methanolysis/000_m-no2_p00.png
-1,m-Br,CN(C(=O)C(F)(F)F)c1ccc(Br)cc1,0,CNc1ccc(Br)cc1,[H][c]1[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]([H])[c]1[Br],trifluoroacetanilide_methanolysis/001_m-br_p00.png
-2,m-Cl,CN(C(=O)C(F)(F)F)c1ccc(Cl)cc1,0,CNc1ccc(Cl)cc1,[H][c]1[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]([H])[c]1[Cl],trifluoroacetanilide_methanolysis/002_m-cl_p00.png
-3,m-OCH3,COc1ccc(N(C)C(=O)C(F)(F)F)cc1,0,CNc1ccc(OC)cc1,[H][c]1[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]([H])[c]1[O][C]([H])([H])[H],trifluoroacetanilide_methanolysis/003_m-och3_p00.png
-4,H,CN(C(=O)C(F)(F)F)c1ccccc1,0,CNc1ccccc1,[H][c]1[c]([H])[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]1[H],trifluoroacetanilide_methanolysis/004_h_p00.png
-5,m-CH3,Cc1ccc(N(C)C(=O)C(F)(F)F)cc1,0,CNc1ccc(C)cc1,[H][c]1[c]([H])[c]([C]([H])([H])[H])[c]([H])[c]([H])[c]1[N]([H])[C]([H])([H])[H],trifluoroacetanilide_methanolysis/005_m-ch3_p00.png
