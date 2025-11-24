@@ -1,7 +1,125 @@
 from rdkit import Chem
 from rdkit.Chem import rdChemReactions
 from rdkit import RDLogger
+import re
+
 RDLogger.DisableLog('rdApp.*')
+
+
+def extract_operator_by_abstraction(smirks: str, abstraction: str):
+    """Dispatch into `operator_extractor` using a discrete EVODEX abstraction level.
+
+    Parameters
+    ----------
+    smirks : str
+        Full reaction SMIRKS.
+    abstraction : {"A", "B", "C", "D", "E"}
+        EVODEX abstraction code. A is implemented by first computing the
+        B abstraction and then erasing atom identity (wildcards) while
+        preserving atom-map numbers.
+    """
+    level = abstraction.upper()
+
+    if level == "A":
+        b_operator = operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=False,
+            include_pi=False,
+            include_extended=False,
+            include_unmapped=False,
+        )
+        return _abstract_operator_atoms_to_wildcards(b_operator)
+
+    if level == "B":
+        return operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=False,
+            include_pi=False,
+            include_extended=False,
+            include_unmapped=False,
+        )
+    elif level == "C":
+        return operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=True,
+            include_pi=False,
+            include_extended=False,
+            include_unmapped=False,
+        )
+    elif level == "D":
+        return operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=True,
+            include_pi=True,
+            include_extended=False,
+            include_unmapped=False,
+        )
+    elif level == "E":
+        return operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=True,
+            include_pi=True,
+            include_extended=True,
+            include_unmapped=False,
+        )
+
+# ================================================================
+# Helper: Abstract atom identity to wildcards for level A
+# ================================================================
+
+def _abstract_operator_atoms_to_wildcards(operator_smirks: str) -> str:
+    """Return a SMIRKS where all atoms have wildcard identity but keep map numbers.
+
+    This is used to build the most abstract EVODEX representation (level A)
+    by stripping element identity in the already-pruned operator SMIRKS.
+    """
+    s = operator_smirks
+    out = []
+    i = 0
+    n = len(s)
+
+    while i < n:
+        ch = s[i]
+
+        # Bracketed atom: [..], may contain :map number
+        if ch == "[":
+            j = s.find("]", i + 1)
+            if j == -1:
+                # Malformed; just append the rest and stop
+                out.append(s[i:])
+                break
+            interior = s[i + 1:j]
+
+            # Preserve atom-map numbers, if present, as [*:num]
+            m = re.search(r":(\d+)", interior)
+            if m:
+                out.append(f"[*:{m.group(1)}]")
+            else:
+                out.append("*")
+            i = j + 1
+
+        # Organic subset / aromatic atoms written without brackets (C, N, O, c, n, etc.)
+        elif ch.isalpha():
+            # Treat an uppercase + lowercase pair as a two-character element symbol (e.g. Cl, Br, Si);
+            # otherwise treat the current character as a single-letter element (including aromatic c, n, o, etc.).
+            if ch.isupper() and i + 1 < n and s[i + 1].islower():
+                i += 2
+            else:
+                i += 1
+            out.append("*")
+
+        else:
+            # Bond symbols, digits, parentheses, '>' delimiters, etc.
+            out.append(ch)
+            i += 1
+
+    return "".join(out)
+
 
 # ================================================================
 # operator_extractor: extract an operator SMIRKS from a reaction SMIRKS
@@ -526,24 +644,17 @@ def _compile_operator(
 
 
 if __name__ == "__main__":
-    # Alcohol Methylation
-    # smirks = "[H][O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]>>[C]([H])([H])([H])[O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]"
-    
-    # Phenol Methylation
-    # smirks = '[H][O:2][c:3]1[c:4]([H:5])[c:6]([H:7])[c:8]([H:9])[c:10]([H:11])[c:12]1[H:13]>>[C]([H])([H])([H])[O:2][c:3]1[c:4]([H:5])[c:6]([H:7])[c:8]([H:9])[c:10]([H:11])[c:12]1[H:13]'
-    
-    # cis/trans Isomerization
-    # smirks = "[C:1]([H:4])([H:5])([H:6])/[C:2]([H:7])=[C:3]([H:8])/[C:4]([H:9])([H:10])([H:11])>>[C:1]([H:4])([H:5])([H:6])\\[C:2]([H:7])=[C:3]([H:8])/[C:4]([H:9])([H:10])([H:11])"
+    # Simple examples to exercise the A abstraction level
 
-    # Nucleophillic Aromatic Substitution
-    smirks = "[C:1]([c:2]1[c:3]([H:12])[c:4]([H:13])[c:5]([F])[c:7]([H:14])[c:8]1[H:15])([H:9])([H:10])[H:11]>>[C:1]([c:2]1[c:3]([H:12])[c:4]([H:13])[c:5]([Cl])[c:7]([H:14])[c:8]1[H:15])([H:9])([H:10])[H:11]"
+    examples = {
+        "alcohol_methylation": "[H][O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]>>[C]([H])([H])([H])[O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]",
+        "phenol_methylation": "[H][O:2][c:3]1[c:4]([H:5])[c:6]([H:7])[c:8]([H:9])[c:10]([H:11])[c:12]1[H:13]>>[C]([H])([H])([H])[O:2][c:3]1[c:4]([H:5])[c:6]([H:7])[c:8]([H:9])[c:10]([H:11])[c:12]1[H:13]",
+        "cis_trans_isomerization": "[C:1]([H:4])([H:5])([H:6])/[C:2]([H:7])=[C:3]([H:8])/[C:4]([H:9])([H:10])([H:11])>>[C:1]([H:4])([H:5])([H:6])\\[C:2]([H:7])=[C:3]([H:8])/[C:4]([H:9])([H:10])([H:11])",
+        "nucleophilic_aromatic_substitution": "[C:1]([c:2]1[c:3]([H:12])[c:4]([H:13])[c:5]([F])[c:7]([H:14])[c:8]1[H:15])([H:9])([H:10])[H:11]>>[C:1]([c:2]1[c:3]([H:12])[c:4]([H:13])[c:5]([Cl])[c:7]([H:14])[c:8]1[H:15])([H:9])([H:10])[H:11]",
+    }
 
-    result = operator_extractor(
-        smirks,
-        include_stereochemistry=True,
-        include_sigma=True,
-        include_pi=True,
-        include_extended=True,
-        include_unmapped=True,
-    )
-    print(result)
+    for name, smirks in examples.items():
+        print(f"\nExample: {name}")
+        print(f"  Full SMIRKS: {smirks}")
+        op_A = extract_operator_by_abstraction(smirks, "A")
+        print(f"  A abstraction: {op_A}")
