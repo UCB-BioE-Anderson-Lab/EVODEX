@@ -1,0 +1,11 @@
+row,label,substrate_smiles,product_index,product_smiles,product_smiles_explicit_h,image
+0,tetracyanoethylene,N#CC(C#N)=C(C#N)C#N,0,N#CC1(C#N)C2C=CC(C2)C1(C#N)C#N,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([C]#[N])([C]#[N])[C]2([C]#[N])[C]#[N],cyclopentadiene_diels_alder/000_tetracyanoethylene_p00.png
+1,1_1-dicyanoethylene,C=C(C#N)C#N,0,N#CC1(C#N)CC2C=CC1C2,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([H])[C]2([C]#[N])[C]#[N],cyclopentadiene_diels_alder/001_1_1-dicyanoethylene_p00.png
+2,maleic anhydride,O=C1C=CC(=O)O1,0,O=C1OC(=O)C2C3C=CC(C3)C12,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]1([H])[C](=[O])[O][C](=[O])[C]21[H],cyclopentadiene_diels_alder/002_maleic_anhydride_p00.png
+3,p-benzoquinone,O=C1C=CC(=O)C=C1,0,O=C1C=CC(=O)C2C3C=CC(C3)C12,[H][C]1=[C]([H])[C](=[O])[C]2([H])[C]3([H])[C]([H])=[C]([H])[C]([H])([C]3([H])[H])[C]2([H])[C]1=[O],cyclopentadiene_diels_alder/003_p-benzoquinone_p00.png
+4,maleonitrile,N#C/C=C\C#N,0,N#CC1C2C=CC(C2)C1C#N,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([C]#[N])[C]2([H])[C]#[N],cyclopentadiene_diels_alder/004_maleonitrile_p00.png
+5,fumaronitrile,N#C/C=C/C#N,0,N#CC1C2C=CC(C2)C1C#N,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([C]#[N])[C]2([H])[C]#[N],cyclopentadiene_diels_alder/005_fumaronitrile_p00.png
+6,dimethyl fumarate,COC(=O)/C=C/C(=O)OC,0,COC(=O)C1C2C=CC(C2)C1C(=O)OC,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([C](=[O])[O][C]([H])([H])[H])[C]2([H])[C](=[O])[O][C]([H])([H])[H],cyclopentadiene_diels_alder/006_dimethyl_fumarate_p00.png
+7,dimethyl maleate,COC(=O)/C=C\C(=O)OC,0,COC(=O)C1C2C=CC(C2)C1C(=O)OC,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([C](=[O])[O][C]([H])([H])[H])[C]2([H])[C](=[O])[O][C]([H])([H])[H],cyclopentadiene_diels_alder/007_dimethyl_maleate_p00.png
+8,methyl acrylate,C=CC(=O)OC,0,COC(=O)C1CC2C=CC1C2,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([H])[C]2([H])[C](=[O])[O][C]([H])([H])[H],cyclopentadiene_diels_alder/008_methyl_acrylate_p00.png
+9,acrylonitrile,C=CC#N,0,N#CC1CC2C=CC1C2,[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([H])[C]2([H])[C]#[N],cyclopentadiene_diels_alder/009_acrylonitrile_p00.png

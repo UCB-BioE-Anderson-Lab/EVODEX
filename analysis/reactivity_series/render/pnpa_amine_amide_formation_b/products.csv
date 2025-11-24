@@ -1,0 +1,5 @@
+row,label,substrate_smiles,product_index,product_smiles,product_smiles_explicit_h,image
+0,4-methylpyridine,Cc1ccncc1,0,CC(=O)[n+]1ccc(C)cc1,[H][c]1[c]([C]([H])([H])[H])[c]([H])[c]([H])[n+]([C](=[O])[C]([H])([H])[H])[c]1[H],pnpa_amine_amide_formation_b/000_4-methylpyridine_p00.png
+1,pyridine,c1ccncc1,0,CC(=O)[n+]1ccccc1,[H][c]1[c]([H])[c]([H])[n+]([C](=[O])[C]([H])([H])[H])[c]([H])[c]1[H],pnpa_amine_amide_formation_b/001_pyridine_p00.png
+2,nicotinamide,NC(=O)c1cccnc1,0,CC(=O)[n+]1cccc(C(N)=O)c1,[H][c]1[c]([H])[c]([H])[n+]([C](=[O])[C]([H])([H])[H])[c]([H])[c]1[C](=[O])[N]([H])[H],pnpa_amine_amide_formation_b/002_nicotinamide_p00.png
+2,nicotinamide,NC(=O)c1cccnc1,1,CC(=O)[NH2+]C(=O)c1cccnc1,[H][c]1[n][c]([H])[c]([C](=[O])[N+]([H])([H])[C](=[O])[C]([H])([H])[H])[c]([H])[c]1[H],pnpa_amine_amide_formation_b/002_nicotinamide_p01.png

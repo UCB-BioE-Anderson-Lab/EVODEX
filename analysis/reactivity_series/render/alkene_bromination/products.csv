@@ -1,0 +1,9 @@
+row,label,substrate_smiles,product_index,product_smiles,product_smiles_explicit_h,image
+0,ethylene,C=C,0,BrCCBr,[H][C]([H])([Br])[C]([H])([H])[Br],alkene_bromination/000_ethylene_p00.png
+1,"3,3-dimethyl-1-butene",C=CCC(C)C,0,CC(C)CC(Br)CBr,[H][C]([H])([H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[C]([H])([Br])[C]([H])([H])[Br],alkene_bromination/001_33-dimethyl-1-butene_p00.png
+2,1-butene,C=CCC,0,CCC(Br)CBr,[H][C]([H])([H])[C]([H])([H])[C]([H])([Br])[C]([H])([H])[Br],alkene_bromination/002_1-butene_p00.png
+3,trans-2-butene,C/C=C/C,0,CC(Br)C(C)Br,[H][C]([H])([H])[C]([H])([Br])[C]([H])([Br])[C]([H])([H])[H],alkene_bromination/003_trans-2-butene_p00.png
+4,cis-2-butene,C/C=C\C,0,CC(Br)C(C)Br,[H][C]([H])([H])[C]([H])([Br])[C]([H])([Br])[C]([H])([H])[H],alkene_bromination/004_cis-2-butene_p00.png
+5,2-methylpropene,C=C(C)C,0,CC(C)(Br)CBr,[H][C]([H])([H])[C]([Br])([C]([H])([H])[H])[C]([H])([H])[Br],alkene_bromination/005_2-methylpropene_p00.png
+6,2-methyl-2-butene,CC=C(C)C,0,CC(Br)C(C)(C)Br,[H][C]([H])([H])[C]([H])([Br])[C]([Br])([C]([H])([H])[H])[C]([H])([H])[H],alkene_bromination/006_2-methyl-2-butene_p00.png
+7,"2,3-dimethyl-2-butene",CC(C)=C(C)C,0,CC(C)(Br)C(C)(C)Br,[H][C]([H])([H])[C]([Br])([C]([H])([H])[H])[C]([Br])([C]([H])([H])[H])[C]([H])([H])[H],alkene_bromination/007_23-dimethyl-2-butene_p00.png

@@ -1,0 +1,8 @@
+row,label,substrate_smiles,product_index,product_smiles,product_smiles_explicit_h,image
+0,benzaldehyde,O=Cc1ccccc1,0,OCc1ccccc1,[H][O][C]([H])([H])[c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H],ketone_reduction/000_benzaldehyde_p00.png
+1,cyclobutanone,O=C1CCC1,0,OC1CCC1,[H][O][C]1([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H],ketone_reduction/001_cyclobutanone_p00.png
+2,cyclohexanone,O=C1CCCCC1,0,OC1CCCCC1,[H][O][C]1([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H],ketone_reduction/002_cyclohexanone_p00.png
+3,acetone,CC(C)=O,0,CC(C)O,[H][O][C]([H])([C]([H])([H])[H])[C]([H])([H])[H],ketone_reduction/003_acetone_p00.png
+4,cyclopentanone,O=C1CCCC1,0,OC1CCCC1,[H][O][C]1([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H],ketone_reduction/004_cyclopentanone_p00.png
+5,acetophenone,CC(=O)c1ccccc1,0,CC(O)c1ccccc1,[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H])[C]([H])([H])[H],ketone_reduction/005_acetophenone_p00.png
+6,benzophenone,O=C(c1ccccc1)c1ccccc1,0,OC(c1ccccc1)c1ccccc1,[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H])[c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H],ketone_reduction/006_benzophenone_p00.png

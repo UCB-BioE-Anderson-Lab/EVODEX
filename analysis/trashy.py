@@ -1,30 +1,32 @@
-from evodex.operators import extract_operator
+'''
+Description:  Inputs the substrate and product names for a reaction and returns an object with:
 
-if __name__ == "__main__":
-    smirks = "[C:4][C:1][O:2]>>[C:4][C:1][O:2][C]"
-    operator = extract_operator(smirks)
-    print("ethanol",operator)
+{
+substrate_name: "...",
+product_name: "...",
+substrate_smiles: "...",
+product_smiles: "...",
+matches: [], # The list of EVODEX IDs and their links in EVODEX
+conclusion: "No match found to any known enzymatic reactions"
+}
 
-    smirks = "[C:4]=[C:1][O:2]>>[C:4]=[C:1][O:2][C]"
-    operator = extract_operator(smirks)
-    print("vinyl alcohol",operator)
+'''
 
-    smirks = "[C:4]=[C:5][C:1][O:2]>>[C:4]=[C:5][C:1][O:2][C]"
-    operator = extract_operator(smirks)
-    print("allyl alcohol", operator)
 
-    smirks = "[C:6]=[C:5][C:4]=[C:1][O:2]>>[C:6]=[C:5][C:4]=[C:1][O:2][C]"
-    operator = extract_operator(smirks)
-    print("dibutenyl alcohol",operator)
+def evaluation_reaction(substrate_name: str, product_name: str) -> object:
+    """
+    Evaluate a reaction based on substrate and product names,
+    returning details and matching results from EVODEX.
+    """
+    # Look up smiles of substrate (if no hit, return "Could not resolve substrate to SMILES")
 
-    smirks = "[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[O:1]>>[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[O:1][C]"
-    operator = extract_operator(smirks)
-    print("phenol",operator)
+    # Look up smiles of product (if no hit, return "Could not resolve product to SMILES")
 
-    smirks = "[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[C:8][O:1]>>[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[C:8][O:1][C]"
-    operator = extract_operator(smirks)
-    print("benzyl alcohol",operator)
+    # Run it through EVODEX at each level of abstraction
+    # Check if there is an F match.  If none, return "No match found to any known enzymatic reactions"
+    # Check if there is an C match.  If none, return "The reaction has precedent with other reactions with a similar formula difference, but the specific mechanism is unprecedented"
+    # Check if there is an N match.  If none, return "The reaction has precedent with other reactions sharing similar reactive groups, but the specific mechanism is unprecedented"
+    # Check if there is an E match.  If none, return "The reaction matches known reaction mechanisms partially but not the entire electronic manifold is present."
 
-    smirks = "[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[C:8][C:9][O:1]>>[C:7]1=[C:6]-[C:5]=[C:4]-[C:3]=[C:2]1[C:8][C:9][O:1][C]"
-    operator = extract_operator(smirks)
-    print("phenethyl alcohol",operator)
+    # If got this far, it has an E match, so return that
+    pass

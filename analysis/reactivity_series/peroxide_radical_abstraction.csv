@@ -1,13 +1,13 @@
 substrate,smiles,k_rel
-tetramethylethylene,CC(C)=C(C)C,320
-methyl oleate,CCCCCCCC/C=C\CCCCCCCC(=O)OC,89
-hept-3-ene,CC/C=C/CCC,54
-1-octene,C=CCCCCCC,6.2
-cyclopentene,C1=CCCC1,280
-cyclohexene,C1=CCCCC1,230
-1_3-cyclohexadiene,C1=CCCC=C1,10000
-1_4-pentadiene,C=CCC=C,42
-methyl octadecadienoate,CCCCCCCCC=CCCC=CCCCCC(=O)OC,2100
-methyl linolenate,CC/C=C/C/C=C/C/C=C/CCCCCCCC(=O)OC,3900
-1_4-cyclohexadiene,C1=CCC=CC1,3900
-2_5-dimethyl-3-hexene,CC(C)C=CC(C)C,540
+tetramethylethylene,CC(C)=[9C](C)C,320
+methyl oleate,CCCCCCCC/[9C]=C\CCCCCCCC(=O)OC,89
+hept-3-ene,CC/[9C]=C/CCC,54
+1-octene,[9C]=CCCCCCC,6.2
+cyclopentene,[9C]1=CCCC1,280
+cyclohexene,[9C]1=CCCCC1,230
+1_3-cyclohexadiene,[9C]1=CCCC=C1,10000
+1_4-pentadiene,[9C]=CCC=C,42
+methyl octadecadienoate,CCCCCCCCC[9C]=CCCC=CCCCCC(=O)OC,2100
+methyl linolenate,CC/[9C]=C/C/C=C/C/C=C/CCCCCCCC(=O)OC,3900
+1_4-cyclohexadiene,[9C]1=CCC=CC1,3900
+2_5-dimethyl-3-hexene,CC(C)[9C]=CC(C)C,540

@@ -1,0 +1,1741 @@
+{
+  "tables": [
+    {
+      "table_id": "steric_sn2",
+      "operator": {
+        "reaction_template": "[C:1][Br]>>[C:1][O]CC"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "methyl",
+          "substrate_smiles_input": "CBr",
+          "substrate_smiles": "CBr",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCOC",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[O][C]([H])([H])[C]([H])([H])[H]",
+              "image": "steric_sn2/000_methyl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "ethyl",
+          "substrate_smiles_input": "CCBr",
+          "substrate_smiles": "CCBr",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCOCC",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[O][C]([H])([H])[C]([H])([H])[H]",
+              "image": "steric_sn2/001_ethyl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "n-propyl",
+          "substrate_smiles_input": "CCCBr",
+          "substrate_smiles": "CCCBr",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCCOCC",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[O][C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "steric_sn2/002_n-propyl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "sec-butyl",
+          "substrate_smiles_input": "C(C)(C)CBr",
+          "substrate_smiles": "CC(C)CBr",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCOCC(C)C",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[O][C]([H])([H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "steric_sn2/003_sec-butyl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "neopentyl bromide",
+          "substrate_smiles_input": "C(C)(C)(C)CBr",
+          "substrate_smiles": "CC(C)(C)CBr",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCOCC(C)(C)C",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[O][C]([H])([H])[C]([C]([H])([H])[H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "steric_sn2/004_neopentyl_bromide_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "alcohol_pka",
+      "operator": {
+        "reaction_template": "[OH:1]>>[O-:1]"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "2,2,2-trichloroethanol",
+          "substrate_smiles_input": "ClC(Cl)(Cl)CO",
+          "substrate_smiles": "OCC(Cl)(Cl)Cl",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[O-]CC(Cl)(Cl)Cl",
+              "product_smiles_explicit_h": "[H][C]([H])([O-])[C]([Cl])([Cl])[Cl]",
+              "image": "alcohol_pka/000_222-trichloroethanol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "2,2,2-trifluoroethanol",
+          "substrate_smiles_input": "FC(F)(F)CO",
+          "substrate_smiles": "OCC(F)(F)F",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[O-]CC(F)(F)F",
+              "product_smiles_explicit_h": "[H][C]([H])([O-])[C]([F])([F])[F]",
+              "image": "alcohol_pka/001_222-trifluoroethanol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "2,2-dichloroethanol",
+          "substrate_smiles_input": "ClC(Cl)CO",
+          "substrate_smiles": "OCC(Cl)Cl",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[O-]CC(Cl)Cl",
+              "product_smiles_explicit_h": "[H][C]([H])([O-])[C]([H])([Cl])[Cl]",
+              "image": "alcohol_pka/002_22-dichloroethanol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "propargyl alcohol",
+          "substrate_smiles_input": "C#CCO",
+          "substrate_smiles": "C#CCO",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "C#CC[O-]",
+              "product_smiles_explicit_h": "[H][C]#[C][C]([H])([H])[O-]",
+              "image": "alcohol_pka/003_propargyl_alcohol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "2-chloroethanol",
+          "substrate_smiles_input": "ClCCO",
+          "substrate_smiles": "OCCCl",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[O-]CCCl",
+              "product_smiles_explicit_h": "[H][C]([H])([O-])[C]([H])([H])[Cl]",
+              "image": "alcohol_pka/004_2-chloroethanol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "2-methoxyethanol",
+          "substrate_smiles_input": "COCCO",
+          "substrate_smiles": "COCCO",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "COCC[O-]",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[O][C]([H])([H])[C]([H])([H])[O-]",
+              "image": "alcohol_pka/005_2-methoxyethanol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 6,
+          "label": "ethylene glycol",
+          "substrate_smiles_input": "OCCO",
+          "substrate_smiles": "OCCO",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[O-]CCO",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[O-]",
+              "image": "alcohol_pka/006_ethylene_glycol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 7,
+          "label": "methanol",
+          "substrate_smiles_input": "CO",
+          "substrate_smiles": "CO",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "C[O-]",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[O-]",
+              "image": "alcohol_pka/007_methanol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 8,
+          "label": "allyl alcohol",
+          "substrate_smiles_input": "C=CCO",
+          "substrate_smiles": "C=CCO",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "C=CC[O-]",
+              "product_smiles_explicit_h": "[H][C]([H])=[C]([H])[C]([H])([H])[O-]",
+              "image": "alcohol_pka/008_allyl_alcohol_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 9,
+          "label": "ethanol",
+          "substrate_smiles_input": "CCO",
+          "substrate_smiles": "CCO",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC[O-]",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[O-]",
+              "image": "alcohol_pka/009_ethanol_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "resonance_stabilized_sn2",
+      "operator": {
+        "reaction_template": "[C:1][Br]>>[C:1][O]CC"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "ethyl",
+          "substrate_smiles_input": "CCBr",
+          "substrate_smiles": "CCBr",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCOCC",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[O][C]([H])([H])[C]([H])([H])[H]",
+              "image": "resonance_stabilized_sn2/000_ethyl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "n-propyl",
+          "substrate_smiles_input": "CCCBr",
+          "substrate_smiles": "CCCBr",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCCOCC",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[O][C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "resonance_stabilized_sn2/001_n-propyl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "allyl",
+          "substrate_smiles_input": "C=CCBr",
+          "substrate_smiles": "C=CCBr",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "C=CCOCC",
+              "product_smiles_explicit_h": "[H][C]([H])=[C]([H])[C]([H])([H])[O][C]([H])([H])[C]([H])([H])[H]",
+              "image": "resonance_stabilized_sn2/002_allyl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "benzyl",
+          "substrate_smiles_input": "c1ccccc1CBr",
+          "substrate_smiles": "BrCc1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCOCc1ccccc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([H])[c]([C]([H])([H])[O][C]([H])([H])[C]([H])([H])[H])[c]([H])[c]1[H]",
+              "image": "resonance_stabilized_sn2/003_benzyl_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "alpha_substituent_effects_sn2",
+      "operator": {
+        "reaction_template": "[C:1][Cl]>>[C:1][I]"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "alkyl",
+          "substrate_smiles_input": "CCCCCl",
+          "substrate_smiles": "CCCCCl",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCCCI",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[I]",
+              "image": "alpha_substituent_effects_sn2/000_alkyl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "sulfone",
+          "substrate_smiles_input": "c1ccccc1S(=O)(=O)CCl",
+          "substrate_smiles": "O=S(=O)(CCl)c1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=S(=O)(CI)c1ccccc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([H])[c]([S](=[O])(=[O])[C]([H])([H])[I])[c]([H])[c]1[H]",
+              "image": "alpha_substituent_effects_sn2/001_sulfone_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "ester",
+          "substrate_smiles_input": "CCOC(=O)CCl",
+          "substrate_smiles": "CCOC(=O)CCl",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCOC(=O)CI",
+              "product_smiles_explicit_h": "[H][C]([H])([I])[C](=[O])[O][C]([H])([H])[C]([H])([H])[H]",
+              "image": "alpha_substituent_effects_sn2/002_ester_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "nitrile",
+          "substrate_smiles_input": "N#CCCl",
+          "substrate_smiles": "N#CCCl",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "N#CCI",
+              "product_smiles_explicit_h": "[H][C]([H])([I])[C]#[N]",
+              "image": "alpha_substituent_effects_sn2/003_nitrile_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "chloroacetone",
+          "substrate_smiles_input": "CC(=O)CCl",
+          "substrate_smiles": "CC(=O)CCl",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(=O)CI",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C](=[O])[C]([H])([H])[I]",
+              "image": "alpha_substituent_effects_sn2/004_chloroacetone_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "phenacyl chloride",
+          "substrate_smiles_input": "c1ccccc1C(=O)CCl",
+          "substrate_smiles": "O=C(CCl)c1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=C(CI)c1ccccc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([H])[c]([C](=[O])[C]([H])([H])[I])[c]([H])[c]1[H]",
+              "image": "alpha_substituent_effects_sn2/005_phenacyl_chloride_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "2chloro5nitropyrimidine_snar",
+      "operator": {
+        "reaction_template": "[N:2][C:1]>>O=[N+]([O-])c1cnc([N:2][C:1])nc1"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "trifluoroethylamine",
+          "substrate_smiles_input": "NCC(F)(F)F",
+          "substrate_smiles": "NCC(F)(F)F",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=[N+]([O-])c1cnc(NCC(F)(F)F)nc1",
+              "product_smiles_explicit_h": "[H][c]1[n][c]([N]([H])[C]([H])([H])[C]([F])([F])[F])[n][c]([H])[c]1[N+](=[O])[O-]",
+              "image": "2chloro5nitropyrimidine_snar/000_trifluoroethylamine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "ethanolamine",
+          "substrate_smiles_input": "NCCO",
+          "substrate_smiles": "NCCO",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=[N+]([O-])c1cnc(NCCO)nc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[N]([H])[c]1[n][c]([H])[c]([N+](=[O])[O-])[c]([H])[n]1",
+              "image": "2chloro5nitropyrimidine_snar/001_ethanolamine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "benzylamine",
+          "substrate_smiles_input": "NCc1ccccc1",
+          "substrate_smiles": "NCc1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=[N+]([O-])c1cnc(NCc2ccccc2)nc1",
+              "product_smiles_explicit_h": "[H][c]1[n][c]([N]([H])[C]([H])([H])[c]2[c]([H])[c]([H])[c]([H])[c]([H])[c]2[H])[n][c]([H])[c]1[N+](=[O])[O-]",
+              "image": "2chloro5nitropyrimidine_snar/002_benzylamine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "glycine",
+          "substrate_smiles_input": "NCC(=O)O",
+          "substrate_smiles": "NCC(=O)O",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=C(O)CNc1ncc([N+](=O)[O-])cn1",
+              "product_smiles_explicit_h": "[H][O][C](=[O])[C]([H])([H])[N]([H])[c]1[n][c]([H])[c]([N+](=[O])[O-])[c]([H])[n]1",
+              "image": "2chloro5nitropyrimidine_snar/003_glycine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "propylamine",
+          "substrate_smiles_input": "CCCN",
+          "substrate_smiles": "CCCN",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCCNc1ncc([N+](=O)[O-])cn1",
+              "product_smiles_explicit_h": "[H][c]1[n][c]([N]([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H])[n][c]([H])[c]1[N+](=[O])[O-]",
+              "image": "2chloro5nitropyrimidine_snar/004_propylamine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "piperidine",
+          "substrate_smiles_input": "C1CCNCC1",
+          "substrate_smiles": "C1CCNCC1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=[N+]([O-])c1cnc(N2CCCCC2)nc1",
+              "product_smiles_explicit_h": "[H][c]1[n][c]([N]2[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]2([H])[H])[n][c]([H])[c]1[N+](=[O])[O-]",
+              "image": "2chloro5nitropyrimidine_snar/005_piperidine_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "alkene_hydration",
+      "operator": {
+        "reaction_template": "[C:1]=[C:2]>>[C:1](O)[C:2]"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "ethylene",
+          "substrate_smiles_input": "C=C",
+          "substrate_smiles": "C=C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCO",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/000_ethylene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "propene",
+          "substrate_smiles_input": "CC=C",
+          "substrate_smiles": "C=CC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(C)O",
+              "product_smiles_explicit_h": "[H][O][C]([H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/001_propene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CCCO",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/001_propene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "1-hexene",
+          "substrate_smiles_input": "CCCCC=C",
+          "substrate_smiles": "C=CCCCC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCCCC(C)O",
+              "product_smiles_explicit_h": "[H][O][C]([H])([C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/002_1-hexene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CCCCCCO",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/002_1-hexene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "styrene",
+          "substrate_smiles_input": "c1ccccc1C=C",
+          "substrate_smiles": "C=Cc1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(O)c1ccccc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/003_styrene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "OCCc1ccccc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H]",
+              "image": "alkene_hydration/003_styrene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "2-methylbut-2-ene",
+          "substrate_smiles_input": "C(C)(C)=CC",
+          "substrate_smiles": "CC=C(C)C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCC(C)(C)O",
+              "product_smiles_explicit_h": "[H][O][C]([C]([H])([H])[H])([C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/004_2-methylbut-2-ene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CC(C)C(C)O",
+              "product_smiles_explicit_h": "[H][O][C]([H])([C]([H])([H])[H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/004_2-methylbut-2-ene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "isobutene",
+          "substrate_smiles_input": "C(C)(C)=C",
+          "substrate_smiles": "C=C(C)C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(C)(C)O",
+              "product_smiles_explicit_h": "[H][O][C]([C]([H])([H])[H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/005_isobutene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CC(C)CO",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "alkene_hydration/005_isobutene_p01.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "styrene_hydration",
+      "operator": {
+        "reaction_template": "[C:1]=[C:2]>>[C:1](O)[C:2]"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "p-methoxy",
+          "substrate_smiles_input": "c1cc(OC)ccc1C=C",
+          "substrate_smiles": "C=Cc1ccc(OC)cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "COc1ccc(C(C)O)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([O][C]([H])([H])[H])[c]([H])[c]1[H])[C]([H])([H])[H]",
+              "image": "styrene_hydration/000_p-methoxy_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "COc1ccc(CCO)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[c]1[c]([H])[c]([H])[c]([O][C]([H])([H])[H])[c]([H])[c]1[H]",
+              "image": "styrene_hydration/000_p-methoxy_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "p-methyl",
+          "substrate_smiles_input": "c1cc(C)ccc1C=C",
+          "substrate_smiles": "C=Cc1ccc(C)cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "Cc1ccc(C(C)O)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([C]([H])([H])[H])[c]([H])[c]1[H])[C]([H])([H])[H]",
+              "image": "styrene_hydration/001_p-methyl_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "Cc1ccc(CCO)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[c]1[c]([H])[c]([H])[c]([C]([H])([H])[H])[c]([H])[c]1[H]",
+              "image": "styrene_hydration/001_p-methyl_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "styrene",
+          "substrate_smiles_input": "c1cc([H])ccc1C=C",
+          "substrate_smiles": "[H]c1ccc(C=C)cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[H]c1ccc(C(C)O)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H])[C]([H])([H])[H]",
+              "image": "styrene_hydration/002_styrene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "[H]c1ccc(CCO)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H]",
+              "image": "styrene_hydration/002_styrene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "p-chloro",
+          "substrate_smiles_input": "c1cc(Cl)ccc1C=C",
+          "substrate_smiles": "C=Cc1ccc(Cl)cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(O)c1ccc(Cl)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([Cl])[c]([H])[c]1[H])[C]([H])([H])[H]",
+              "image": "styrene_hydration/003_p-chloro_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "OCCc1ccc(Cl)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[c]1[c]([H])[c]([H])[c]([Cl])[c]([H])[c]1[H]",
+              "image": "styrene_hydration/003_p-chloro_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "p-nitro",
+          "substrate_smiles_input": "C=Cc1ccc([N+](=O)[O-])cc1",
+          "substrate_smiles": "C=Cc1ccc([N+](=O)[O-])cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=[N+]([O-])c1ccc(CCO)cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[C]([H])([H])[c]1[c]([H])[c]([H])[c]([N+](=[O])[O-])[c]([H])[c]1[H]",
+              "image": "styrene_hydration/004_p-nitro_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CC(O)c1ccc([N+](=O)[O-])cc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([N+](=[O])[O-])[c]([H])[c]1[H])[C]([H])([H])[H]",
+              "image": "styrene_hydration/004_p-nitro_p01.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "alkene_bromination",
+      "operator": {
+        "reaction_template": "[C:1]=[C:2]>>[C:1]([Br])[C:2][Br]"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "ethylene",
+          "substrate_smiles_input": "C=C",
+          "substrate_smiles": "C=C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "BrCCBr",
+              "product_smiles_explicit_h": "[H][C]([H])([Br])[C]([H])([H])[Br]",
+              "image": "alkene_bromination/000_ethylene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "3,3-dimethyl-1-butene",
+          "substrate_smiles_input": "C(C)(C)CC=C",
+          "substrate_smiles": "C=CCC(C)C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(C)CC(Br)CBr",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[C]([H])([Br])[C]([H])([H])[Br]",
+              "image": "alkene_bromination/001_33-dimethyl-1-butene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "1-butene",
+          "substrate_smiles_input": "CCC=C",
+          "substrate_smiles": "C=CCC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCC(Br)CBr",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([H])[C]([H])([Br])[C]([H])([H])[Br]",
+              "image": "alkene_bromination/002_1-butene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "trans-2-butene",
+          "substrate_smiles_input": "C/C=C/C",
+          "substrate_smiles": "C/C=C/C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(Br)C(C)Br",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([Br])[C]([H])([Br])[C]([H])([H])[H]",
+              "image": "alkene_bromination/003_trans-2-butene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "cis-2-butene",
+          "substrate_smiles_input": "C/C=C\\C",
+          "substrate_smiles": "C/C=C\\C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(Br)C(C)Br",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([Br])[C]([H])([Br])[C]([H])([H])[H]",
+              "image": "alkene_bromination/004_cis-2-butene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "2-methylpropene",
+          "substrate_smiles_input": "CC(C)=C",
+          "substrate_smiles": "C=C(C)C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(C)(Br)CBr",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([Br])([C]([H])([H])[H])[C]([H])([H])[Br]",
+              "image": "alkene_bromination/005_2-methylpropene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 6,
+          "label": "2-methyl-2-butene",
+          "substrate_smiles_input": "CC(C)=CC",
+          "substrate_smiles": "CC=C(C)C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(Br)C(C)(C)Br",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([H])([Br])[C]([Br])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "alkene_bromination/006_2-methyl-2-butene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 7,
+          "label": "2,3-dimethyl-2-butene",
+          "substrate_smiles_input": "CC(C)=C(C)C",
+          "substrate_smiles": "CC(C)=C(C)C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(C)(Br)C(C)(C)Br",
+              "product_smiles_explicit_h": "[H][C]([H])([H])[C]([Br])([C]([H])([H])[H])[C]([Br])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "alkene_bromination/007_23-dimethyl-2-butene_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "ketone_reduction",
+      "operator": {
+        "reaction_template": "[C:1]=[O:2]>>[C:1][O:2]"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "benzaldehyde",
+          "substrate_smiles_input": "O=Cc1ccccc1",
+          "substrate_smiles": "O=Cc1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OCc1ccccc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([H])[c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H]",
+              "image": "ketone_reduction/000_benzaldehyde_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "cyclobutanone",
+          "substrate_smiles_input": "O=C1CCC1",
+          "substrate_smiles": "O=C1CCC1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OC1CCC1",
+              "product_smiles_explicit_h": "[H][O][C]1([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "ketone_reduction/001_cyclobutanone_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "cyclohexanone",
+          "substrate_smiles_input": "O=C1CCCCC1",
+          "substrate_smiles": "O=C1CCCCC1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OC1CCCCC1",
+              "product_smiles_explicit_h": "[H][O][C]1([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "ketone_reduction/002_cyclohexanone_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "acetone",
+          "substrate_smiles_input": "CC(C)=O",
+          "substrate_smiles": "CC(C)=O",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(C)O",
+              "product_smiles_explicit_h": "[H][O][C]([H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "ketone_reduction/003_acetone_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "cyclopentanone",
+          "substrate_smiles_input": "O=C1CCCC1",
+          "substrate_smiles": "O=C1CCCC1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OC1CCCC1",
+              "product_smiles_explicit_h": "[H][O][C]1([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "ketone_reduction/004_cyclopentanone_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "acetophenone",
+          "substrate_smiles_input": "CC(=O)c1ccccc1",
+          "substrate_smiles": "CC(=O)c1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(O)c1ccccc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H])[C]([H])([H])[H]",
+              "image": "ketone_reduction/005_acetophenone_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 6,
+          "label": "benzophenone",
+          "substrate_smiles_input": "O=C(c1ccccc1)c1ccccc1",
+          "substrate_smiles": "O=C(c1ccccc1)c1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OC(c1ccccc1)c1ccccc1",
+              "product_smiles_explicit_h": "[H][O][C]([H])([c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H])[c]1[c]([H])[c]([H])[c]([H])[c]([H])[c]1[H]",
+              "image": "ketone_reduction/006_benzophenone_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "trifluoroacetanilide_methanolysis",
+      "operator": {
+        "reaction_template": "[N:1]C(=O)C(F)(F)(F)>>[N:1]"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "m-NO2",
+          "substrate_smiles_input": "c1ccc([N+](=O)[O-])cc1N(C)C(=O)C(F)(F)(F)",
+          "substrate_smiles": "CN(C(=O)C(F)(F)F)c1cccc([N+](=O)[O-])c1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CNc1cccc([N+](=O)[O-])c1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]([N+](=[O])[O-])[c]1[H]",
+              "image": "trifluoroacetanilide_methanolysis/000_m-no2_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "m-Br",
+          "substrate_smiles_input": "c1cc(Br)ccc1N(C)C(=O)C(F)(F)(F)",
+          "substrate_smiles": "CN(C(=O)C(F)(F)F)c1ccc(Br)cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CNc1ccc(Br)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]([H])[c]1[Br]",
+              "image": "trifluoroacetanilide_methanolysis/001_m-br_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "m-Cl",
+          "substrate_smiles_input": "c1cc(Cl)ccc1N(C)C(=O)C(F)(F)(F)",
+          "substrate_smiles": "CN(C(=O)C(F)(F)F)c1ccc(Cl)cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CNc1ccc(Cl)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]([H])[c]1[Cl]",
+              "image": "trifluoroacetanilide_methanolysis/002_m-cl_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "m-OCH3",
+          "substrate_smiles_input": "c1cc(OC)ccc1N(C)C(=O)C(F)(F)(F)",
+          "substrate_smiles": "COc1ccc(N(C)C(=O)C(F)(F)F)cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CNc1ccc(OC)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]([H])[c]1[O][C]([H])([H])[H]",
+              "image": "trifluoroacetanilide_methanolysis/003_m-och3_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "H",
+          "substrate_smiles_input": "c1ccccc1N(C)C(=O)C(F)(F)(F)",
+          "substrate_smiles": "CN(C(=O)C(F)(F)F)c1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CNc1ccccc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([H])[c]([N]([H])[C]([H])([H])[H])[c]([H])[c]1[H]",
+              "image": "trifluoroacetanilide_methanolysis/004_h_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "m-CH3",
+          "substrate_smiles_input": "c1cc(C)ccc1N(C)C(=O)C(F)(F)(F)",
+          "substrate_smiles": "Cc1ccc(N(C)C(=O)C(F)(F)F)cc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CNc1ccc(C)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([C]([H])([H])[H])[c]([H])[c]([H])[c]1[N]([H])[C]([H])([H])[H]",
+              "image": "trifluoroacetanilide_methanolysis/005_m-ch3_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "pnpa_amine_amide_formation_a",
+      "operator": {
+        "reaction_template": "[n,N:1]>>[n,N:1]C(=O)C"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "ethylamine",
+          "substrate_smiles_input": "CCN",
+          "substrate_smiles": "CCN",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCNC(C)=O",
+              "product_smiles_explicit_h": "[H][N]([C](=[O])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "pnpa_amine_amide_formation_a/000_ethylamine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "propylamine",
+          "substrate_smiles_input": "CCCN",
+          "substrate_smiles": "CCCN",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCCNC(C)=O",
+              "product_smiles_explicit_h": "[H][N]([C](=[O])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "pnpa_amine_amide_formation_a/001_propylamine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "glycine",
+          "substrate_smiles_input": "NCC(=O)O",
+          "substrate_smiles": "NCC(=O)O",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(=O)NCC(=O)O",
+              "product_smiles_explicit_h": "[H][O][C](=[O])[C]([H])([H])[N]([H])[C](=[O])[C]([H])([H])[H]",
+              "image": "pnpa_amine_amide_formation_a/002_glycine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "trifluoroethylamine",
+          "substrate_smiles_input": "NCC(F)(F)F",
+          "substrate_smiles": "NCC(F)(F)F",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(=O)NCC(F)(F)F",
+              "product_smiles_explicit_h": "[H][N]([C](=[O])[C]([H])([H])[H])[C]([H])([H])[C]([F])([F])[F]",
+              "image": "pnpa_amine_amide_formation_a/003_trifluoroethylamine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "aniline",
+          "substrate_smiles_input": "Nc1ccccc1",
+          "substrate_smiles": "Nc1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(=O)Nc1ccccc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([H])[c]([N]([H])[C](=[O])[C]([H])([H])[H])[c]([H])[c]1[H]",
+              "image": "pnpa_amine_amide_formation_a/004_aniline_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "imidazole",
+          "substrate_smiles_input": "c1c[nH]cn1",
+          "substrate_smiles": "c1c[nH]cn1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(=O)n1ccnc1",
+              "product_smiles_explicit_h": "[H][c]1[n][c]([H])[n]([C](=[O])[C]([H])([H])[H])[c]1[H]",
+              "image": "pnpa_amine_amide_formation_a/005_imidazole_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CC(=O)n1cc[nH]c1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[n]([C](=[O])[C]([H])([H])[H])[c]([H])[n]1[H]",
+              "image": "pnpa_amine_amide_formation_a/005_imidazole_p01.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "pnpa_amine_amide_formation_b",
+      "operator": {
+        "reaction_template": "[n,N:1]>>[n,N+:1]C(=O)C"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "4-methylpyridine",
+          "substrate_smiles_input": "Cc1ccncc1",
+          "substrate_smiles": "Cc1ccncc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(=O)[n+]1ccc(C)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([C]([H])([H])[H])[c]([H])[c]([H])[n+]([C](=[O])[C]([H])([H])[H])[c]1[H]",
+              "image": "pnpa_amine_amide_formation_b/000_4-methylpyridine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "pyridine",
+          "substrate_smiles_input": "c1ccncc1",
+          "substrate_smiles": "c1ccncc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(=O)[n+]1ccccc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([H])[n+]([C](=[O])[C]([H])([H])[H])[c]([H])[c]1[H]",
+              "image": "pnpa_amine_amide_formation_b/001_pyridine_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "nicotinamide",
+          "substrate_smiles_input": "c1cc(cnc1)C(=O)N",
+          "substrate_smiles": "NC(=O)c1cccnc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(=O)[n+]1cccc(C(N)=O)c1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([H])[n+]([C](=[O])[C]([H])([H])[H])[c]([H])[c]1[C](=[O])[N]([H])[H]",
+              "image": "pnpa_amine_amide_formation_b/002_nicotinamide_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CC(=O)[NH2+]C(=O)c1cccnc1",
+              "product_smiles_explicit_h": "[H][c]1[n][c]([H])[c]([C](=[O])[N+]([H])([H])[C](=[O])[C]([H])([H])[H])[c]([H])[c]1[H]",
+              "image": "pnpa_amine_amide_formation_b/002_nicotinamide_p01.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "peroxide_radical_abstraction",
+      "operator": {
+        "reaction_template": "[C:1]=[C:2]>>[C:1][C:2]OO"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "tetramethylethylene",
+          "substrate_smiles_input": "CC(C)=[9C](C)C",
+          "substrate_smiles": "CC(C)=[9C](C)C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(C)C(C)(C)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([C]([H])([H])[H])([C]([H])([H])[H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/000_tetramethylethylene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "C[C](C)C(C)(C)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([C]([C]([H])([H])[H])[C]([H])([H])[H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/000_tetramethylethylene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "methyl oleate",
+          "substrate_smiles_input": "CCCCCCCC/[9C]=C\\CCCCCCCC(=O)OC",
+          "substrate_smiles": "CCCCCCCC/[9C]=C\\CCCCCCCC(=O)OC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCCCCCCC[C]C(CCCCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/001_methyl_oleate_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CCCCCCCCC(CCCCCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/001_methyl_oleate_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "hept-3-ene",
+          "substrate_smiles_input": "CC/[9C]=C/CCC",
+          "substrate_smiles": "CCC/C=[9C]/CC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC[C]C(CCC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C][C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/002_hept-3-ene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CCCCC(CC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/002_hept-3-ene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "1-octene",
+          "substrate_smiles_input": "[9C]=CCCCCCC",
+          "substrate_smiles": "CCCCCCC=[9C]",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[C]C(CCCCCC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/003_1-octene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CCCCCCCCOO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/003_1-octene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "cyclopentene",
+          "substrate_smiles_input": "[9C]1=CCCC1",
+          "substrate_smiles": "C1=[9C]CCC1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OOC1[C]CCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C][C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/004_cyclopentene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "OOC1CCCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/004_cyclopentene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "cyclohexene",
+          "substrate_smiles_input": "[9C]1=CCCCC1",
+          "substrate_smiles": "C1=[9C]CCCC1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OOC1[C]CCCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/005_cyclohexene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "OOC1CCCCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/005_cyclohexene_p01.png"
+            }
+          ]
+        },
+        {
+          "row": 6,
+          "label": "1_3-cyclohexadiene",
+          "substrate_smiles_input": "[9C]1=CCCC=C1",
+          "substrate_smiles": "C1=C[9C]=CCC1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OOC1[C]C=CCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C][C]([H])=[C]([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/006_1_3-cyclohexadiene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "OOC1C=CCCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/006_1_3-cyclohexadiene_p01.png"
+            },
+            {
+              "product_index": 2,
+              "product_smiles": "OOC1[C]=CCCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C]=[C]([H])[C]([H])([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/006_1_3-cyclohexadiene_p02.png"
+            },
+            {
+              "product_index": 3,
+              "product_smiles": "OOC1C[C]=CCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C]([H])([H])[C]=[C]([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/006_1_3-cyclohexadiene_p03.png"
+            }
+          ]
+        },
+        {
+          "row": 7,
+          "label": "1_4-pentadiene",
+          "substrate_smiles_input": "[9C]=CCC=C",
+          "substrate_smiles": "C=CCC=[9C]",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[C]C(CC=C)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C])[C]([H])([H])[C]([H])=[C]([H])[H]",
+              "image": "peroxide_radical_abstraction/007_1_4-pentadiene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "C=CCCCOO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])=[C]([H])[H]",
+              "image": "peroxide_radical_abstraction/007_1_4-pentadiene_p01.png"
+            },
+            {
+              "product_index": 2,
+              "product_smiles": "[C]=CCCCOO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])=[C]",
+              "image": "peroxide_radical_abstraction/007_1_4-pentadiene_p02.png"
+            },
+            {
+              "product_index": 3,
+              "product_smiles": "[C]=CCC(C)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[H])[C]([H])([H])[C]([H])=[C]",
+              "image": "peroxide_radical_abstraction/007_1_4-pentadiene_p03.png"
+            }
+          ]
+        },
+        {
+          "row": 8,
+          "label": "methyl octadecadienoate",
+          "substrate_smiles_input": "CCCCCCCCC[9C]=CCCC=CCCCCC(=O)OC",
+          "substrate_smiles": "CCCCCCCCC[9C]=CCCC=CCCCCC(=O)OC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CCCCCCCCC[C]C(CCC=CCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/008_methyl_octadecadienoate_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CCCCCCCCCC(CCCC=CCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/008_methyl_octadecadienoate_p01.png"
+            },
+            {
+              "product_index": 2,
+              "product_smiles": "CCCCCCCCC[C]=CCCCC(CCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])=[C][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/008_methyl_octadecadienoate_p02.png"
+            },
+            {
+              "product_index": 3,
+              "product_smiles": "CCCCCCCCC[C]=CCCC(CCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])([H])[C]([H])=[C][C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/008_methyl_octadecadienoate_p03.png"
+            }
+          ]
+        },
+        {
+          "row": 9,
+          "label": "methyl linolenate",
+          "substrate_smiles_input": "CC/[9C]=C/C/C=C/C/C=C/CCCCCCCC(=O)OC",
+          "substrate_smiles": "CC/[9C]=C/C/C=C/C/C=C/CCCCCCCC(=O)OC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC[C]C(CC=CCC=CCCCCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C][C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/009_methyl_linolenate_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CCC(CCC=CCC=CCCCCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/009_methyl_linolenate_p01.png"
+            },
+            {
+              "product_index": 2,
+              "product_smiles": "CC[C]=CCCC(CC=CCCCCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])=[C][C]([H])([H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/009_methyl_linolenate_p02.png"
+            },
+            {
+              "product_index": 3,
+              "product_smiles": "CC[C]=CCC(CCC=CCCCCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])=[C][C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/009_methyl_linolenate_p03.png"
+            },
+            {
+              "product_index": 4,
+              "product_smiles": "CC[C]=CCC=CCCC(CCCCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])=[C][C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/009_methyl_linolenate_p04.png"
+            },
+            {
+              "product_index": 5,
+              "product_smiles": "CC[C]=CCC=CCC(CCCCCCCCC(=O)OC)OO",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]([H])=[C][C]([H])([H])[C]([H])([H])[H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C]([H])([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/009_methyl_linolenate_p05.png"
+            }
+          ]
+        },
+        {
+          "row": 10,
+          "label": "1_4-cyclohexadiene",
+          "substrate_smiles_input": "[9C]1=CCC=CC1",
+          "substrate_smiles": "C1=CC[9C]=CC1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "OOC1[C]CC=CC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C][C]([H])([H])[C]([H])=[C]([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/010_1_4-cyclohexadiene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "OOC1CC=CCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C]([H])([H])[C]([H])=[C]([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/010_1_4-cyclohexadiene_p01.png"
+            },
+            {
+              "product_index": 2,
+              "product_smiles": "OOC1C[C]=CCC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C]([H])([H])[C]=[C]([H])[C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/010_1_4-cyclohexadiene_p02.png"
+            },
+            {
+              "product_index": 3,
+              "product_smiles": "OOC1CC=[C]CC1",
+              "product_smiles_explicit_h": "[H][O][O][C]1([H])[C]([H])([H])[C]([H])=[C][C]([H])([H])[C]1([H])[H]",
+              "image": "peroxide_radical_abstraction/010_1_4-cyclohexadiene_p03.png"
+            }
+          ]
+        },
+        {
+          "row": 11,
+          "label": "2_5-dimethyl-3-hexene",
+          "substrate_smiles_input": "CC(C)[9C]=CC(C)C",
+          "substrate_smiles": "CC(C)C=[9C]C(C)C",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CC(C)[C]C(OO)C(C)C",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C][C]([H])([C]([H])([H])[H])[C]([H])([H])[H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/011_2_5-dimethyl-3-hexene_p00.png"
+            },
+            {
+              "product_index": 1,
+              "product_smiles": "CC(C)CC(OO)C(C)C",
+              "product_smiles_explicit_h": "[H][O][O][C]([H])([C]([H])([H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[H])[C]([H])([C]([H])([H])[H])[C]([H])([H])[H]",
+              "image": "peroxide_radical_abstraction/011_2_5-dimethyl-3-hexene_p01.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "aryl_bromination",
+      "operator": {
+        "reaction_template": "[c:1]([*:7])1[cH:2][c:3][cH:4][c:5][cH:6]1>>[c:1]([*:7])1[cH:2][c:3][c:4](Br)[c:5][cH:6]1"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "H",
+          "substrate_smiles_input": "c1ccccc1[H]",
+          "substrate_smiles": "[H]c1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "[H]c1ccc(Br)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([H])[c]([Br])[c]([H])[c]1[H]",
+              "image": "aryl_bromination/000_h_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "CH3",
+          "substrate_smiles_input": "c1ccccc1C",
+          "substrate_smiles": "Cc1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "Cc1ccc(Br)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([C]([H])([H])[H])[c]([H])[c]([H])[c]1[Br]",
+              "image": "aryl_bromination/001_ch3_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "OCH3",
+          "substrate_smiles_input": "c1ccccc1OC",
+          "substrate_smiles": "COc1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "COc1ccc(Br)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([O][C]([H])([H])[H])[c]([H])[c]([H])[c]1[Br]",
+              "image": "aryl_bromination/002_och3_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "OH",
+          "substrate_smiles_input": "c1ccccc1O",
+          "substrate_smiles": "Oc1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "Oc1ccc(Br)cc1",
+              "product_smiles_explicit_h": "[H][O][c]1[c]([H])[c]([H])[c]([Br])[c]([H])[c]1[H]",
+              "image": "aryl_bromination/003_oh_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "N(CH3)2",
+          "substrate_smiles_input": "c1ccccc1N(C)(C)",
+          "substrate_smiles": "CN(C)c1ccccc1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "CN(C)c1ccc(Br)cc1",
+              "product_smiles_explicit_h": "[H][c]1[c]([H])[c]([N]([C]([H])([H])[H])[C]([H])([H])[H])[c]([H])[c]([H])[c]1[Br]",
+              "image": "aryl_bromination/004_nch32_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "table_id": "cyclopentadiene_diels_alder",
+      "operator": {
+        "reaction_template": "[C:1]=[C:2]>>C1=CC2[C:1][C:2]C1C2"
+      },
+      "substrates": [
+        {
+          "row": 0,
+          "label": "tetracyanoethylene",
+          "substrate_smiles_input": "N#CC(C#N)=C(C#N)C#N",
+          "substrate_smiles": "N#CC(C#N)=C(C#N)C#N",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "N#CC1(C#N)C2C=CC(C2)C1(C#N)C#N",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([C]#[N])([C]#[N])[C]2([C]#[N])[C]#[N]",
+              "image": "cyclopentadiene_diels_alder/000_tetracyanoethylene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 1,
+          "label": "1_1-dicyanoethylene",
+          "substrate_smiles_input": "C=C(C#N)C#N",
+          "substrate_smiles": "C=C(C#N)C#N",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "N#CC1(C#N)CC2C=CC1C2",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([H])[C]2([C]#[N])[C]#[N]",
+              "image": "cyclopentadiene_diels_alder/001_1_1-dicyanoethylene_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 2,
+          "label": "maleic anhydride",
+          "substrate_smiles_input": "O=C1C=CC(=O)O1",
+          "substrate_smiles": "O=C1C=CC(=O)O1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=C1OC(=O)C2C3C=CC(C3)C12",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]1([H])[C](=[O])[O][C](=[O])[C]21[H]",
+              "image": "cyclopentadiene_diels_alder/002_maleic_anhydride_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 3,
+          "label": "p-benzoquinone",
+          "substrate_smiles_input": "O=C1C=CC(=O)C=C1",
+          "substrate_smiles": "O=C1C=CC(=O)C=C1",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "O=C1C=CC(=O)C2C3C=CC(C3)C12",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C](=[O])[C]2([H])[C]3([H])[C]([H])=[C]([H])[C]([H])([C]3([H])[H])[C]2([H])[C]1=[O]",
+              "image": "cyclopentadiene_diels_alder/003_p-benzoquinone_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 4,
+          "label": "maleonitrile",
+          "substrate_smiles_input": "N#C/C=C\\C#N",
+          "substrate_smiles": "N#C/C=C\\C#N",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "N#CC1C2C=CC(C2)C1C#N",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([C]#[N])[C]2([H])[C]#[N]",
+              "image": "cyclopentadiene_diels_alder/004_maleonitrile_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 5,
+          "label": "fumaronitrile",
+          "substrate_smiles_input": "N#C/C=C/C#N",
+          "substrate_smiles": "N#C/C=C/C#N",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "N#CC1C2C=CC(C2)C1C#N",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([C]#[N])[C]2([H])[C]#[N]",
+              "image": "cyclopentadiene_diels_alder/005_fumaronitrile_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 6,
+          "label": "dimethyl fumarate",
+          "substrate_smiles_input": "COC(=O)/C=C/C(=O)OC",
+          "substrate_smiles": "COC(=O)/C=C/C(=O)OC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "COC(=O)C1C2C=CC(C2)C1C(=O)OC",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([C](=[O])[O][C]([H])([H])[H])[C]2([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "cyclopentadiene_diels_alder/006_dimethyl_fumarate_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 7,
+          "label": "dimethyl maleate",
+          "substrate_smiles_input": "COC(=O)/C=C\\C(=O)OC",
+          "substrate_smiles": "COC(=O)/C=C\\C(=O)OC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "COC(=O)C1C2C=CC(C2)C1C(=O)OC",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([C](=[O])[O][C]([H])([H])[H])[C]2([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "cyclopentadiene_diels_alder/007_dimethyl_maleate_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 8,
+          "label": "methyl acrylate",
+          "substrate_smiles_input": "C=CC(=O)OC",
+          "substrate_smiles": "C=CC(=O)OC",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "COC(=O)C1CC2C=CC1C2",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([H])[C]2([H])[C](=[O])[O][C]([H])([H])[H]",
+              "image": "cyclopentadiene_diels_alder/008_methyl_acrylate_p00.png"
+            }
+          ]
+        },
+        {
+          "row": 9,
+          "label": "acrylonitrile",
+          "substrate_smiles_input": "C=CC#N",
+          "substrate_smiles": "C=CC#N",
+          "products": [
+            {
+              "product_index": 0,
+              "product_smiles": "N#CC1CC2C=CC1C2",
+              "product_smiles_explicit_h": "[H][C]1=[C]([H])[C]2([H])[C]([H])([H])[C]1([H])[C]([H])([H])[C]2([H])[C]#[N]",
+              "image": "cyclopentadiene_diels_alder/009_acrylonitrile_p00.png"
+            }
+          ]
+        }
+      ],
+      "errors": []
+    }
+  ]
+}
