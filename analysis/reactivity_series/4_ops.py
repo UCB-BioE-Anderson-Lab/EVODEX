@@ -169,7 +169,7 @@ def process_file(in_path: Path, out_path: Path) -> None:
 
             # If a previous stage marked this row as an error, just propagate it
             if "error" in rec:
-                fout.write(json.dumps(rec) + "\n")
+                fout.write(json.dumps(rec, ensure_ascii=False, indent=2) + "\n")
                 continue
 
             try:
@@ -184,9 +184,9 @@ def process_file(in_path: Path, out_path: Path) -> None:
                 for key in ("table_id", "row", "label"):
                     if key in rec:
                         err_rec[key] = rec[key]
-                fout.write(json.dumps(err_rec) + "\n")
+                fout.write(json.dumps(err_rec, ensure_ascii=False, indent=2) + "\n")
             else:
-                fout.write(json.dumps(out_rec) + "\n")
+                fout.write(json.dumps(out_rec, ensure_ascii=False, indent=2) + "\n")
 
 
 def main() -> None:

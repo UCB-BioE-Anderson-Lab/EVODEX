@@ -5,122 +5,6 @@ import re
 
 RDLogger.DisableLog('rdApp.*')
 
-
-def extract_operator_by_abstraction(smirks: str, abstraction: str):
-    """Dispatch into `operator_extractor` using a discrete EVODEX abstraction level.
-
-    Parameters
-    ----------
-    smirks : str
-        Full reaction SMIRKS.
-    abstraction : {"A", "B", "C", "D", "E"}
-        EVODEX abstraction code. A is implemented by first computing the
-        B abstraction and then erasing atom identity (wildcards) while
-        preserving atom-map numbers.
-    """
-    level = abstraction.upper()
-
-    if level == "A":
-        b_operator = operator_extractor(
-            smirks,
-            include_stereochemistry=True,
-            include_sigma=False,
-            include_pi=False,
-            include_extended=False,
-            include_unmapped=False,
-        )
-        return _abstract_operator_atoms_to_wildcards(b_operator)
-
-    if level == "B":
-        return operator_extractor(
-            smirks,
-            include_stereochemistry=True,
-            include_sigma=False,
-            include_pi=False,
-            include_extended=False,
-            include_unmapped=False,
-        )
-    elif level == "C":
-        return operator_extractor(
-            smirks,
-            include_stereochemistry=True,
-            include_sigma=True,
-            include_pi=False,
-            include_extended=False,
-            include_unmapped=False,
-        )
-    elif level == "D":
-        return operator_extractor(
-            smirks,
-            include_stereochemistry=True,
-            include_sigma=True,
-            include_pi=True,
-            include_extended=False,
-            include_unmapped=False,
-        )
-    elif level == "E":
-        return operator_extractor(
-            smirks,
-            include_stereochemistry=True,
-            include_sigma=True,
-            include_pi=True,
-            include_extended=True,
-            include_unmapped=False,
-        )
-
-# ================================================================
-# Helper: Abstract atom identity to wildcards for level A
-# ================================================================
-
-def _abstract_operator_atoms_to_wildcards(operator_smirks: str) -> str:
-    """Return a SMIRKS where all atoms have wildcard identity but keep map numbers.
-
-    This is used to build the most abstract EVODEX representation (level A)
-    by stripping element identity in the already-pruned operator SMIRKS.
-    """
-    s = operator_smirks
-    out = []
-    i = 0
-    n = len(s)
-
-    while i < n:
-        ch = s[i]
-
-        # Bracketed atom: [..], may contain :map number
-        if ch == "[":
-            j = s.find("]", i + 1)
-            if j == -1:
-                # Malformed; just append the rest and stop
-                out.append(s[i:])
-                break
-            interior = s[i + 1:j]
-
-            # Preserve atom-map numbers, if present, as [*:num]
-            m = re.search(r":(\d+)", interior)
-            if m:
-                out.append(f"[*:{m.group(1)}]")
-            else:
-                out.append("*")
-            i = j + 1
-
-        # Organic subset / aromatic atoms written without brackets (C, N, O, c, n, etc.)
-        elif ch.isalpha():
-            # Treat an uppercase + lowercase pair as a two-character element symbol (e.g. Cl, Br, Si);
-            # otherwise treat the current character as a single-letter element (including aromatic c, n, o, etc.).
-            if ch.isupper() and i + 1 < n and s[i + 1].islower():
-                i += 2
-            else:
-                i += 1
-            out.append("*")
-
-        else:
-            # Bond symbols, digits, parentheses, '>' delimiters, etc.
-            out.append(ch)
-            i += 1
-
-    return "".join(out)
-
-
 # ================================================================
 # operator_extractor: extract an operator SMIRKS from a reaction SMIRKS
 # ================================================================
@@ -640,8 +524,186 @@ def _compile_operator(
         p_mol = editable_product.GetMol()
         new_reaction.AddProductTemplate(p_mol)
 
+    # Post-process: remove map numbers from hydrogen-like atoms (Z=1 or 85)
+    # that are attached to non-carbon atoms on either side of the operator.
+    _unset_hydrogen_map_on_noncarbon(new_reaction)
+
     return rdChemReactions.ReactionToSmarts(new_reaction)
 
+def extract_operator_by_abstraction(smirks: str, abstraction: str):
+    """Dispatch into `operator_extractor` using a discrete EVODEX abstraction level.
+
+    Parameters
+    ----------
+    smirks : str
+        Full reaction SMIRKS.
+    abstraction : {"A", "B", "C", "D", "E"}
+        EVODEX abstraction code. A is implemented by first computing the
+        B abstraction and then erasing atom identity (wildcards) while
+        preserving atom-map numbers.
+    """
+    level = abstraction.upper()
+
+    if level == "A":
+        b_operator = operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=False,
+            include_pi=False,
+            include_extended=False,
+            include_unmapped=False,
+        )
+        return _abstract_operator_atoms_to_wildcards(b_operator)
+
+    if level == "B":
+        return operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=False,
+            include_pi=False,
+            include_extended=False,
+            include_unmapped=False,
+        )
+    elif level == "C":
+        return operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=True,
+            include_pi=False,
+            include_extended=False,
+            include_unmapped=False,
+        )
+    elif level == "D":
+        return operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=True,
+            include_pi=True,
+            include_extended=False,
+            include_unmapped=False,
+        )
+    elif level == "E":
+        return operator_extractor(
+            smirks,
+            include_stereochemistry=True,
+            include_sigma=True,
+            include_pi=True,
+            include_extended=True,
+            include_unmapped=False,
+        )
+
+# ================================================================
+# Helper: Abstract atom identity to wildcards for level A
+# ================================================================
+
+def _abstract_operator_atoms_to_wildcards(operator_smirks: str) -> str:
+    """Return a SMIRKS where all atoms have wildcard identity but keep map numbers.
+
+    This is used to build the most abstract EVODEX representation (level A)
+    by stripping element identity in the already-pruned operator SMIRKS.
+    """
+    s = operator_smirks
+    out = []
+    i = 0
+    n = len(s)
+
+    while i < n:
+        ch = s[i]
+
+        # Bracketed atom: [..], may contain :map number
+        if ch == "[":
+            j = s.find("]", i + 1)
+            if j == -1:
+                # Malformed; just append the rest and stop
+                out.append(s[i:])
+                break
+            interior = s[i + 1:j]
+
+            # Preserve atom-map numbers, if present, as [*:num]
+            m = re.search(r":(\d+)", interior)
+            if m:
+                out.append(f"[*:{m.group(1)}]")
+            else:
+                out.append("*")
+            i = j + 1
+
+        # Organic subset / aromatic atoms written without brackets (C, N, O, c, n, etc.)
+        elif ch.isalpha():
+            # Treat an uppercase + lowercase pair as a two-character element symbol (e.g. Cl, Br, Si);
+            # otherwise treat the current character as a single-letter element (including aromatic c, n, o, etc.).
+            if ch.isupper() and i + 1 < n and s[i + 1].islower():
+                i += 2
+            else:
+                i += 1
+            out.append("*")
+
+        else:
+            # Bond symbols, digits, parentheses, '>' delimiters, etc.
+            out.append(ch)
+            i += 1
+
+    return "".join(out)
+
+# ================================================================
+# Helper: Remove map numbers from hydrogen atoms attached to non-carbon
+# ================================================================
+
+def _unset_hydrogen_map_on_noncarbon(reaction):
+    """
+    For all templates in the reaction, identify mapped hydrogens that are
+    attached to a non-carbon atom and remove their map numbers on both
+    sides of the reaction.
+
+    Hydrogens can be encoded using atomic number 1 (H) or 85 (At) in the
+    SMIRKS. Both are treated as hydrogen-like here.
+    """
+    maps_to_clear = set()
+
+    def _collect_maps_to_clear(mol):
+        for atom in mol.GetAtoms():
+            amap = atom.GetAtomMapNum()
+            if amap == 0:
+                continue
+
+            # Treat atomic numbers 1 (H) and 85 (At) as hydrogen-like
+            z = atom.GetAtomicNum()
+            if z not in (1, 85):
+                continue
+
+            # If this hydrogen-like atom is attached to anything other than carbon,
+            # mark its map number for removal.
+            attached_to_noncarbon = False
+            for nbr in atom.GetNeighbors():
+                if nbr.GetAtomicNum() != 6:  # atomic number 6 is carbon
+                    attached_to_noncarbon = True
+                    break
+
+            if attached_to_noncarbon:
+                maps_to_clear.add(amap)
+
+    # First pass: determine which map numbers to clear based on local environments
+    for i in range(reaction.GetNumReactantTemplates()):
+        _collect_maps_to_clear(reaction.GetReactantTemplate(i))
+
+    for i in range(reaction.GetNumProductTemplates()):
+        _collect_maps_to_clear(reaction.GetProductTemplate(i))
+
+    if not maps_to_clear:
+        return reaction
+
+    # Second pass: clear those map numbers on all templates (both sides)
+    def _clear_maps(mol):
+        for atom in mol.GetAtoms():
+            if atom.GetAtomMapNum() in maps_to_clear:
+                atom.SetAtomMapNum(0)
+
+    for i in range(reaction.GetNumReactantTemplates()):
+        _clear_maps(reaction.GetReactantTemplate(i))
+
+    for i in range(reaction.GetNumProductTemplates()):
+        _clear_maps(reaction.GetProductTemplate(i))
+
+    return reaction
 
 if __name__ == "__main__":
     # Simple examples to exercise the A abstraction level

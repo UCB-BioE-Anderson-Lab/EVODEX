@@ -1,4 +1,0 @@
-{"stage": "operator_extraction", "error": "Failed to generate hashes for substrates or products: Failed to get molecule hash for SMILES:\n[c:4][H:14]\nInvalid SMILES string provided", "table_id": "aryl_bromination", "row": 1, "label": "row_1"}
-{"stage": "operator_extraction", "error": "Failed to generate hashes for substrates or products: Failed to get molecule hash for SMILES:\n[c:4][H:15]\nInvalid SMILES string provided", "table_id": "aryl_bromination", "row": 2, "label": "row_2"}
-{"stage": "operator_extraction", "error": "Failed to generate hashes for substrates or products: Failed to get molecule hash for SMILES:\n[c:4][H:12]\nInvalid SMILES string provided", "table_id": "aryl_bromination", "row": 3, "label": "row_3"}
-{"stage": "operator_extraction", "error": "Failed to generate hashes for substrates or products: Failed to get molecule hash for SMILES:\n[c:4][H:19]\nInvalid SMILES string provided", "table_id": "aryl_bromination", "row": 4, "label": "row_4"}

@@ -7,61 +7,24 @@ from pathlib import Path
 
 import pandas as pd
 import yaml
-from rdkit import Chem
+from rdkit import Chem, RDLogger
+import traceback
+
+RDLogger.DisableLog("rdApp.warning")
+
+from .projectionmap import project_operator_to_mapped_products
 
 
-from rdkit.Chem import rdChemReactions
-
-def clear_isotopes(mol):
-    for atom in mol.GetAtoms():
-        atom.SetIsotope(0)
-    return mol
-
-def sanitize_lenient(mol):
-    try:
-        Chem.SanitizeMol(mol)
-        return mol, None
-    except Exception as e:
-        return None, str(e)
-
-def fix_overvalent_nitrogens(mol):
-    try:
-        for atom in mol.GetAtoms():
-            if atom.GetAtomicNum() == 7 and atom.GetFormalCharge() == 1 and atom.GetTotalValence() > 4:
-                atom.SetFormalCharge(0)
-        Chem.SanitizeMol(mol)
-        return mol, None
-    except Exception as e:
-        return None, str(e)
-
-def to_explicit_h_smiles(mol):
-    mol2 = Chem.AddHs(mol)
-    return Chem.MolToSmiles(mol2, kekuleSmiles=False)
-
-def apply_template_first(template, reactant_mol):
-    try:
-        rxn = rdChemReactions.ReactionFromSmarts(template)
-        if rxn is None:
-            return None, "ReactionFromSmarts returned None"
-        outcomes = rxn.RunReactants((reactant_mol,))
-        if not outcomes:
-            return None, "no_products"
-        prod = Chem.Mol(outcomes[0][0])
-        prod, err = sanitize_lenient(prod)
-        if prod is None:
-            repaired, rerr = fix_overvalent_nitrogens(Chem.Mol(outcomes[0][0]))
-            if repaired is None:
-                return None, f"product_{err}; repair={rerr}"
-            prod = repaired
-        prod = clear_isotopes(prod)
-        return prod, None
-    except Exception as e:
-        return None, f"reaction_failed: {e}"
-
-def render_reaction_png(reactant, product, out_path, sub_img_size=(300,300)):
+def render_reaction_png(reactant, product, out_path, sub_img_size=(300, 300)):
     from rdkit.Chem import Draw
-    img = Draw.MolsToGridImage([reactant, product], molsPerRow=2, subImgSize=sub_img_size)
+
+    img = Draw.MolsToGridImage(
+        [reactant, product],
+        molsPerRow=2,
+        subImgSize=sub_img_size,
+    )
     img.save(str(out_path))
+
 
 def pick_smiles_column(df):
     cols = list(df.columns)
@@ -139,6 +102,59 @@ def to_python_value(v):
     return v
 
 
+def log_error(
+    fh,
+    *,
+    table_id,
+    stage,
+    error,
+    row_idx=None,
+    label=None,
+    smiles=None,
+    smiles_col=None,
+    template=None,
+    row_data=None,
+    extra=None,
+):
+    rec = {
+        "table_id": table_id,
+        "stage": stage,
+    }
+
+    # Normalize error information
+    if isinstance(error, Exception):
+        rec["error_type"] = type(error).__name__
+        rec["error_message"] = str(error)
+    else:
+        rec["error"] = str(error)
+
+    if row_idx is not None:
+        rec["row"] = int(row_idx)
+    if label is not None:
+        rec["label"] = str(label)
+    if smiles is not None:
+        rec["smiles"] = smiles
+        if smiles_col:
+            rec[smiles_col] = smiles
+    if template is not None:
+        rec["template"] = str(template)
+
+    if row_data is not None:
+        safe_row = {}
+        for k, v in row_data.items():
+            safe_row[k] = to_python_value(v)
+        rec["row_data"] = safe_row
+
+    if extra:
+        rec["extra"] = extra
+
+    if isinstance(error, Exception):
+        rec["traceback"] = traceback.format_exc()
+
+    fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    fh.flush()
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     RENDER_DIR.mkdir(parents=True, exist_ok=True)
@@ -154,22 +170,25 @@ def main():
 
             csv_path = TABLES_DIR / f"{table_id}.csv"
             if not csv_path.exists():
-                err_rec = {
-                    "table_id": table_id,
-                    "stage": "input",
-                    "error": f"missing_csv: {csv_path}",
-                }
-                err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
+                log_error(
+                    err_f,
+                    table_id=table_id,
+                    stage="input",
+                    error=f"missing_csv: {csv_path}",
+                )
                 continue
 
             df = pd.read_csv(csv_path)
 
             smiles_col = pick_smiles_column(df)
-
-            value_cols = [
-                c for c in df.columns
-                if c not in (smiles_col, "template", "label", "smiles")
-            ]
+            if smiles_col is None:
+                log_error(
+                    err_f,
+                    table_id=table_id,
+                    stage="input",
+                    error="no_smiles_column_detected",
+                )
+                continue
 
             out_jsonl_path = OUT_DIR / f"{table_id}.project.jsonl"
             out_jsonl_path.parent.mkdir(parents=True, exist_ok=True)
@@ -177,91 +196,137 @@ def main():
             png_table_dir.mkdir(parents=True, exist_ok=True)
 
             template = meta.get("reaction_template")
+
             with open(out_jsonl_path, "w", encoding="utf-8") as out_f:
                 for idx, row in df.iterrows():
                     smiles_raw = row.get(smiles_col)
-                    label = row.get("label", f"row_{idx}")
-                    row_template = row.get("template", template)
+                    label = row.get("substrate", f"row_{idx}")
+                    row_template = row.get("template") or template
 
                     if not isinstance(smiles_raw, str) or not smiles_raw.strip():
-                        err_rec = {
-                            "table_id": table_id,
-                            "row": int(idx),
-                            "label": label,
-                            "stage": "input",
-                            "error": "missing_or_invalid_substrate_smiles",
-                        }
-                        err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
+                        log_error(
+                            err_f,
+                            table_id=table_id,
+                            stage="input",
+                            error="missing_or_invalid_substrate_smiles",
+                            row_idx=idx,
+                            label=label,
+                            row_data=row.to_dict(),
+                        )
+                        continue
+
+                    if not isinstance(row_template, str) or not row_template.strip():
+                        log_error(
+                            err_f,
+                            table_id=table_id,
+                            stage="input",
+                            error="missing_or_invalid_reaction_template",
+                            row_idx=idx,
+                            label=label,
+                            row_data=row.to_dict(),
+                        )
                         continue
 
                     mol = Chem.MolFromSmiles(smiles_raw)
                     if mol is None:
-                        err_rec = {
-                            "table_id": table_id,
-                            "row": int(idx),
-                            "label": label,
-                            smiles_col: smiles_raw,
-                            "stage": "input",
-                            "error": "invalid_smiles",
-                        }
-                        err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
+                        log_error(
+                            err_f,
+                            table_id=table_id,
+                            stage="input",
+                            error="invalid_smiles",
+                            row_idx=idx,
+                            label=label,
+                            smiles=smiles_raw,
+                            smiles_col=smiles_col,
+                            row_data=row.to_dict(),
+                        )
                         continue
 
-                    prod, perr = apply_template_first(row_template, mol)
-                    if prod is None:
-                        err_rec = {
-                            "table_id": table_id,
-                            "row": int(idx),
-                            "label": label,
-                            smiles_col: smiles_raw,
-                            "stage": "reaction",
-                            "error": perr or "no_products",
-                        }
-                        err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
+                    # Projection-based mapping: substrate + operator template
+                    try:
+                        mapped_substrate_smiles, mapped_product_smiles = project_operator_to_mapped_products(
+                            smiles_raw, row_template
+                        )
+                    except Exception as e:
+                        log_error(
+                            err_f,
+                            table_id=table_id,
+                            stage="projection",
+                            error=e,
+                            row_idx=idx,
+                            label=label,
+                            smiles=smiles_raw,
+                            smiles_col=smiles_col,
+                            template=row_template,
+                            row_data=row.to_dict(),
+                        )
                         continue
 
-                    substrate_canon = Chem.MolToSmiles(mol, kekuleSmiles=False)
-                    prod_smiles = Chem.MolToSmiles(prod, kekuleSmiles=False)
-                    prod_smiles_h = to_explicit_h_smiles(prod)
+                    # For rendering, use the mapped substrate/product so atom maps are visible
+                    try:
+                        sub_mol = Chem.MolFromSmiles(mapped_substrate_smiles)
+                        prod_mol = Chem.MolFromSmiles(mapped_product_smiles)
+                    except Exception as e:
+                        log_error(
+                            err_f,
+                            table_id=table_id,
+                            stage="render_input",
+                            error=f"mol_from_smiles_failed: {e}",
+                            row_idx=idx,
+                            label=label,
+                            smiles=smiles_raw,
+                            smiles_col=smiles_col,
+                            template=row_template,
+                            row_data=row.to_dict(),
+                        )
+                        continue
+
+                    if sub_mol is None or prod_mol is None:
+                        log_error(
+                            err_f,
+                            table_id=table_id,
+                            stage="render_input",
+                            error="mol_from_smiles_returned_none",
+                            row_idx=idx,
+                            label=label,
+                            smiles=smiles_raw,
+                            smiles_col=smiles_col,
+                            template=row_template,
+                            row_data=row.to_dict(),
+                        )
+                        continue
 
                     slug = slugify(label)
                     png_path = png_table_dir / f"{int(idx):03d}_{slug}.png"
                     try:
-                        render_reaction_png(mol, prod, png_path)
+                        render_reaction_png(sub_mol, prod_mol, png_path)
                     except Exception as e:
-                        err_rec = {
-                            "table_id": table_id,
-                            "row": int(idx),
-                            "label": label,
-                            smiles_col: smiles_raw,
-                            "stage": "render",
-                            "error": f"{e}",
-                        }
-                        err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
+                        log_error(
+                            err_f,
+                            table_id=table_id,
+                            stage="render",
+                            error=e,
+                            row_idx=idx,
+                            label=label,
+                            smiles=smiles_raw,
+                            smiles_col=smiles_col,
+                            template=row_template,
+                            row_data=row.to_dict(),
+                        )
                         continue
 
-                    row_data = {}
-                    for col in value_cols:
-                        row_data[col] = to_python_value(row.get(col))
-
+                    # Minimal semantics: raw input substrate + mapped substrate/product + image
                     rec = {
                         "table_id": table_id,
                         "row": int(idx),
                         "label": label,
-                        f"{smiles_col}_input": smiles_raw,
-                        smiles_col: substrate_canon,
-                        "product_smiles": prod_smiles,
-                        "product_smiles_explicit_h": prod_smiles_h,
+                        "smiles_input": smiles_raw,
+                        "mapped_substrate_smiles": mapped_substrate_smiles,
+                        "mapped_product_smiles": mapped_product_smiles,
                         "image": str(png_path.relative_to(BASE_DIR)),
-                        "reaction_template": row_template,
-                        "reactivity_type": meta.get("reactivity_type"),
-                        "units": meta.get("units"),
-                        "context": meta.get("context"),
-                        "source_ref": meta.get("source_ref"),
-                        "data": row_data,
                     }
 
-                    out_f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                    out_f.write(json.dumps(rec, ensure_ascii=False, indent=2) + "\n")
 
 
 if __name__ == "__main__":

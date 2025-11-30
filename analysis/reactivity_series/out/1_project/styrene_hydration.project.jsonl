@@ -1,5 +1,45 @@
-{"table_id": "styrene_hydration", "row": 0, "label": "row_0", "smiles_input": "c1cc(OC)ccc1C=C", "smiles": "C=Cc1ccc(OC)cc1", "product_smiles": "COc1ccc(C(C)O)cc1", "product_smiles_explicit_h": "[H]OC([H])(c1c([H])c([H])c(OC([H])([H])[H])c([H])c1[H])C([H])([H])[H]", "image": "render/1_project/styrene_hydration/000_row_0.png", "reaction_template": "[C:1]=[C:2]>>[C:1](O)[C:2]", "reactivity_type": "k", "units": "k × 10⁸ (s⁻¹)", "context": "This table reports a Hammett substituent series for the acid-catalyzed hydration of para-substituted styrenes. The reaction proceeds through benzylic carbocation intermediates stabilized by resonance with the aromatic ring. Electron-donating substituents accelerate the rate by increasing electron density and stabilizing the carbocation, whereas electron-withdrawing substituents slow the reaction. The data span over four orders of magnitude and illustrate the basis of the σ⁺/ρ⁺ correlation, showing that resonance donation and withdrawal dominate over simple inductive effects in determining the effective stabilization of the delocalized carbocation intermediate.", "source_ref": "carey_sundberg_volA_3ed", "data": {"substrate": "p-methoxy", "k": 48800.0}}
-{"table_id": "styrene_hydration", "row": 1, "label": "row_1", "smiles_input": "c1cc(C)ccc1C=C", "smiles": "C=Cc1ccc(C)cc1", "product_smiles": "Cc1ccc(C(C)O)cc1", "product_smiles_explicit_h": "[H]OC([H])(c1c([H])c([H])c(C([H])([H])[H])c([H])c1[H])C([H])([H])[H]", "image": "render/1_project/styrene_hydration/001_row_1.png", "reaction_template": "[C:1]=[C:2]>>[C:1](O)[C:2]", "reactivity_type": "k", "units": "k × 10⁸ (s⁻¹)", "context": "This table reports a Hammett substituent series for the acid-catalyzed hydration of para-substituted styrenes. The reaction proceeds through benzylic carbocation intermediates stabilized by resonance with the aromatic ring. Electron-donating substituents accelerate the rate by increasing electron density and stabilizing the carbocation, whereas electron-withdrawing substituents slow the reaction. The data span over four orders of magnitude and illustrate the basis of the σ⁺/ρ⁺ correlation, showing that resonance donation and withdrawal dominate over simple inductive effects in determining the effective stabilization of the delocalized carbocation intermediate.", "source_ref": "carey_sundberg_volA_3ed", "data": {"substrate": "p-methyl", "k": 16400.0}}
-{"table_id": "styrene_hydration", "row": 2, "label": "row_2", "smiles_input": "c1cc([H])ccc1C=C", "smiles": "C=Cc1ccccc1", "product_smiles": "CC(O)c1ccccc1", "product_smiles_explicit_h": "[H]OC([H])(c1c([H])c([H])c([H])c([H])c1[H])C([H])([H])[H]", "image": "render/1_project/styrene_hydration/002_row_2.png", "reaction_template": "[C:1]=[C:2]>>[C:1](O)[C:2]", "reactivity_type": "k", "units": "k × 10⁸ (s⁻¹)", "context": "This table reports a Hammett substituent series for the acid-catalyzed hydration of para-substituted styrenes. The reaction proceeds through benzylic carbocation intermediates stabilized by resonance with the aromatic ring. Electron-donating substituents accelerate the rate by increasing electron density and stabilizing the carbocation, whereas electron-withdrawing substituents slow the reaction. The data span over four orders of magnitude and illustrate the basis of the σ⁺/ρ⁺ correlation, showing that resonance donation and withdrawal dominate over simple inductive effects in determining the effective stabilization of the delocalized carbocation intermediate.", "source_ref": "carey_sundberg_volA_3ed", "data": {"substrate": "styrene", "k": 811.0}}
-{"table_id": "styrene_hydration", "row": 3, "label": "row_3", "smiles_input": "c1cc(Cl)ccc1C=C", "smiles": "C=Cc1ccc(Cl)cc1", "product_smiles": "CC(O)c1ccc(Cl)cc1", "product_smiles_explicit_h": "[H]OC([H])(c1c([H])c([H])c(Cl)c([H])c1[H])C([H])([H])[H]", "image": "render/1_project/styrene_hydration/003_row_3.png", "reaction_template": "[C:1]=[C:2]>>[C:1](O)[C:2]", "reactivity_type": "k", "units": "k × 10⁸ (s⁻¹)", "context": "This table reports a Hammett substituent series for the acid-catalyzed hydration of para-substituted styrenes. The reaction proceeds through benzylic carbocation intermediates stabilized by resonance with the aromatic ring. Electron-donating substituents accelerate the rate by increasing electron density and stabilizing the carbocation, whereas electron-withdrawing substituents slow the reaction. The data span over four orders of magnitude and illustrate the basis of the σ⁺/ρ⁺ correlation, showing that resonance donation and withdrawal dominate over simple inductive effects in determining the effective stabilization of the delocalized carbocation intermediate.", "source_ref": "carey_sundberg_volA_3ed", "data": {"substrate": "p-chloro", "k": 318.0}}
-{"table_id": "styrene_hydration", "row": 4, "label": "row_4", "smiles_input": "C=Cc1ccc([N+](=O)[O-])cc1", "smiles": "C=Cc1ccc([N+](=O)[O-])cc1", "product_smiles": "O=[N+]([O-])c1ccc(CCO)cc1", "product_smiles_explicit_h": "[H]OC([H])([H])C([H])([H])c1c([H])c([H])c([N+](=O)[O-])c([H])c1[H]", "image": "render/1_project/styrene_hydration/004_row_4.png", "reaction_template": "[C:1]=[C:2]>>[C:1](O)[C:2]", "reactivity_type": "k", "units": "k × 10⁸ (s⁻¹)", "context": "This table reports a Hammett substituent series for the acid-catalyzed hydration of para-substituted styrenes. The reaction proceeds through benzylic carbocation intermediates stabilized by resonance with the aromatic ring. Electron-donating substituents accelerate the rate by increasing electron density and stabilizing the carbocation, whereas electron-withdrawing substituents slow the reaction. The data span over four orders of magnitude and illustrate the basis of the σ⁺/ρ⁺ correlation, showing that resonance donation and withdrawal dominate over simple inductive effects in determining the effective stabilization of the delocalized carbocation intermediate.", "source_ref": "carey_sundberg_volA_3ed", "data": {"substrate": "p-nitro", "k": 1.44}}
+{
+  "table_id": "styrene_hydration",
+  "row": 0,
+  "label": "p-methoxy",
+  "smiles_input": "c1cc(OC)ccc1C=C",
+  "mapped_substrate_smiles": "[cH:1]1[cH:2][c:3]([O:4][CH3:5])[cH:6][cH:7][c:8]1[CH:9]=[CH2:10]",
+  "mapped_product_smiles": "O[CH:9]([c:8]1[cH:1][cH:2][c:3]([O:4][CH3:5])[cH:6][cH:7]1)[CH2:10]",
+  "image": "render/1_project/styrene_hydration/000_pmethoxy.png"
+}
+{
+  "table_id": "styrene_hydration",
+  "row": 1,
+  "label": "p-methyl",
+  "smiles_input": "c1cc(C)ccc1C=C",
+  "mapped_substrate_smiles": "[cH:1]1[cH:2][c:3]([CH3:4])[cH:5][cH:6][c:7]1[CH:8]=[CH2:9]",
+  "mapped_product_smiles": "O[CH:8]([c:7]1[cH:1][cH:2][c:3]([CH3:4])[cH:5][cH:6]1)[CH2:9]",
+  "image": "render/1_project/styrene_hydration/001_pmethyl.png"
+}
+{
+  "table_id": "styrene_hydration",
+  "row": 2,
+  "label": "styrene",
+  "smiles_input": "c1cc([H])ccc1C=C",
+  "mapped_substrate_smiles": "[cH:1]1[cH:2][cH:3][cH:4][cH:5][c:6]1[CH:7]=[CH2:8]",
+  "mapped_product_smiles": "O[CH2:8][CH:7][c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1",
+  "image": "render/1_project/styrene_hydration/002_styrene.png"
+}
+{
+  "table_id": "styrene_hydration",
+  "row": 3,
+  "label": "p-chloro",
+  "smiles_input": "c1cc(Cl)ccc1C=C",
+  "mapped_substrate_smiles": "[cH:1]1[cH:2][c:3]([Cl:4])[cH:5][cH:6][c:7]1[CH:8]=[CH2:9]",
+  "mapped_product_smiles": "O[CH2:9][CH:8][c:7]1[cH:1][cH:2][c:3]([Cl:4])[cH:5][cH:6]1",
+  "image": "render/1_project/styrene_hydration/003_pchloro.png"
+}
+{
+  "table_id": "styrene_hydration",
+  "row": 4,
+  "label": "p-nitro",
+  "smiles_input": "C=Cc1ccc([N+](=O)[O-])cc1",
+  "mapped_substrate_smiles": "[CH2:1]=[CH:2][c:3]1[cH:4][cH:5][c:6]([N+:7](=[O:8])[O-:9])[cH:10][cH:11]1",
+  "mapped_product_smiles": "O[CH2:1][CH:2][c:3]1[cH:4][cH:5][c:6]([N+:7](=[O:8])[O-:9])[cH:10][cH:11]1",
+  "image": "render/1_project/styrene_hydration/004_pnitro.png"
+}

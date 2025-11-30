@@ -199,13 +199,26 @@ def main():
                         err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
                         continue
 
-                    rec = dict(row)
-                    rec["evodex_p_smirks"] = mapped_smirks
-                    rec["evodex_p_hash"] = rxn_hash
-                    rec["evodex_p_substrate_smiles"] = sub_h
-                    rec["evodex_p_product_smiles"] = prod_h
+                    # Build a minimal Stage-3 record: keep identifiers, per-row data,
+                    # and hydrogen-mapped EVODEX-P fields, but drop bulky intermediates.
+                    rec = {
+                        "table_id": row.get("table_id", table_id),
+                        "row": row.get("row"),
+                        "label": row.get("label"),
+                        "data": row.get("data"),
+                        # Stage-2 SMILES context
+                        "substrate_smiles": row.get("substrate_smiles"),
+                        "product_smiles": row.get("product_smiles"),
+                        "mapped_substrate_smiles": sub_mapped,
+                        "mapped_product_smiles": prod_mapped,
+                        # New Stage-3 EVODEX-P hydrogen-mapped fields
+                        "evodex_p_smirks": mapped_smirks,
+                        "evodex_p_hash": rxn_hash,
+                        "evodex_p_substrate_smiles": sub_h,
+                        "evodex_p_product_smiles": prod_h,
+                    }
 
-                    out_f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                    out_f.write(json.dumps(rec, ensure_ascii=False, indent=2) + "\n")
 
 
 if __name__ == "__main__":
