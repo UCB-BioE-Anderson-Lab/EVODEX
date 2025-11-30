@@ -3,8 +3,8 @@
   "row": 0,
   "label": "ethyl",
   "smiles_input": "CCBr",
-  "mapped_substrate_smiles": "Br[CH2:2][CH3:1]",
-  "mapped_product_smiles": "CCO[CH2:2][CH3:1]",
+  "mapped_substrate_smiles": "Br[C:2]([C:1]([H:4])([H:5])[H:6])([H:7])[H:8]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:2]([C:1]([H:4])([H:5])[H:6])([H:7])[H:8]",
   "image": "render/1_project/resonance_stabilized_sn2/000_ethyl.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "n-propyl",
   "smiles_input": "CCCBr",
-  "mapped_substrate_smiles": "Br[CH2:3][CH2:2][CH3:1]",
-  "mapped_product_smiles": "CCO[CH2:3][CH2:2][CH3:1]",
+  "mapped_substrate_smiles": "Br[C:3]([C:2]([C:1]([H:5])([H:6])[H:7])([H:8])[H:9])([H:10])[H:11]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:3]([C:2]([C:1]([H:5])([H:6])[H:7])([H:8])[H:9])([H:10])[H:11]",
   "image": "render/1_project/resonance_stabilized_sn2/001_npropyl.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "allyl",
   "smiles_input": "C=CCBr",
-  "mapped_substrate_smiles": "Br[CH2:3][CH:2]=[CH2:1]",
-  "mapped_product_smiles": "CCO[CH2:3][CH:2]=[CH2:1]",
+  "mapped_substrate_smiles": "Br[C:3]([C:2](=[C:1]([H:5])[H:6])[H:7])([H:8])[H:9]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:3]([C:2](=[C:1]([H:5])[H:6])[H:7])([H:8])[H:9]",
   "image": "render/1_project/resonance_stabilized_sn2/002_allyl.png"
 }
 {
@@ -30,7 +30,7 @@
   "row": 3,
   "label": "benzyl",
   "smiles_input": "c1ccccc1CBr",
-  "mapped_substrate_smiles": "Br[CH2:7][c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1",
-  "mapped_product_smiles": "CCO[CH2:7][c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1",
+  "mapped_substrate_smiles": "Br[C:7]([c:6]1[c:1]([H:9])[c:2]([H:10])[c:3]([H:11])[c:4]([H:12])[c:5]1[H:13])([H:14])[H:15]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:7]([c:6]1[c:1]([H:9])[c:2]([H:10])[c:3]([H:11])[c:4]([H:12])[c:5]1[H:13])([H:14])[H:15]",
   "image": "render/1_project/resonance_stabilized_sn2/003_benzyl.png"
 }

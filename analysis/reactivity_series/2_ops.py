@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Iterable, Dict, Any
 
 from evodex.operators import extract_operator_by_abstraction
-from evodex.utils import reaction_hash
 
 # Optional RdChiral dependency for radius=1, special_groups=True operators
 try:
@@ -16,8 +15,9 @@ except ImportError:
     _rdchiral_te = None
 
 BASE = Path(__file__).resolve().parent
-IN_DIR = BASE / "out/3_hmap"
-OUT_DIR = BASE / "out/4_ops"
+IN_DIR = BASE / "out/1_project"
+OUT_DIR = BASE / "out/2_ops"
+LOG_DIR = BASE / "out/_logs"
 
 # If nonempty, only process tables whose file stem (e.g. "alcohol_pka") is listed here
 ONLY_TABLES: Iterable[str] = []
@@ -96,29 +96,40 @@ def _rdchiral_operator_from_smirks(forward_smirks: str) -> str | None:
     return tpl["reaction_smarts"]
 
 def process_row(row: Dict[str, Any]) -> Dict[str, Any]:
-    """Attach EVODEX operators (A–E) to a single Stage-3 row.
+    """Attach EVODEX operators (A–E) to a single Stage-1 projection row.
 
-    Expects a successful Stage-3 record that already contains:
-      - "evodex_p_smirks": fully H-mapped EVODEX-P reaction SMIRKS
+    Expects a successful record from 1_project that already contains:
+      - "mapped_substrate_smiles": atom-mapped substrate SMILES
+      - "mapped_product_smiles": atom-mapped product SMILES
 
-    On success, returns the row augmented with, for each abstraction level X in {A,B,C,D,E}:
+    These are combined into a forward EVODEX-P SMIRKS of the form
+    "evodex_p_smirks" = "{mapped_substrate_smiles}>>{mapped_product_smiles}".
+
+    On success, returns the row augmented with:
+      - "evodex_p_smirks": forward EVODEX-P reaction SMIRKS
+      and for each abstraction level X in {A,B,C,D,E}:
       - "evodex_x_smirks": operator SMIRKS at abstraction level X
-      - "evodex_x_hash": integer hash of that operator SMIRKS
 
+    If RdChiral is available, the row may also be augmented with:
+      - "rdchiral_smirks": RdChiral-style operator SMIRKS
     """
+    mapped_sub = row.get("mapped_substrate_smiles")
+    mapped_prod = row.get("mapped_product_smiles")
 
-    smirks = row.get("evodex_p_smirks")
-    if not smirks:
-        raise ValueError("Missing evodex_p_smirks in Stage-3 row")
+    if not mapped_sub or not mapped_prod:
+        raise ValueError("Missing mapped_substrate_smiles or mapped_product_smiles in projection row")
+
+    # Forward EVODEX-P SMIRKS constructed directly from projection output
+    smirks = f"{mapped_sub}>>{mapped_prod}"
 
     out = dict(row)
+    out["evodex_p_smirks"] = smirks
 
     # Compute operators for all abstraction levels A–E
     for level in ("A", "B", "C", "D", "E"):
         op_smirks = extract_operator_by_abstraction(smirks, level)
         key = level.lower()
         out[f"evodex_{key}_smirks"] = op_smirks
-        out[f"evodex_{key}_hash"] = reaction_hash(op_smirks)
 
     # Optionally compute a RdChiral operator (radius=1, special_groups=True)
     # from the same fully H-mapped EVODEX-P SMIRKS.
@@ -138,13 +149,12 @@ def process_row(row: Dict[str, Any]) -> Dict[str, Any]:
 
     if rdchiral_smirks:
         out["rdchiral_smirks"] = rdchiral_smirks
-        out["rdchiral_hash"] = reaction_hash(rdchiral_smirks)
 
     return out
 
 
-def process_file(in_path: Path, out_path: Path) -> None:
-    """Read a Stage-3 JSONL file and write the corresponding Stage-4 JSONL file.
+def process_file(in_path: Path, out_path: Path, err_f) -> None:
+    """Read a Stage-1 projection JSONL file and write the corresponding Stage-2 operator JSONL file.
 
     Error handling is row-local: if operator extraction fails for a row
     we emit a compact error record of the form used by earlier stages:
@@ -161,15 +171,42 @@ def process_file(in_path: Path, out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     with in_path.open("r") as fin, out_path.open("w") as fout:
-        for line in fin:
-            line = line.strip()
-            if not line:
+        buffer: list[str] = []
+
+        def _flush_buffer():
+            nonlocal buffer
+            if not buffer:
+                return None
+            text = "\n".join(buffer)
+            buffer = []
+            return json.loads(text)
+
+        for raw_line in fin:
+            line = raw_line.rstrip("\n")
+            if not line.strip():
+                # skip blank lines
                 continue
-            rec = json.loads(line)
+
+            # Fast path: a single-line JSON object
+            stripped = line.strip()
+            if not buffer and stripped.startswith("{") and stripped.endswith("}"):
+                rec = json.loads(stripped)
+            else:
+                # Accumulate lines until we hit the end of an object (line ending with "}")
+                buffer.append(line)
+                if stripped.endswith("}"):
+                    rec = _flush_buffer()
+                else:
+                    # Need more lines to complete this object
+                    continue
+
+            if rec is None:
+                # Should not happen, but guard anyway
+                continue
 
             # If a previous stage marked this row as an error, just propagate it
             if "error" in rec:
-                fout.write(json.dumps(rec, ensure_ascii=False, indent=2) + "\n")
+                fout.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 continue
 
             try:
@@ -184,13 +221,39 @@ def process_file(in_path: Path, out_path: Path) -> None:
                 for key in ("table_id", "row", "label"):
                     if key in rec:
                         err_rec[key] = rec[key]
-                fout.write(json.dumps(err_rec, ensure_ascii=False, indent=2) + "\n")
+                err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
+                fout.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
             else:
-                fout.write(json.dumps(out_rec, ensure_ascii=False, indent=2) + "\n")
+                fout.write(json.dumps(out_rec, ensure_ascii=False) + "\n")
+
+        # In case there is a final buffered object without trailing newline
+        if buffer:
+            rec = _flush_buffer()
+            if rec is not None:
+                if "error" in rec:
+                    fout.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                else:
+                    try:
+                        out_rec = process_row(rec)
+                    except Exception as e:
+                        err_rec = {
+                            "stage": "operator_extraction",
+                            "error": str(e),
+                        }
+                        for key in ("table_id", "row", "label"):
+                            if key in rec:
+                                err_rec[key] = rec[key]
+                        err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
+                        fout.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
+                    else:
+                        fout.write(json.dumps(out_rec, ensure_ascii=False) + "\n")
 
 
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+    errors_path = LOG_DIR / "2_ops.errors.jsonl"
 
     table_filter = set(ONLY_TABLES)
 
@@ -199,15 +262,16 @@ def main() -> None:
         input_files = [p for p in input_files if p.stem in table_filter]
 
     if not input_files:
-        print(f"[4_ops] No input files found in {IN_DIR} (filter={sorted(table_filter)})")
+        print(f"[2_ops] No input files found in {IN_DIR} (filter={sorted(table_filter)})")
         return
 
-    print(f"[4_ops] Writing Stage-4 operator files to {OUT_DIR}")
+    print(f"[2_ops] Writing Stage-4 operator files to {OUT_DIR}")
 
-    for in_path in input_files:
-        out_path = OUT_DIR / in_path.name
-        print(f"[4_ops] Processing {in_path.name} -> {out_path.name}")
-        process_file(in_path, out_path)
+    with open(errors_path, "w", encoding="utf-8") as err_f:
+        for in_path in input_files:
+            out_path = OUT_DIR / in_path.name
+            print(f"[2_ops] Processing {in_path.name} -> {out_path.name}")
+            process_file(in_path, out_path, err_f)
 
 
 if __name__ == "__main__":

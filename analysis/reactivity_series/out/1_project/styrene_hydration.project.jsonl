@@ -3,8 +3,8 @@
   "row": 0,
   "label": "p-methoxy",
   "smiles_input": "c1cc(OC)ccc1C=C",
-  "mapped_substrate_smiles": "[cH:1]1[cH:2][c:3]([O:4][CH3:5])[cH:6][cH:7][c:8]1[CH:9]=[CH2:10]",
-  "mapped_product_smiles": "O[CH:9]([c:8]1[cH:1][cH:2][c:3]([O:4][CH3:5])[cH:6][cH:7]1)[CH2:10]",
+  "mapped_substrate_smiles": "[c:1]1([H:11])[c:2]([H:12])[c:3]([O:4][C:5]([H:13])([H:14])[H:15])[c:6]([H:16])[c:7]([H:17])[c:8]1[C:9](=[C:10]([H:19])[H:20])[H:18]",
+  "mapped_product_smiles": "[H]O[C:10]([C:9]([H])([c:8]1[c:1]([H:11])[c:2]([H:12])[c:3]([O:4][C:5]([H:13])([H:14])[H:15])[c:6]([H:16])[c:7]1[H:17])[H:18])([H:19])[H:20]",
   "image": "render/1_project/styrene_hydration/000_pmethoxy.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "p-methyl",
   "smiles_input": "c1cc(C)ccc1C=C",
-  "mapped_substrate_smiles": "[cH:1]1[cH:2][c:3]([CH3:4])[cH:5][cH:6][c:7]1[CH:8]=[CH2:9]",
-  "mapped_product_smiles": "O[CH:8]([c:7]1[cH:1][cH:2][c:3]([CH3:4])[cH:5][cH:6]1)[CH2:9]",
+  "mapped_substrate_smiles": "[c:1]1([H:10])[c:2]([H:11])[c:3]([C:4]([H:12])([H:13])[H:14])[c:5]([H:15])[c:6]([H:16])[c:7]1[C:8](=[C:9]([H:18])[H:19])[H:17]",
+  "mapped_product_smiles": "[H]O[C:9]([C:8]([H])([c:7]1[c:1]([H:10])[c:2]([H:11])[c:3]([C:4]([H:12])([H:13])[H:14])[c:5]([H:15])[c:6]1[H:16])[H:17])([H:18])[H:19]",
   "image": "render/1_project/styrene_hydration/001_pmethyl.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "styrene",
   "smiles_input": "c1cc([H])ccc1C=C",
-  "mapped_substrate_smiles": "[cH:1]1[cH:2][cH:3][cH:4][cH:5][c:6]1[CH:7]=[CH2:8]",
-  "mapped_product_smiles": "O[CH2:8][CH:7][c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1",
+  "mapped_substrate_smiles": "[c:1]1([H:9])[c:2]([H:10])[c:3]([H:11])[c:4]([H:12])[c:5]([H:13])[c:6]1[C:7](=[C:8]([H:15])[H:16])[H:14]",
+  "mapped_product_smiles": "[H]O[C:8]([C:7]([H])([c:6]1[c:1]([H:9])[c:2]([H:10])[c:3]([H:11])[c:4]([H:12])[c:5]1[H:13])[H:14])([H:15])[H:16]",
   "image": "render/1_project/styrene_hydration/002_styrene.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "p-chloro",
   "smiles_input": "c1cc(Cl)ccc1C=C",
-  "mapped_substrate_smiles": "[cH:1]1[cH:2][c:3]([Cl:4])[cH:5][cH:6][c:7]1[CH:8]=[CH2:9]",
-  "mapped_product_smiles": "O[CH2:9][CH:8][c:7]1[cH:1][cH:2][c:3]([Cl:4])[cH:5][cH:6]1",
+  "mapped_substrate_smiles": "[c:1]1([H:10])[c:2]([H:11])[c:3]([Cl:4])[c:5]([H:12])[c:6]([H:13])[c:7]1[C:8](=[C:9]([H:15])[H:16])[H:14]",
+  "mapped_product_smiles": "[H]O[C:9]([C:8]([H])([c:7]1[c:1]([H:10])[c:2]([H:11])[c:3]([Cl:4])[c:5]([H:12])[c:6]1[H:13])[H:14])([H:15])[H:16]",
   "image": "render/1_project/styrene_hydration/003_pchloro.png"
 }
 {
@@ -39,7 +39,7 @@
   "row": 4,
   "label": "p-nitro",
   "smiles_input": "C=Cc1ccc([N+](=O)[O-])cc1",
-  "mapped_substrate_smiles": "[CH2:1]=[CH:2][c:3]1[cH:4][cH:5][c:6]([N+:7](=[O:8])[O-:9])[cH:10][cH:11]1",
-  "mapped_product_smiles": "O[CH2:1][CH:2][c:3]1[cH:4][cH:5][c:6]([N+:7](=[O:8])[O-:9])[cH:10][cH:11]1",
+  "mapped_substrate_smiles": "[C:1](=[C:2]([c:3]1[c:4]([H:15])[c:5]([H:16])[c:6]([N+:7](=[O:8])[O-:9])[c:10]([H:17])[c:11]1[H:18])[H:14])([H:12])[H:13]",
+  "mapped_product_smiles": "[H]O[C:1]([C:2]([H])([c:3]1[c:4]([H:15])[c:5]([H:16])[c:6]([N+:7](=[O:8])[O-:9])[c:10]([H:17])[c:11]1[H:18])[H:14])([H:12])[H:13]",
   "image": "render/1_project/styrene_hydration/004_pnitro.png"
 }

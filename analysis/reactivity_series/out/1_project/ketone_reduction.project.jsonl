@@ -3,8 +3,8 @@
   "row": 0,
   "label": "benzaldehyde",
   "smiles_input": "O=Cc1ccccc1",
-  "mapped_substrate_smiles": "[O:1]=[CH:2][c:3]1[cH:4][cH:5][cH:6][cH:7][cH:8]1",
-  "mapped_product_smiles": "[O:1][CH:2][c:3]1[cH:4][cH:5][cH:6][cH:7][cH:8]1",
+  "mapped_substrate_smiles": "[O:1]=[C:2]([c:3]1[c:4]([H:10])[c:5]([H:11])[c:6]([H:12])[c:7]([H:13])[c:8]1[H:14])[H:9]",
+  "mapped_product_smiles": "[H][O:1][C:2]([H])([c:3]1[c:4]([H:10])[c:5]([H:11])[c:6]([H:12])[c:7]([H:13])[c:8]1[H:14])[H:9]",
   "image": "render/1_project/ketone_reduction/000_benzaldehyde.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "cyclobutanone",
   "smiles_input": "O=C1CCC1",
-  "mapped_substrate_smiles": "[O:1]=[C:2]1[CH2:3][CH2:4][CH2:5]1",
-  "mapped_product_smiles": "[O:1][C:2]1[CH2:3][CH2:4][CH2:5]1",
+  "mapped_substrate_smiles": "[O:1]=[C:2]1[C:3]([H:6])([H:7])[C:4]([H:8])([H:9])[C:5]1([H:10])[H:11]",
+  "mapped_product_smiles": "[H][O:1][C:2]1([H])[C:3]([H:6])([H:7])[C:4]([H:8])([H:9])[C:5]1([H:10])[H:11]",
   "image": "render/1_project/ketone_reduction/001_cyclobutanone.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "cyclohexanone",
   "smiles_input": "O=C1CCCCC1",
-  "mapped_substrate_smiles": "[O:1]=[C:2]1[CH2:3][CH2:4][CH2:5][CH2:6][CH2:7]1",
-  "mapped_product_smiles": "[O:1][C:2]1[CH2:3][CH2:4][CH2:5][CH2:6][CH2:7]1",
+  "mapped_substrate_smiles": "[O:1]=[C:2]1[C:3]([H:8])([H:9])[C:4]([H:10])([H:11])[C:5]([H:12])([H:13])[C:6]([H:14])([H:15])[C:7]1([H:16])[H:17]",
+  "mapped_product_smiles": "[H][O:1][C:2]1([H])[C:3]([H:8])([H:9])[C:4]([H:10])([H:11])[C:5]([H:12])([H:13])[C:6]([H:14])([H:15])[C:7]1([H:16])[H:17]",
   "image": "render/1_project/ketone_reduction/002_cyclohexanone.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "acetone",
   "smiles_input": "CC(C)=O",
-  "mapped_substrate_smiles": "[CH3:1][C:2]([CH3:3])=[O:4]",
-  "mapped_product_smiles": "[CH3:1][C:2]([CH3:3])[O:4]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([H:8])([H:9])[H:10])=[O:4])([H:5])([H:6])[H:7]",
+  "mapped_product_smiles": "[H][C:2]([C:1]([H:5])([H:6])[H:7])([C:3]([H:8])([H:9])[H:10])[O:4][H]",
   "image": "render/1_project/ketone_reduction/003_acetone.png"
 }
 {
@@ -39,8 +39,8 @@
   "row": 4,
   "label": "cyclopentanone",
   "smiles_input": "O=C1CCCC1",
-  "mapped_substrate_smiles": "[O:1]=[C:2]1[CH2:3][CH2:4][CH2:5][CH2:6]1",
-  "mapped_product_smiles": "[O:1][C:2]1[CH2:3][CH2:4][CH2:5][CH2:6]1",
+  "mapped_substrate_smiles": "[O:1]=[C:2]1[C:3]([H:7])([H:8])[C:4]([H:9])([H:10])[C:5]([H:11])([H:12])[C:6]1([H:13])[H:14]",
+  "mapped_product_smiles": "[H][O:1][C:2]1([H])[C:3]([H:7])([H:8])[C:4]([H:9])([H:10])[C:5]([H:11])([H:12])[C:6]1([H:13])[H:14]",
   "image": "render/1_project/ketone_reduction/004_cyclopentanone.png"
 }
 {
@@ -48,8 +48,8 @@
   "row": 5,
   "label": "acetophenone",
   "smiles_input": "CC(=O)c1ccccc1",
-  "mapped_substrate_smiles": "[CH3:1][C:2](=[O:3])[c:4]1[cH:5][cH:6][cH:7][cH:8][cH:9]1",
-  "mapped_product_smiles": "[CH3:1][C:2]([O:3])[c:4]1[cH:5][cH:6][cH:7][cH:8][cH:9]1",
+  "mapped_substrate_smiles": "[C:1]([C:2](=[O:3])[c:4]1[c:5]([H:13])[c:6]([H:14])[c:7]([H:15])[c:8]([H:16])[c:9]1[H:17])([H:10])([H:11])[H:12]",
+  "mapped_product_smiles": "[H][C:2]([C:1]([H:10])([H:11])[H:12])([O:3][H])[c:4]1[c:5]([H:13])[c:6]([H:14])[c:7]([H:15])[c:8]([H:16])[c:9]1[H:17]",
   "image": "render/1_project/ketone_reduction/005_acetophenone.png"
 }
 {
@@ -57,7 +57,7 @@
   "row": 6,
   "label": "benzophenone",
   "smiles_input": "O=C(c1ccccc1)c1ccccc1",
-  "mapped_substrate_smiles": "[O:1]=[C:2]([c:3]1[cH:4][cH:5][cH:6][cH:7][cH:8]1)[c:9]1[cH:10][cH:11][cH:12][cH:13][cH:14]1",
-  "mapped_product_smiles": "[O:1][C:2]([c:3]1[cH:4][cH:5][cH:6][cH:7][cH:8]1)[c:9]1[cH:10][cH:11][cH:12][cH:13][cH:14]1",
+  "mapped_substrate_smiles": "[O:1]=[C:2]([c:3]1[c:4]([H:15])[c:5]([H:16])[c:6]([H:17])[c:7]([H:18])[c:8]1[H:19])[c:9]1[c:10]([H:20])[c:11]([H:21])[c:12]([H:22])[c:13]([H:23])[c:14]1[H:24]",
+  "mapped_product_smiles": "[H][O:1][C:2]([H])([c:3]1[c:4]([H:15])[c:5]([H:16])[c:6]([H:17])[c:7]([H:18])[c:8]1[H:19])[c:9]1[c:10]([H:20])[c:11]([H:21])[c:12]([H:22])[c:13]([H:23])[c:14]1[H:24]",
   "image": "render/1_project/ketone_reduction/006_benzophenone.png"
 }

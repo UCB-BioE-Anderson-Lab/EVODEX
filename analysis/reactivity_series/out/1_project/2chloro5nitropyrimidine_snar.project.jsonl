@@ -3,8 +3,8 @@
   "row": 0,
   "label": "trifluoroethylamine",
   "smiles_input": "NCC(F)(F)F",
-  "mapped_substrate_smiles": "[NH2:1][CH2:2][C:3]([F:4])([F:5])[F:6]",
-  "mapped_product_smiles": "O=[N+]([O-])c1cnc([NH:1][CH2:2][C:3]([F:4])([F:5])[F:6])nc1",
+  "mapped_substrate_smiles": "[H][N:1]([C:2]([C:3]([F:4])([F:5])[F:6])([H:9])[H:10])[H:8]",
+  "mapped_product_smiles": "[H]c1nc([N:1]([C:2]([C:3]([F:4])([F:5])[F:6])([H:9])[H:10])[H:8])nc([H])c1[N+](=O)[O-]",
   "image": "render/1_project/2chloro5nitropyrimidine_snar/000_trifluoroethylamine.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "ethanolamine",
   "smiles_input": "NCCO",
-  "mapped_substrate_smiles": "[NH2:1][CH2:2][CH2:3][OH:4]",
-  "mapped_product_smiles": "O=[N+]([O-])c1cnc([NH:1][CH2:2][CH2:3][OH:4])nc1",
+  "mapped_substrate_smiles": "[H][N:1]([C:2]([C:3]([O:4][H:11])([H:9])[H:10])([H:7])[H:8])[H:6]",
+  "mapped_product_smiles": "[H]c1nc([N:1]([C:2]([C:3]([O:4][H:11])([H:9])[H:10])([H:7])[H:8])[H:6])nc([H])c1[N+](=O)[O-]",
   "image": "render/1_project/2chloro5nitropyrimidine_snar/001_ethanolamine.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "benzylamine",
   "smiles_input": "NCc1ccccc1",
-  "mapped_substrate_smiles": "[NH2:1][CH2:2][c:3]1[cH:4][cH:5][cH:6][cH:7][cH:8]1",
-  "mapped_product_smiles": "O=[N+]([O-])c1cnc([NH:1][CH2:2][c:3]2[cH:4][cH:5][cH:6][cH:7][cH:8]2)nc1",
+  "mapped_substrate_smiles": "[H][N:1]([C:2]([c:3]1[c:4]([H:13])[c:5]([H:14])[c:6]([H:15])[c:7]([H:16])[c:8]1[H:17])([H:11])[H:12])[H:10]",
+  "mapped_product_smiles": "[H]c1nc([N:1]([C:2]([c:3]2[c:4]([H:13])[c:5]([H:14])[c:6]([H:15])[c:7]([H:16])[c:8]2[H:17])([H:11])[H:12])[H:10])nc([H])c1[N+](=O)[O-]",
   "image": "render/1_project/2chloro5nitropyrimidine_snar/002_benzylamine.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "glycine",
   "smiles_input": "NCC(=O)O",
-  "mapped_substrate_smiles": "[NH2:1][CH2:2][C:3](=[O:4])[OH:5]",
-  "mapped_product_smiles": "O=[N+]([O-])c1cnc([NH:1][CH2:2][C:3](=[O:4])[OH:5])nc1",
+  "mapped_substrate_smiles": "[H][N:1]([C:2]([C:3](=[O:4])[O:5][H:10])([H:8])[H:9])[H:7]",
+  "mapped_product_smiles": "[H]c1nc([N:1]([C:2]([C:3](=[O:4])[O:5][H:10])([H:8])[H:9])[H:7])nc([H])c1[N+](=O)[O-]",
   "image": "render/1_project/2chloro5nitropyrimidine_snar/003_glycine.png"
 }
 {
@@ -39,8 +39,8 @@
   "row": 4,
   "label": "propylamine",
   "smiles_input": "CCCN",
-  "mapped_substrate_smiles": "[CH3:1][CH2:2][CH2:3][NH2:4]",
-  "mapped_product_smiles": "O=[N+]([O-])c1cnc([NH:4][CH2:3][CH2:2][CH3:1])nc1",
+  "mapped_substrate_smiles": "[H][N:4]([C:3]([C:2]([C:1]([H:5])([H:6])[H:7])([H:8])[H:9])([H:10])[H:11])[H:13]",
+  "mapped_product_smiles": "[H]c1nc([N:4]([C:3]([C:2]([C:1]([H:5])([H:6])[H:7])([H:8])[H:9])([H:10])[H:11])[H:13])nc([H])c1[N+](=O)[O-]",
   "image": "render/1_project/2chloro5nitropyrimidine_snar/004_propylamine.png"
 }
 {
@@ -48,7 +48,7 @@
   "row": 5,
   "label": "piperidine",
   "smiles_input": "C1CCNCC1",
-  "mapped_substrate_smiles": "[CH2:1]1[CH2:2][CH2:3][NH:4][CH2:5][CH2:6]1",
-  "mapped_product_smiles": "O=[N+]([O-])c1cnc([N:4]2[CH2:3][CH2:2][CH2:1][CH2:6][CH2:5]2)nc1",
+  "mapped_substrate_smiles": "[H][N:4]1[C:3]([H:11])([H:12])[C:2]([H:9])([H:10])[C:1]([H:7])([H:8])[C:6]([H:16])([H:17])[C:5]1([H:14])[H:15]",
+  "mapped_product_smiles": "[H]c1nc([N:4]2[C:3]([H:11])([H:12])[C:2]([H:9])([H:10])[C:1]([H:7])([H:8])[C:6]([H:16])([H:17])[C:5]2([H:14])[H:15])nc([H])c1[N+](=O)[O-]",
   "image": "render/1_project/2chloro5nitropyrimidine_snar/005_piperidine.png"
 }

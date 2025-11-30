@@ -3,8 +3,8 @@
   "row": 0,
   "label": "alkyl",
   "smiles_input": "CCCCCl",
-  "mapped_substrate_smiles": "Cl[CH2:4][CH2:3][CH2:2][CH3:1]",
-  "mapped_product_smiles": "I[CH2:4][CH2:3][CH2:2][CH3:1]",
+  "mapped_substrate_smiles": "Cl[C:4]([C:3]([C:2]([C:1]([H:6])([H:7])[H:8])([H:9])[H:10])([H:11])[H:12])([H:13])[H:14]",
+  "mapped_product_smiles": "I[C:4]([C:3]([C:2]([C:1]([H:6])([H:7])[H:8])([H:9])[H:10])([H:11])[H:12])([H:13])[H:14]",
   "image": "render/1_project/alpha_substituent_effects_sn2/000_alkyl.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "sulfone",
   "smiles_input": "c1ccccc1S(=O)(=O)CCl",
-  "mapped_substrate_smiles": "Cl[CH2:10][S:7]([c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1)(=[O:8])=[O:9]",
-  "mapped_product_smiles": "I[CH2:10][S:7]([c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1)(=[O:8])=[O:9]",
+  "mapped_substrate_smiles": "Cl[C:10]([S:7]([c:6]1[c:1]([H:12])[c:2]([H:13])[c:3]([H:14])[c:4]([H:15])[c:5]1[H:16])(=[O:8])=[O:9])([H:17])[H:18]",
+  "mapped_product_smiles": "I[C:10]([S:7]([c:6]1[c:1]([H:12])[c:2]([H:13])[c:3]([H:14])[c:4]([H:15])[c:5]1[H:16])(=[O:8])=[O:9])([H:17])[H:18]",
   "image": "render/1_project/alpha_substituent_effects_sn2/001_sulfone.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "ester",
   "smiles_input": "CCOC(=O)CCl",
-  "mapped_substrate_smiles": "Cl[CH2:6][C:4]([O:3][CH2:2][CH3:1])=[O:5]",
-  "mapped_product_smiles": "I[CH2:6][C:4]([O:3][CH2:2][CH3:1])=[O:5]",
+  "mapped_substrate_smiles": "Cl[C:6]([C:4]([O:3][C:2]([C:1]([H:8])([H:9])[H:10])([H:11])[H:12])=[O:5])([H:13])[H:14]",
+  "mapped_product_smiles": "I[C:6]([C:4]([O:3][C:2]([C:1]([H:8])([H:9])[H:10])([H:11])[H:12])=[O:5])([H:13])[H:14]",
   "image": "render/1_project/alpha_substituent_effects_sn2/002_ester.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "nitrile",
   "smiles_input": "N#CCCl",
-  "mapped_substrate_smiles": "Cl[CH2:3][C:2]#[N:1]",
-  "mapped_product_smiles": "I[CH2:3][C:2]#[N:1]",
+  "mapped_substrate_smiles": "Cl[C:3]([C:2]#[N:1])([H:5])[H:6]",
+  "mapped_product_smiles": "I[C:3]([C:2]#[N:1])([H:5])[H:6]",
   "image": "render/1_project/alpha_substituent_effects_sn2/003_nitrile.png"
 }
 {
@@ -39,8 +39,8 @@
   "row": 4,
   "label": "chloroacetone",
   "smiles_input": "CC(=O)CCl",
-  "mapped_substrate_smiles": "Cl[CH2:4][C:2]([CH3:1])=[O:3]",
-  "mapped_product_smiles": "I[CH2:4][C:2]([CH3:1])=[O:3]",
+  "mapped_substrate_smiles": "Cl[C:4]([C:2]([C:1]([H:6])([H:7])[H:8])=[O:3])([H:9])[H:10]",
+  "mapped_product_smiles": "I[C:4]([C:2]([C:1]([H:6])([H:7])[H:8])=[O:3])([H:9])[H:10]",
   "image": "render/1_project/alpha_substituent_effects_sn2/004_chloroacetone.png"
 }
 {
@@ -48,7 +48,7 @@
   "row": 5,
   "label": "phenacyl chloride",
   "smiles_input": "c1ccccc1C(=O)CCl",
-  "mapped_substrate_smiles": "Cl[CH2:9][C:7]([c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1)=[O:8]",
-  "mapped_product_smiles": "I[CH2:9][C:7]([c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1)=[O:8]",
+  "mapped_substrate_smiles": "Cl[C:9]([C:7]([c:6]1[c:1]([H:11])[c:2]([H:12])[c:3]([H:13])[c:4]([H:14])[c:5]1[H:15])=[O:8])([H:16])[H:17]",
+  "mapped_product_smiles": "I[C:9]([C:7]([c:6]1[c:1]([H:11])[c:2]([H:12])[c:3]([H:13])[c:4]([H:14])[c:5]1[H:15])=[O:8])([H:16])[H:17]",
   "image": "render/1_project/alpha_substituent_effects_sn2/005_phenacyl_chloride.png"
 }

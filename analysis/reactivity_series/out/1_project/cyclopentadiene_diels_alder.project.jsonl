@@ -4,7 +4,7 @@
   "label": "tetracyanoethylene",
   "smiles_input": "N#CC(C#N)=C(C#N)C#N",
   "mapped_substrate_smiles": "[N:1]#[C:2][C:3]([C:4]#[N:5])=[C:6]([C:7]#[N:8])[C:9]#[N:10]",
-  "mapped_product_smiles": "C1=CC2CC1[C:3]([C:2]#[N:1])([C:4]#[N:5])[C:6]2([C:7]#[N:8])[C:9]#[N:10]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:3]([C:2]#[N:1])([C:4]#[N:5])[C:6]2([C:7]#[N:8])[C:9]#[N:10]",
   "image": "render/1_project/cyclopentadiene_diels_alder/000_tetracyanoethylene.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "1_1-dicyanoethylene",
   "smiles_input": "C=C(C#N)C#N",
-  "mapped_substrate_smiles": "[CH2:1]=[C:2]([C:3]#[N:4])[C:5]#[N:6]",
-  "mapped_product_smiles": "C1=CC2CC1[CH2:1][C:2]2([C:3]#[N:4])[C:5]#[N:6]",
+  "mapped_substrate_smiles": "[C:1](=[C:2]([C:3]#[N:4])[C:5]#[N:6])([H:7])[H:8]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:1]([H:7])([H:8])[C:2]2([C:3]#[N:4])[C:5]#[N:6]",
   "image": "render/1_project/cyclopentadiene_diels_alder/001_1_1dicyanoethylene.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "maleic anhydride",
   "smiles_input": "O=C1C=CC(=O)O1",
-  "mapped_substrate_smiles": "[O:1]=[C:2]1[CH:3]=[CH:4][C:5](=[O:6])[O:7]1",
-  "mapped_product_smiles": "C1=CC2CC1[CH:3]1[C:2](=[O:1])[O:7][C:5](=[O:6])[CH:4]21",
+  "mapped_substrate_smiles": "[O:1]=[C:2]1[C:3]([H:8])=[C:4]([H:9])[C:5](=[O:6])[O:7]1",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:3]1([H:8])[C:2](=[O:1])[O:7][C:5](=[O:6])[C:4]21[H:9]",
   "image": "render/1_project/cyclopentadiene_diels_alder/002_maleic_anhydride.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "p-benzoquinone",
   "smiles_input": "O=C1C=CC(=O)C=C1",
-  "mapped_substrate_smiles": "[O:1]=[C:2]1[CH:3]=[CH:4][C:5](=[O:6])[CH:7]=[CH:8]1",
-  "mapped_product_smiles": "C1=CC2CC1[CH:3]1[C:2](=[O:1])[CH:8]=[CH:7][C:5](=[O:6])[CH:4]21",
+  "mapped_substrate_smiles": "[O:1]=[C:2]1[C:3]([H:9])=[C:4]([H:10])[C:5](=[O:6])[C:7]([H:11])=[C:8]1[H:12]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:3]1([H:9])[C:2](=[O:1])[C:8]([H:12])=[C:7]([H:11])[C:5](=[O:6])[C:4]21[H:10]",
   "image": "render/1_project/cyclopentadiene_diels_alder/003_pbenzoquinone.png"
 }
 {
@@ -39,8 +39,8 @@
   "row": 4,
   "label": "maleonitrile",
   "smiles_input": "N#C/C=C\\C#N",
-  "mapped_substrate_smiles": "[N:1]#[C:2]/[CH:3]=[CH:4]\\[C:5]#[N:6]",
-  "mapped_product_smiles": "C1=CC2CC1[CH:3]([C:2]#[N:1])[CH:4]2[C:5]#[N:6]",
+  "mapped_substrate_smiles": "[N:1]#[C:2][C:3](=[C:4]([C:5]#[N:6])[H:8])[H:7]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:3]([C:2]#[N:1])([H:7])[C:4]2([C:5]#[N:6])[H:8]",
   "image": "render/1_project/cyclopentadiene_diels_alder/004_maleonitrile.png"
 }
 {
@@ -48,8 +48,8 @@
   "row": 5,
   "label": "fumaronitrile",
   "smiles_input": "N#C/C=C/C#N",
-  "mapped_substrate_smiles": "[N:1]#[C:2]/[CH:3]=[CH:4]/[C:5]#[N:6]",
-  "mapped_product_smiles": "C1=CC2CC1[CH:3]([C:2]#[N:1])[CH:4]2[C:5]#[N:6]",
+  "mapped_substrate_smiles": "[N:1]#[C:2][C:3](=[C:4]([C:5]#[N:6])[H:8])[H:7]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:3]([C:2]#[N:1])([H:7])[C:4]2([C:5]#[N:6])[H:8]",
   "image": "render/1_project/cyclopentadiene_diels_alder/005_fumaronitrile.png"
 }
 {
@@ -57,8 +57,8 @@
   "row": 6,
   "label": "dimethyl fumarate",
   "smiles_input": "COC(=O)/C=C/C(=O)OC",
-  "mapped_substrate_smiles": "[CH3:1][O:2][C:3](=[O:4])/[CH:5]=[CH:6]/[C:7](=[O:8])[O:9][CH3:10]",
-  "mapped_product_smiles": "C1=CC2CC1[CH:5]([C:3]([O:2][CH3:1])=[O:4])[CH:6]2[C:7](=[O:8])[O:9][CH3:10]",
+  "mapped_substrate_smiles": "[C:1]([O:2][C:3](=[O:4])[C:5](=[C:6]([C:7](=[O:8])[O:9][C:10]([H:16])([H:17])[H:18])[H:15])[H:14])([H:11])([H:12])[H:13]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:5]([C:3]([O:2][C:1]([H:11])([H:12])[H:13])=[O:4])([H:14])[C:6]2([C:7](=[O:8])[O:9][C:10]([H:16])([H:17])[H:18])[H:15]",
   "image": "render/1_project/cyclopentadiene_diels_alder/006_dimethyl_fumarate.png"
 }
 {
@@ -66,8 +66,8 @@
   "row": 7,
   "label": "dimethyl maleate",
   "smiles_input": "COC(=O)/C=C\\C(=O)OC",
-  "mapped_substrate_smiles": "[CH3:1][O:2][C:3](=[O:4])/[CH:5]=[CH:6]\\[C:7](=[O:8])[O:9][CH3:10]",
-  "mapped_product_smiles": "C1=CC2CC1[CH:5]([C:3]([O:2][CH3:1])=[O:4])[CH:6]2[C:7](=[O:8])[O:9][CH3:10]",
+  "mapped_substrate_smiles": "[C:1]([O:2][C:3](=[O:4])[C:5](=[C:6]([C:7](=[O:8])[O:9][C:10]([H:16])([H:17])[H:18])[H:15])[H:14])([H:11])([H:12])[H:13]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:5]([C:3]([O:2][C:1]([H:11])([H:12])[H:13])=[O:4])([H:14])[C:6]2([C:7](=[O:8])[O:9][C:10]([H:16])([H:17])[H:18])[H:15]",
   "image": "render/1_project/cyclopentadiene_diels_alder/007_dimethyl_maleate.png"
 }
 {
@@ -75,8 +75,8 @@
   "row": 8,
   "label": "methyl acrylate",
   "smiles_input": "C=CC(=O)OC",
-  "mapped_substrate_smiles": "[CH2:1]=[CH:2][C:3](=[O:4])[O:5][CH3:6]",
-  "mapped_product_smiles": "C1=CC2CC1[CH2:1][CH:2]2[C:3](=[O:4])[O:5][CH3:6]",
+  "mapped_substrate_smiles": "[C:1](=[C:2]([C:3](=[O:4])[O:5][C:6]([H:10])([H:11])[H:12])[H:9])([H:7])[H:8]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:1]([H:7])([H:8])[C:2]2([C:3](=[O:4])[O:5][C:6]([H:10])([H:11])[H:12])[H:9]",
   "image": "render/1_project/cyclopentadiene_diels_alder/008_methyl_acrylate.png"
 }
 {
@@ -84,7 +84,7 @@
   "row": 9,
   "label": "acrylonitrile",
   "smiles_input": "C=CC#N",
-  "mapped_substrate_smiles": "[CH2:1]=[CH:2][C:3]#[N:4]",
-  "mapped_product_smiles": "C1=CC2CC1[CH2:1][CH:2]2[C:3]#[N:4]",
+  "mapped_substrate_smiles": "[C:1](=[C:2]([C:3]#[N:4])[H:7])([H:5])[H:6]",
+  "mapped_product_smiles": "[H]C1=C([H])C2([H])C([H])([H])C1([H])[C:1]([H:5])([H:6])[C:2]2([C:3]#[N:4])[H:7]",
   "image": "render/1_project/cyclopentadiene_diels_alder/009_acrylonitrile.png"
 }

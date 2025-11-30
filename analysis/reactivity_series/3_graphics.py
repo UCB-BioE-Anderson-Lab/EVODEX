@@ -1,10 +1,63 @@
+#!/usr/bin/env python3
+
 import os
 import html
 import traceback
+from pathlib import Path
+import json
 
+import pandas as pd
 from rdkit import Chem
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem import rdChemReactions as Reactions
+
+# ------------------------------------------------------------
+# Output and logging setup (local version)
+# ------------------------------------------------------------
+
+BASE_DIR = Path(__file__).resolve().parent
+LOG_DIR = BASE_DIR / "out/_logs"
+TABLES_DIR = BASE_DIR / "data/tables"
+
+
+def log_error(
+    fh,
+    *,
+    table_id,
+    stage,
+    error,
+    row_idx=None,
+    label=None,
+    extra=None,
+):
+    """
+    Minimal error logger for 3_graphics, modeled on 1_project.log_error.
+    Writes one JSON record per line to the given file handle.
+    """
+    rec = {
+        "table_id": table_id,
+        "stage": stage,
+    }
+
+    # Normalize error information
+    if isinstance(error, Exception):
+        rec["error_type"] = type(error).__name__
+        rec["error_message"] = str(error)
+    else:
+        rec["error"] = str(error)
+
+    if row_idx is not None:
+        rec["row"] = int(row_idx)
+    if label is not None:
+        rec["label"] = str(label)
+    if extra:
+        rec["extra"] = extra
+
+    if isinstance(error, Exception):
+        rec["traceback"] = traceback.format_exc()
+
+    fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    fh.flush()
 
 
 # ------------------------------------------------------------
@@ -30,6 +83,77 @@ def _draw_mol_svg(pattern: str, w: int, h: int) -> str:
 
     if mol is None:
         raise ValueError(f"SMARTS/SMILES render error: could not parse pattern: {pattern}")
+
+    mol = rdMolDraw2D.PrepareMolForDrawing(mol)
+    drawer = rdMolDraw2D.MolDraw2DSVG(w, h)
+    drawer.DrawMolecule(mol)
+    drawer.FinishDrawing()
+    return drawer.GetDrawingText()
+
+
+# Helper: draw RdChiral substrate-side SMARTS with explicit aromaticity and atom-map numbers
+def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
+    """
+    Render an RdChiral substrate-side SMARTS pattern to SVG, but keep
+    an explicit indication of aromaticity and atom-map numbers by
+    overriding atom labels.
+
+    This is still RDKit-based, but for atoms it sets a custom
+    'atomLabel' property such as 'c:5' (for aromatic carbon with map 5)
+    instead of the default 'C'.
+    """
+    if not pattern or pattern.strip() == "":
+        raise ValueError("SMARTS/SMILES render error: empty pattern (RdChiral)")
+
+    mol = Chem.MolFromSmarts(pattern)
+    if mol is None:
+        mol = Chem.MolFromSmiles(pattern)
+
+    if mol is None:
+        raise ValueError(f"SMARTS/SMILES render error: could not parse pattern: {pattern}")
+
+    import re
+    # Detect which mapped atoms are specified with an explicit H decorator in the SMARTS,
+    # e.g. [cH;...:1], [nH:4], [CH2:3], etc. Store a label like "cH" or "nH" keyed by map number.
+    H_decorated = {}
+    try:
+        for m in re.finditer(r"\[([A-Za-z][a-z]?)H[^:]*:(\d+)\]", pattern):
+            base_sym = m.group(1)  # c, n, C, N, O, etc.
+            mapnum = int(m.group(2))
+            H_decorated[mapnum] = base_sym + "H"
+    except Exception:
+        H_decorated = {}
+
+    # Work on a copy so we do not mutate any cached templates
+    mol = Chem.Mol(mol)
+
+    for atom in mol.GetAtoms():
+        atom_num = atom.GetAtomicNum()
+        amap = atom.GetAtomMapNum()
+        is_arom = atom.GetIsAromatic()
+
+        # Base symbol selection:
+        #   - if this atom had an explicit H decorator in the SMARTS (e.g. [cH:1], [nH:4]),
+        #     use that combined label (cH, nH, CH, etc.)
+        #   - otherwise:
+        #       * aromatic carbons: "c"
+        #       * explicit hydrogens (if present as atoms): "H"
+        #       * everything else: element symbol (C, N, O, etc.)
+        if amap and amap in H_decorated:
+            base = H_decorated[amap]
+        elif atom_num == 6 and is_arom:
+            base = "c"
+        elif atom_num == 1:
+            base = "H"
+        else:
+            base = atom.GetSymbol()
+
+        label = base
+        if amap:
+            label = f"{base}:{amap}"
+
+        # Attach the custom label so RDKit draws it verbosely.
+        atom.SetProp("atomLabel", label)
 
     mol = rdMolDraw2D.PrepareMolForDrawing(mol)
     drawer = rdMolDraw2D.MolDraw2DSVG(w, h)
@@ -99,26 +223,68 @@ def _error_panel(x: int, y: int, w: int, h: int, msg: str = "Error") -> str:
     )
 
 
-def _safe_mol_group(pattern: str | None, x: int, y: int, w: int, h: int) -> str:
+def _safe_mol_group(
+    pattern: str | None,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    *,
+    err_f=None,
+    table_id: str | None = None,
+    stage: str = "graphics_mol",
+    row_idx: int | None = None,
+    label: str | None = None,
+    field: str | None = None,
+) -> str:
     """
     Wrap a molecule drawing (pattern may be SMARTS/SMILES) in a <g> block.
-    On failure, emits an error panel and prints a message to stdout.
+    On failure, emits an error panel and logs a message.
     """
     if not pattern:
         return _error_panel(x, y, w, h, "No pattern")
 
     try:
-        svg = _draw_mol_svg(pattern, w, h)
+        # For RdChiral entries, use a specialized renderer that keeps
+        # aromatic 'c' labels and map numbers visible on atoms.
+        if field == "rdchiral_smirks":
+            svg = _draw_rdchiral_mol_svg(pattern, w, h)
+        else:
+            svg = _draw_mol_svg(pattern, w, h)
         return _svg_as_group(svg, x, y)
     except Exception as e:
-        print(f"[5_graphics] _safe_mol_group error for pattern={pattern!r}: {e}")
+        if err_f and table_id:
+            extra = {"pattern": pattern}
+            if field:
+                extra["field"] = field
+            log_error(
+                err_f,
+                table_id=table_id,
+                stage=stage,
+                error=e,
+                row_idx=row_idx,
+                label=label,
+                extra=extra,
+            )
+        else:
+            print(f"[3_graphics] _safe_mol_group error for pattern={pattern!r}: {e}")
         return _error_panel(x, y, w, h, "Parse error")
 
 
-def _safe_rxn_group(smirks: str | None, x: int, y: int, w: int, h: int) -> str:
+def _safe_rxn_group(
+    smirks: str | None,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    *,
+    err_f=None,
+    table_id: str | None = None,
+    stage: str = "graphics_rxn",
+) -> str:
     """
     Wrap a reaction drawing in a <g> block.
-    On failure, emits an error panel and prints a message to stdout.
+    On failure, emits an error panel and logs a message.
     """
     if not smirks:
         return _error_panel(x, y, w, h, "No SMIRKS")
@@ -127,7 +293,16 @@ def _safe_rxn_group(smirks: str | None, x: int, y: int, w: int, h: int) -> str:
         svg = _draw_rxn_svg(smirks, w, h)
         return _svg_as_group(svg, x, y)
     except Exception as e:
-        print(f"[5_graphics] _safe_rxn_group error for smirks={smirks!r}: {e}")
+        if err_f and table_id:
+            log_error(
+                err_f,
+                table_id=table_id,
+                stage=stage,
+                error=e,
+                extra={"smirks": smirks},
+            )
+        else:
+            print(f"[3_graphics] _safe_rxn_group error for smirks={smirks!r}: {e}")
         return _error_panel(x, y, w, h, "Parse error")
 
 
@@ -136,13 +311,12 @@ def _safe_rxn_group(smirks: str | None, x: int, y: int, w: int, h: int) -> str:
 # ------------------------------------------------------------
 
 print(
-    "[5_graphics] OUTPUT_DIR:",
-    os.path.abspath("analysis/reactivity_series/out/5_graphics"),
+    "[3_graphics] OUTPUT_DIR:",
+    os.path.abspath("analysis/reactivity_series/out/3_graphics"),
 )
 
 
-def _build_table_svg(table_id: str, rows: list[dict]) -> str:
-    print(f"[5_graphics] _build_table_svg called for {table_id} ({len(rows)} rows)")
+def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
     """
     Build a single SVG string for one table.
 
@@ -223,10 +397,14 @@ def _build_table_svg(table_id: str, rows: list[dict]) -> str:
                 int(header_y + 10),
                 int(total_w - 2 * margin_x),
                 int(header_reaction_h - 20),
+                err_f=err_f,
+                table_id=table_id,
+                stage="graphics_header",
             )
         )
     else:
-        print(f"[5_graphics] No exemplar reaction found for {table_id}")
+        # No exemplar reaction found; header will just be blank.
+        pass
 
     # Caption of full exemplar string below header reaction
     if exemplar:
@@ -264,7 +442,6 @@ def _build_table_svg(table_id: str, rows: list[dict]) -> str:
     draw_h = cell_h - 26
 
     for idx, rec in enumerate(rows):
-        print(f"[5_graphics]   row {idx} (table {table_id})")
         row_y = y0 + idx * (cell_h + row_gap)
         label_y = row_y + cell_h / 2 + 4
 
@@ -281,32 +458,41 @@ def _build_table_svg(table_id: str, rows: list[dict]) -> str:
             f"{html.escape(substrate_name)}</text>"
         )
 
-        # Substrate structure (SMILES/SMARTS)
+        # Substrate structure (SMILES/SMARTS): prefer the raw input SMILES
+        # so we do not show atom-map numbers or explicit hydrogens.
         sub_pattern = (
-            rec.get("mapped_substrate_smiles")
+            rec.get("smiles_input")
             or rec.get("smiles")
-            or rec.get("smiles_input")
+            or rec.get("mapped_substrate_smiles")
         )
         content_parts.append(
-            _safe_mol_group(sub_pattern, int(x_struct), int(row_y), int(struct_col_w - 10), int(draw_h))
-        )
-        if sub_pattern:
-            struct_cx = x_struct + (struct_col_w - 10) / 2
-            caption = _truncate(sub_pattern)
-            content_parts.append(
-                f'<text x="{struct_cx}" y="{row_y + draw_h + 14}" font-size="8" '
-                f'text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">'
-                f"{html.escape(caption)}</text>"
+            _safe_mol_group(
+                sub_pattern,
+                int(x_struct),
+                int(row_y),
+                int(struct_col_w - 10),
+                int(draw_h),
+                err_f=err_f,
+                table_id=table_id,
+                stage="graphics_substrate",
+                row_idx=rec.get("row", idx),
+                label=substrate_name,
+                field="substrate",
             )
+        )
 
-        # Reactivity value: first non-substrate key in data
+        # Reactivity value: prefer an explicit "value" key (from column C of the CSV),
+        # otherwise fall back to the first non-substrate entry in data.
         value = None
         data_dict = rec.get("data", {})
         if data_dict:
-            for k, v in data_dict.items():
-                if k != "substrate":
-                    value = v
-                    break
+            if "value" in data_dict:
+                value = data_dict["value"]
+            else:
+                for k, v in data_dict.items():
+                    if k != "substrate":
+                        value = v
+                        break
         value_str = str(value) if value is not None else ""
         content_parts.append(
             f'<text x="{x_value}" y="{label_y}" font-size="12" '
@@ -318,16 +504,6 @@ def _build_table_svg(table_id: str, rows: list[dict]) -> str:
         def left_side(field: str) -> str | None:
             smirks = rec.get(field)
             if not smirks:
-                if field == "rdchiral_smirks" and rec.get("rdchiral_error"):
-                    print(
-                        f"[5_graphics] RdChiral error for {table_id} row "
-                        f"{rec.get('row')}: {rec.get('rdchiral_error')}"
-                    )
-                else:
-                    print(
-                        f"[5_graphics] Missing {field} for {table_id} row "
-                        f"{rec.get('row')}"
-                    )
                 return None
             return smirks.split(">>", 1)[0]
 
@@ -343,16 +519,20 @@ def _build_table_svg(table_id: str, rows: list[dict]) -> str:
         for label, x in zip(op_cols, x_ops):
             pattern = left_side(field_map[label])
             content_parts.append(
-                _safe_mol_group(pattern, int(x), int(row_y), int(op_col_w - 10), int(draw_h))
-            )
-            if pattern:
-                op_cx = x + (op_col_w - 10) / 2
-                caption = _truncate(pattern)
-                content_parts.append(
-                    f'<text x="{op_cx}" y="{row_y + draw_h + 14}" font-size="8" '
-                    f'text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace">'
-                    f"{html.escape(caption)}</text>"
+                _safe_mol_group(
+                    pattern,
+                    int(x),
+                    int(row_y),
+                    int(op_col_w - 10),
+                    int(draw_h),
+                    err_f=err_f,
+                    table_id=table_id,
+                    stage=f"graphics_{label}",
+                    row_idx=rec.get("row", idx),
+                    label=substrate_name,
+                    field=field_map[label],
                 )
+            )
 
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" '
@@ -370,23 +550,27 @@ def _build_table_svg(table_id: str, rows: list[dict]) -> str:
 # ------------------------------------------------------------
 
 def main():
-    import json
     from glob import glob
 
-    OUTPUT_DIR = os.path.abspath("analysis/reactivity_series/out/5_graphics")
+    OUTPUT_DIR = os.path.abspath("analysis/reactivity_series/out/3_graphics")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(LOG_DIR, exist_ok=True)
 
-    input_dir = "analysis/reactivity_series/out/4_ops"
+    errors_path = LOG_DIR / "3_graphics.errors.jsonl"
+    err_f = open(errors_path, "w", encoding="utf-8")
+
+    input_dir = "analysis/reactivity_series/out/2_ops"
     paths = sorted(glob(os.path.join(input_dir, "*.jsonl")))
     if not paths:
-        print(f"[5_graphics] No input files found in {input_dir}")
+        print(f"[3_graphics] No input files found in {input_dir}")
         return
 
     for path in paths:
         table_id = os.path.splitext(os.path.basename(path))[0]
-        print(f"[5_graphics] Processing {table_id} from {path}")
+        print(f"[3_graphics] Processing {table_id} from {path}")
         rows: list[dict] = []
 
+        # Load JSONL rows from 2_ops
         with open(path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -394,18 +578,58 @@ def main():
                     continue
                 rows.append(json.loads(line))
 
-        print(f"[5_graphics]  - {len(rows)} rows")
+        # Attach values from the original CSV (column C) if available
+        base_id = table_id.replace(".project", "")
+        csv_path = TABLES_DIR / f"{base_id}.csv"
+        value_by_row: dict[int, object] = {}
+
+        if csv_path.exists():
+            try:
+                df = pd.read_csv(csv_path)
+                # Use the third column (index 2) as the value column if it exists
+                if df.shape[1] >= 3:
+                    for i in range(len(df)):
+                        value_by_row[i] = df.iloc[i, 2]
+            except Exception as e:
+                log_error(
+                    err_f,
+                    table_id=base_id,
+                    stage="graphics_value_load",
+                    error=e,
+                    extra={"csv_path": str(csv_path)},
+                )
+
+        # Push those values into each record’s data dict under key "value"
+        if value_by_row:
+            for rec in rows:
+                idx = rec.get("row")
+                if isinstance(idx, int) and idx in value_by_row:
+                    v = value_by_row[idx]
+                    data_dict = rec.get("data") or {}
+                    if "data" not in rec:
+                        rec["data"] = data_dict
+                    # Only set if not already present
+                    if "value" not in data_dict:
+                        data_dict["value"] = v
+
+        print(f"[3_graphics]  - {len(rows)} rows")
         try:
-            svg = _build_table_svg(table_id, rows)
-        except Exception:
-            print(f"[5_graphics] ERROR building SVG for {table_id}")
+            svg = _build_table_svg(table_id, rows, err_f=err_f)
+        except Exception as e:
+            print(f"[3_graphics] ERROR building SVG for {table_id}")
             traceback.print_exc()
+            log_error(
+                err_f,
+                table_id=table_id,
+                stage="graphics_table",
+                error=e,
+            )
             continue
 
         out_path = os.path.join(OUTPUT_DIR, f"{table_id}.svg")
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(svg)
-        print(f"[5_graphics]  - wrote {out_path}")
+        print(f"[3_graphics]  - wrote {out_path}")
 
 
 if __name__ == "__main__":

@@ -3,8 +3,8 @@
   "row": 0,
   "label": "ethylene",
   "smiles_input": "C=C",
-  "mapped_substrate_smiles": "[CH2:1]=[CH2:2]",
-  "mapped_product_smiles": "Br[CH2:1][CH2:2]Br",
+  "mapped_substrate_smiles": "[C:1](=[C:2]([H:5])[H:6])([H:3])[H:4]",
+  "mapped_product_smiles": "Br[C:1]([C:2](Br)([H:5])[H:6])([H:3])[H:4]",
   "image": "render/1_project/alkene_bromination/000_ethylene.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "3,3-dimethyl-1-butene",
   "smiles_input": "C(C)(C)CC=C",
-  "mapped_substrate_smiles": "[CH:1]([CH3:2])([CH3:3])[CH2:4][CH:5]=[CH2:6]",
-  "mapped_product_smiles": "Br[CH:5]([CH2:4][CH:1]([CH3:2])[CH3:3])[CH2:6]Br",
+  "mapped_substrate_smiles": "[C:1]([C:2]([H:8])([H:9])[H:10])([C:3]([H:11])([H:12])[H:13])([C:4]([C:5](=[C:6]([H:17])[H:18])[H:16])([H:14])[H:15])[H:7]",
+  "mapped_product_smiles": "Br[C:5]([C:4]([C:1]([C:2]([H:8])([H:9])[H:10])([C:3]([H:11])([H:12])[H:13])[H:7])([H:14])[H:15])([C:6](Br)([H:17])[H:18])[H:16]",
   "image": "render/1_project/alkene_bromination/001_33dimethyl1butene.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "1-butene",
   "smiles_input": "CCC=C",
-  "mapped_substrate_smiles": "[CH3:1][CH2:2][CH:3]=[CH2:4]",
-  "mapped_product_smiles": "Br[CH:3]([CH2:2][CH3:1])[CH2:4]Br",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3](=[C:4]([H:11])[H:12])[H:10])([H:8])[H:9])([H:5])([H:6])[H:7]",
+  "mapped_product_smiles": "Br[C:3]([C:2]([C:1]([H:5])([H:6])[H:7])([H:8])[H:9])([C:4](Br)([H:11])[H:12])[H:10]",
   "image": "render/1_project/alkene_bromination/002_1butene.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "trans-2-butene",
   "smiles_input": "C/C=C/C",
-  "mapped_substrate_smiles": "[CH3:1]/[CH:2]=[CH:3]/[CH3:4]",
-  "mapped_product_smiles": "Br[CH:2]([CH3:1])[CH:3](Br)[CH3:4]",
+  "mapped_substrate_smiles": "[C:1]([C:2](=[C:3]([C:4]([H:10])([H:11])[H:12])[H:9])[H:8])([H:5])([H:6])[H:7]",
+  "mapped_product_smiles": "Br[C:2]([C:1]([H:5])([H:6])[H:7])([C:3](Br)([C:4]([H:10])([H:11])[H:12])[H:9])[H:8]",
   "image": "render/1_project/alkene_bromination/003_trans2butene.png"
 }
 {
@@ -39,8 +39,8 @@
   "row": 4,
   "label": "cis-2-butene",
   "smiles_input": "C/C=C\\C",
-  "mapped_substrate_smiles": "[CH3:1]/[CH:2]=[CH:3]\\[CH3:4]",
-  "mapped_product_smiles": "Br[CH:2]([CH3:1])[CH:3](Br)[CH3:4]",
+  "mapped_substrate_smiles": "[C:1]([C:2](=[C:3]([C:4]([H:10])([H:11])[H:12])[H:9])[H:8])([H:5])([H:6])[H:7]",
+  "mapped_product_smiles": "Br[C:2]([C:1]([H:5])([H:6])[H:7])([C:3](Br)([C:4]([H:10])([H:11])[H:12])[H:9])[H:8]",
   "image": "render/1_project/alkene_bromination/004_cis2butene.png"
 }
 {
@@ -48,8 +48,8 @@
   "row": 5,
   "label": "2-methylpropene",
   "smiles_input": "CC(C)=C",
-  "mapped_substrate_smiles": "[CH3:1][C:2]([CH3:3])=[CH2:4]",
-  "mapped_product_smiles": "Br[C:2]([CH3:1])([CH3:3])[CH2:4]Br",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([H:8])([H:9])[H:10])=[C:4]([H:11])[H:12])([H:5])([H:6])[H:7]",
+  "mapped_product_smiles": "Br[C:2]([C:1]([H:5])([H:6])[H:7])([C:3]([H:8])([H:9])[H:10])[C:4](Br)([H:11])[H:12]",
   "image": "render/1_project/alkene_bromination/005_2methylpropene.png"
 }
 {
@@ -57,8 +57,8 @@
   "row": 6,
   "label": "2-methyl-2-butene",
   "smiles_input": "CC(C)=CC",
-  "mapped_substrate_smiles": "[CH3:1][C:2]([CH3:3])=[CH:4][CH3:5]",
-  "mapped_product_smiles": "Br[C:2]([CH3:1])([CH3:3])[CH:4](Br)[CH3:5]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([H:9])([H:10])[H:11])=[C:4]([C:5]([H:13])([H:14])[H:15])[H:12])([H:6])([H:7])[H:8]",
+  "mapped_product_smiles": "Br[C:2]([C:1]([H:6])([H:7])[H:8])([C:3]([H:9])([H:10])[H:11])[C:4](Br)([C:5]([H:13])([H:14])[H:15])[H:12]",
   "image": "render/1_project/alkene_bromination/006_2methyl2butene.png"
 }
 {
@@ -66,7 +66,7 @@
   "row": 7,
   "label": "2,3-dimethyl-2-butene",
   "smiles_input": "CC(C)=C(C)C",
-  "mapped_substrate_smiles": "[CH3:1][C:2]([CH3:3])=[C:4]([CH3:5])[CH3:6]",
-  "mapped_product_smiles": "Br[C:2]([CH3:1])([CH3:3])[C:4](Br)([CH3:5])[CH3:6]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([H:10])([H:11])[H:12])=[C:4]([C:5]([H:13])([H:14])[H:15])[C:6]([H:16])([H:17])[H:18])([H:7])([H:8])[H:9]",
+  "mapped_product_smiles": "Br[C:2]([C:1]([H:7])([H:8])[H:9])([C:3]([H:10])([H:11])[H:12])[C:4](Br)([C:5]([H:13])([H:14])[H:15])[C:6]([H:16])([H:17])[H:18]",
   "image": "render/1_project/alkene_bromination/007_23dimethyl2butene.png"
 }

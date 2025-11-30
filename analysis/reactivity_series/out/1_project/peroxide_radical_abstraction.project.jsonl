@@ -3,8 +3,8 @@
   "row": 0,
   "label": "tetramethylethylene",
   "smiles_input": "CC(C)=[9C](C)C",
-  "mapped_substrate_smiles": "[CH3:1][C:2]([CH3:3])=[C:4]([CH3:5])[CH3:6]",
-  "mapped_product_smiles": "OO[C:4]([C:2]([CH3:1])[CH3:3])([CH3:5])[CH3:6]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([H:10])([H:11])[H:12])=[C:4]([C:5]([H:13])([H:14])[H:15])[C:6]([H:16])([H:17])[H:18])([H:7])([H:8])[H:9]",
+  "mapped_product_smiles": "OO[C:4]([C:2]([C:1]([H:7])([H:8])[H:9])[C:3]([H:10])([H:11])[H:12])([C:5]([H:13])([H:14])[H:15])[C:6]([H:16])([H:17])[H:18]",
   "image": "render/1_project/peroxide_radical_abstraction/000_tetramethylethylene.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "methyl oleate",
   "smiles_input": "CCCCCCCC/[9C]=C\\CCCCCCCC(=O)OC",
-  "mapped_substrate_smiles": "[CH3:1][CH2:2][CH2:3][CH2:4][CH2:5][CH2:6][CH2:7][CH2:8]/[C:9]=[CH:10]\\[CH2:11][CH2:12][CH2:13][CH2:14][CH2:15][CH2:16][CH2:17][C:18](=[O:19])[O:20][CH3:21]",
-  "mapped_product_smiles": "OO[CH:10]([C:9][CH2:8][CH2:7][CH2:6][CH2:5][CH2:4][CH2:3][CH2:2][CH3:1])[CH2:11][CH2:12][CH2:13][CH2:14][CH2:15][CH2:16][CH2:17][C:18](=[O:19])[O:20][CH3:21]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([C:4]([C:5]([C:6]([C:7]([C:8]([CH:9]=[C:10]([C:11]([C:12]([C:13]([C:14]([C:15]([C:16]([C:17]([C:18](=[O:19])[O:20][C:21]([H:54])([H:55])[H:56])([H:52])[H:53])([H:50])[H:51])([H:48])[H:49])([H:46])[H:47])([H:44])[H:45])([H:42])[H:43])([H:40])[H:41])[H:39])([H:37])[H:38])([H:35])[H:36])([H:33])[H:34])([H:31])[H:32])([H:29])[H:30])([H:27])[H:28])([H:25])[H:26])([H:22])([H:23])[H:24]",
+  "mapped_product_smiles": "OO[CH:9]([C:8]([C:7]([C:6]([C:5]([C:4]([C:3]([C:2]([C:1]([H:22])([H:23])[H:24])([H:25])[H:26])([H:27])[H:28])([H:29])[H:30])([H:31])[H:32])([H:33])[H:34])([H:35])[H:36])([H:37])[H:38])[C:10]([C:11]([C:12]([C:13]([C:14]([C:15]([C:16]([C:17]([C:18](=[O:19])[O:20][C:21]([H:54])([H:55])[H:56])([H:52])[H:53])([H:50])[H:51])([H:48])[H:49])([H:46])[H:47])([H:44])[H:45])([H:42])[H:43])([H:40])[H:41])[H:39]",
   "image": "render/1_project/peroxide_radical_abstraction/001_methyl_oleate.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "hept-3-ene",
   "smiles_input": "CC/[9C]=C/CCC",
-  "mapped_substrate_smiles": "[CH3:1][CH2:2]/[C:3]=[CH:4]/[CH2:5][CH2:6][CH3:7]",
-  "mapped_product_smiles": "OO[CH:4]([C:3][CH2:2][CH3:1])[CH2:5][CH2:6][CH3:7]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([CH:3]=[C:4]([C:5]([C:6]([C:7]([H:18])([H:19])[H:20])([H:16])[H:17])([H:14])[H:15])[H:13])([H:11])[H:12])([H:8])([H:9])[H:10]",
+  "mapped_product_smiles": "OO[C:4]([CH:3][C:2]([C:1]([H:8])([H:9])[H:10])([H:11])[H:12])([C:5]([C:6]([C:7]([H:18])([H:19])[H:20])([H:16])[H:17])([H:14])[H:15])[H:13]",
   "image": "render/1_project/peroxide_radical_abstraction/002_hept3ene.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "1-octene",
   "smiles_input": "[9C]=CCCCCCC",
-  "mapped_substrate_smiles": "[C:1]=[CH:2][CH2:3][CH2:4][CH2:5][CH2:6][CH2:7][CH3:8]",
-  "mapped_product_smiles": "OO[CH:2]([C:1])[CH2:3][CH2:4][CH2:5][CH2:6][CH2:7][CH3:8]",
+  "mapped_substrate_smiles": "[CH2:1]=[C:2]([C:3]([C:4]([C:5]([C:6]([C:7]([C:8]([H:20])([H:21])[H:22])([H:18])[H:19])([H:16])[H:17])([H:14])[H:15])([H:12])[H:13])([H:10])[H:11])[H:9]",
+  "mapped_product_smiles": "OO[C:2]([CH2:1])([C:3]([C:4]([C:5]([C:6]([C:7]([C:8]([H:20])([H:21])[H:22])([H:18])[H:19])([H:16])[H:17])([H:14])[H:15])([H:12])[H:13])([H:10])[H:11])[H:9]",
   "image": "render/1_project/peroxide_radical_abstraction/003_1octene.png"
 }
 {
@@ -39,8 +39,8 @@
   "row": 4,
   "label": "cyclopentene",
   "smiles_input": "[9C]1=CCCC1",
-  "mapped_substrate_smiles": "[C:1]1=[CH:2][CH2:3][CH2:4][CH2:5]1",
-  "mapped_product_smiles": "OO[CH:2]1[C:1][CH2:5][CH2:4][CH2:3]1",
+  "mapped_substrate_smiles": "[CH:1]1=[C:2]([H:6])[C:3]([H:7])([H:8])[C:4]([H:9])([H:10])[C:5]1([H:11])[H:12]",
+  "mapped_product_smiles": "OO[CH:1]1[C:2]([H:6])[C:3]([H:7])([H:8])[C:4]([H:9])([H:10])[C:5]1([H:11])[H:12]",
   "image": "render/1_project/peroxide_radical_abstraction/004_cyclopentene.png"
 }
 {
@@ -48,8 +48,8 @@
   "row": 5,
   "label": "cyclohexene",
   "smiles_input": "[9C]1=CCCCC1",
-  "mapped_substrate_smiles": "[C:1]1=[CH:2][CH2:3][CH2:4][CH2:5][CH2:6]1",
-  "mapped_product_smiles": "OO[CH:2]1[C:1][CH2:6][CH2:5][CH2:4][CH2:3]1",
+  "mapped_substrate_smiles": "[CH:1]1=[C:2]([H:7])[C:3]([H:8])([H:9])[C:4]([H:10])([H:11])[C:5]([H:12])([H:13])[C:6]1([H:14])[H:15]",
+  "mapped_product_smiles": "OO[CH:1]1[C:2]([H:7])[C:3]([H:8])([H:9])[C:4]([H:10])([H:11])[C:5]([H:12])([H:13])[C:6]1([H:14])[H:15]",
   "image": "render/1_project/peroxide_radical_abstraction/005_cyclohexene.png"
 }
 {
@@ -57,8 +57,8 @@
   "row": 6,
   "label": "1_3-cyclohexadiene",
   "smiles_input": "[9C]1=CCCC=C1",
-  "mapped_substrate_smiles": "[C:1]1=[CH:2][CH2:3][CH2:4][CH:5]=[CH:6]1",
-  "mapped_product_smiles": "OO[CH:2]1[C:1][CH:6]=[CH:5][CH2:4][CH2:3]1",
+  "mapped_substrate_smiles": "[CH:1]1=[C:2]([H:7])[C:3]([H:8])([H:9])[C:4]([H:10])([H:11])[C:5]([H:12])=[C:6]1[H:13]",
+  "mapped_product_smiles": "OO[CH:1]1[C:2]([H:7])[C:3]([H:8])([H:9])[C:4]([H:10])([H:11])[C:5]([H:12])=[C:6]1[H:13]",
   "image": "render/1_project/peroxide_radical_abstraction/006_1_3cyclohexadiene.png"
 }
 {
@@ -66,8 +66,8 @@
   "row": 7,
   "label": "1_4-pentadiene",
   "smiles_input": "[9C]=CCC=C",
-  "mapped_substrate_smiles": "[C:1]=[CH:2][CH2:3][CH:4]=[CH2:5]",
-  "mapped_product_smiles": "OO[CH:2]([C:1])[CH2:3][CH:4]=[CH2:5]",
+  "mapped_substrate_smiles": "[CH2:1]=[C:2]([C:3]([C:4](=[C:5]([H:10])[H:11])[H:9])([H:7])[H:8])[H:6]",
+  "mapped_product_smiles": "OO[C:2]([CH2:1])([C:3]([C:4](=[C:5]([H:10])[H:11])[H:9])([H:7])[H:8])[H:6]",
   "image": "render/1_project/peroxide_radical_abstraction/007_1_4pentadiene.png"
 }
 {
@@ -75,8 +75,8 @@
   "row": 8,
   "label": "methyl octadecadienoate",
   "smiles_input": "CCCCCCCCC[9C]=CCCC=CCCCCC(=O)OC",
-  "mapped_substrate_smiles": "[CH3:1][CH2:2][CH2:3][CH2:4][CH2:5][CH2:6][CH2:7][CH2:8][CH2:9][C:10]=[CH:11][CH2:12][CH2:13][CH:14]=[CH:15][CH2:16][CH2:17][CH2:18][CH2:19][C:20](=[O:21])[O:22][CH3:23]",
-  "mapped_product_smiles": "OO[CH:11]([C:10][CH2:9][CH2:8][CH2:7][CH2:6][CH2:5][CH2:4][CH2:3][CH2:2][CH3:1])[CH2:12][CH2:13][CH:14]=[CH:15][CH2:16][CH2:17][CH2:18][CH2:19][C:20](=[O:21])[O:22][CH3:23]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([C:4]([C:5]([C:6]([C:7]([C:8]([C:9]([CH:10]=[C:11]([C:12]([C:13]([C:14](=[C:15]([C:16]([C:17]([C:18]([C:19]([C:20](=[O:21])[O:22][C:23]([H:58])([H:59])[H:60])([H:56])[H:57])([H:54])[H:55])([H:52])[H:53])([H:50])[H:51])[H:49])[H:48])([H:46])[H:47])([H:44])[H:45])[H:43])([H:41])[H:42])([H:39])[H:40])([H:37])[H:38])([H:35])[H:36])([H:33])[H:34])([H:31])[H:32])([H:29])[H:30])([H:27])[H:28])([H:24])([H:25])[H:26]",
+  "mapped_product_smiles": "OO[C:14]([C:13]([C:12]([C:11](=[CH:10][C:9]([C:8]([C:7]([C:6]([C:5]([C:4]([C:3]([C:2]([C:1]([H:24])([H:25])[H:26])([H:27])[H:28])([H:29])[H:30])([H:31])[H:32])([H:33])[H:34])([H:35])[H:36])([H:37])[H:38])([H:39])[H:40])([H:41])[H:42])[H:43])([H:44])[H:45])([H:46])[H:47])([C:15]([C:16]([C:17]([C:18]([C:19]([C:20](=[O:21])[O:22][C:23]([H:58])([H:59])[H:60])([H:56])[H:57])([H:54])[H:55])([H:52])[H:53])([H:50])[H:51])[H:49])[H:48]",
   "image": "render/1_project/peroxide_radical_abstraction/008_methyl_octadecadienoate.png"
 }
 {
@@ -84,8 +84,8 @@
   "row": 9,
   "label": "methyl linolenate",
   "smiles_input": "CC/[9C]=C/C/C=C/C/C=C/CCCCCCCC(=O)OC",
-  "mapped_substrate_smiles": "[CH3:1][CH2:2]/[C:3]=[CH:4]/[CH2:5]/[CH:6]=[CH:7]/[CH2:8]/[CH:9]=[CH:10]/[CH2:11][CH2:12][CH2:13][CH2:14][CH2:15][CH2:16][CH2:17][C:18](=[O:19])[O:20][CH3:21]",
-  "mapped_product_smiles": "OO[CH:4]([C:3][CH2:2][CH3:1])[CH2:5]/[CH:6]=[CH:7]/[CH2:8]/[CH:9]=[CH:10]/[CH2:11][CH2:12][CH2:13][CH2:14][CH2:15][CH2:16][CH2:17][C:18](=[O:19])[O:20][CH3:21]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([CH:3]=[C:4]([C:5]([C:6](=[C:7]([C:8]([C:9](=[C:10]([C:11]([C:12]([C:13]([C:14]([C:15]([C:16]([C:17]([C:18](=[O:19])[O:20][C:21]([H:50])([H:51])[H:52])([H:48])[H:49])([H:46])[H:47])([H:44])[H:45])([H:42])[H:43])([H:40])[H:41])([H:38])[H:39])([H:36])[H:37])[H:35])[H:34])([H:32])[H:33])[H:31])[H:30])([H:28])[H:29])[H:27])([H:25])[H:26])([H:22])([H:23])[H:24]",
+  "mapped_product_smiles": "OO[C:9]([C:8]([C:7](=[C:6]([C:5]([C:4](=[CH:3][C:2]([C:1]([H:22])([H:23])[H:24])([H:25])[H:26])[H:27])([H:28])[H:29])[H:30])[H:31])([H:32])[H:33])([C:10]([C:11]([C:12]([C:13]([C:14]([C:15]([C:16]([C:17]([C:18](=[O:19])[O:20][C:21]([H:50])([H:51])[H:52])([H:48])[H:49])([H:46])[H:47])([H:44])[H:45])([H:42])[H:43])([H:40])[H:41])([H:38])[H:39])([H:36])[H:37])[H:35])[H:34]",
   "image": "render/1_project/peroxide_radical_abstraction/009_methyl_linolenate.png"
 }
 {
@@ -93,8 +93,8 @@
   "row": 10,
   "label": "1_4-cyclohexadiene",
   "smiles_input": "[9C]1=CCC=CC1",
-  "mapped_substrate_smiles": "[C:1]1=[CH:2][CH2:3][CH:4]=[CH:5][CH2:6]1",
-  "mapped_product_smiles": "OO[CH:2]1[C:1][CH2:6][CH:5]=[CH:4][CH2:3]1",
+  "mapped_substrate_smiles": "[CH:1]1=[C:2]([H:7])[C:3]([H:8])([H:9])[C:4]([H:10])=[C:5]([H:11])[C:6]1([H:12])[H:13]",
+  "mapped_product_smiles": "OO[CH:1]1[C:2]([H:7])[C:3]([H:8])([H:9])[C:4]([H:10])=[C:5]([H:11])[C:6]1([H:12])[H:13]",
   "image": "render/1_project/peroxide_radical_abstraction/010_1_4cyclohexadiene.png"
 }
 {
@@ -102,7 +102,7 @@
   "row": 11,
   "label": "2_5-dimethyl-3-hexene",
   "smiles_input": "CC(C)[9C]=CC(C)C",
-  "mapped_substrate_smiles": "[CH3:1][CH:2]([CH3:3])[C:4]=[CH:5][CH:6]([CH3:7])[CH3:8]",
-  "mapped_product_smiles": "OO[CH:5]([C:4][CH:2]([CH3:1])[CH3:3])[CH:6]([CH3:7])[CH3:8]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([H:13])([H:14])[H:15])([CH:4]=[C:5]([C:6]([C:7]([H:18])([H:19])[H:20])([C:8]([H:21])([H:22])[H:23])[H:17])[H:16])[H:12])([H:9])([H:10])[H:11]",
+  "mapped_product_smiles": "OO[C:5]([CH:4][C:2]([C:1]([H:9])([H:10])[H:11])([C:3]([H:13])([H:14])[H:15])[H:12])([C:6]([C:7]([H:18])([H:19])[H:20])([C:8]([H:21])([H:22])[H:23])[H:17])[H:16]",
   "image": "render/1_project/peroxide_radical_abstraction/011_2_5dimethyl3hexene.png"
 }

@@ -3,8 +3,8 @@
   "row": 0,
   "label": "methyl",
   "smiles_input": "CBr",
-  "mapped_substrate_smiles": "Br[CH3:1]",
-  "mapped_product_smiles": "CCO[CH3:1]",
+  "mapped_substrate_smiles": "Br[C:1]([H:3])([H:4])[H:5]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:1]([H:3])([H:4])[H:5]",
   "image": "render/1_project/steric_sn2/000_methyl.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "ethyl",
   "smiles_input": "CCBr",
-  "mapped_substrate_smiles": "Br[CH2:2][CH3:1]",
-  "mapped_product_smiles": "CCO[CH2:2][CH3:1]",
+  "mapped_substrate_smiles": "Br[C:2]([C:1]([H:4])([H:5])[H:6])([H:7])[H:8]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:2]([C:1]([H:4])([H:5])[H:6])([H:7])[H:8]",
   "image": "render/1_project/steric_sn2/001_ethyl.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "n-propyl",
   "smiles_input": "CCCBr",
-  "mapped_substrate_smiles": "Br[CH2:3][CH2:2][CH3:1]",
-  "mapped_product_smiles": "CCO[CH2:3][CH2:2][CH3:1]",
+  "mapped_substrate_smiles": "Br[C:3]([C:2]([C:1]([H:5])([H:6])[H:7])([H:8])[H:9])([H:10])[H:11]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:3]([C:2]([C:1]([H:5])([H:6])[H:7])([H:8])[H:9])([H:10])[H:11]",
   "image": "render/1_project/steric_sn2/002_npropyl.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "sec-butyl",
   "smiles_input": "C(C)(C)CBr",
-  "mapped_substrate_smiles": "Br[CH2:4][CH:1]([CH3:2])[CH3:3]",
-  "mapped_product_smiles": "CCO[CH2:4][CH:1]([CH3:2])[CH3:3]",
+  "mapped_substrate_smiles": "Br[C:4]([C:1]([C:2]([H:7])([H:8])[H:9])([C:3]([H:10])([H:11])[H:12])[H:6])([H:13])[H:14]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:4]([C:1]([C:2]([H:7])([H:8])[H:9])([C:3]([H:10])([H:11])[H:12])[H:6])([H:13])[H:14]",
   "image": "render/1_project/steric_sn2/003_secbutyl.png"
 }
 {
@@ -39,7 +39,7 @@
   "row": 4,
   "label": "neopentyl bromide",
   "smiles_input": "C(C)(C)(C)CBr",
-  "mapped_substrate_smiles": "Br[CH2:5][C:1]([CH3:2])([CH3:3])[CH3:4]",
-  "mapped_product_smiles": "CCO[CH2:5][C:1]([CH3:2])([CH3:3])[CH3:4]",
+  "mapped_substrate_smiles": "Br[C:5]([C:1]([C:2]([H:7])([H:8])[H:9])([C:3]([H:10])([H:11])[H:12])[C:4]([H:13])([H:14])[H:15])([H:16])[H:17]",
+  "mapped_product_smiles": "[H]C([H])([H])C([H])([H])O[C:5]([C:1]([C:2]([H:7])([H:8])[H:9])([C:3]([H:10])([H:11])[H:12])[C:4]([H:13])([H:14])[H:15])([H:16])[H:17]",
   "image": "render/1_project/steric_sn2/004_neopentyl_bromide.png"
 }

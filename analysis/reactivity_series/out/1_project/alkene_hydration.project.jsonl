@@ -3,8 +3,8 @@
   "row": 0,
   "label": "row_0",
   "smiles_input": "C=C",
-  "mapped_substrate_smiles": "[CH2:1]=[CH2:2]",
-  "mapped_product_smiles": "O[CH2:1][CH2:2]",
+  "mapped_substrate_smiles": "[C:1](=[C:2]([H:5])[H:6])([H:3])[H:4]",
+  "mapped_product_smiles": "[H]O[C:2]([C:1]([H])([H:3])[H:4])([H:5])[H:6]",
   "image": "render/1_project/alkene_hydration/000_row_0.png"
 }
 {
@@ -12,8 +12,8 @@
   "row": 1,
   "label": "row_1",
   "smiles_input": "CC=C",
-  "mapped_substrate_smiles": "[CH3:1][CH:2]=[CH2:3]",
-  "mapped_product_smiles": "O[CH:2]([CH3:1])[CH2:3]",
+  "mapped_substrate_smiles": "[C:1]([C:2](=[C:3]([H:8])[H:9])[H:7])([H:4])([H:5])[H:6]",
+  "mapped_product_smiles": "[H]O[C:3]([C:2]([H])([C:1]([H:4])([H:5])[H:6])[H:7])([H:8])[H:9]",
   "image": "render/1_project/alkene_hydration/001_row_1.png"
 }
 {
@@ -21,8 +21,8 @@
   "row": 2,
   "label": "row_2",
   "smiles_input": "CCCCC=C",
-  "mapped_substrate_smiles": "[CH3:1][CH2:2][CH2:3][CH2:4][CH:5]=[CH2:6]",
-  "mapped_product_smiles": "O[CH:5]([CH2:4][CH2:3][CH2:2][CH3:1])[CH2:6]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([C:3]([C:4]([C:5](=[C:6]([H:17])[H:18])[H:16])([H:14])[H:15])([H:12])[H:13])([H:10])[H:11])([H:7])([H:8])[H:9]",
+  "mapped_product_smiles": "[H]O[C:6]([C:5]([H])([C:4]([C:3]([C:2]([C:1]([H:7])([H:8])[H:9])([H:10])[H:11])([H:12])[H:13])([H:14])[H:15])[H:16])([H:17])[H:18]",
   "image": "render/1_project/alkene_hydration/002_row_2.png"
 }
 {
@@ -30,8 +30,8 @@
   "row": 3,
   "label": "row_3",
   "smiles_input": "c1ccccc1C=C",
-  "mapped_substrate_smiles": "[cH:1]1[cH:2][cH:3][cH:4][cH:5][c:6]1[CH:7]=[CH2:8]",
-  "mapped_product_smiles": "O[CH2:8][CH:7][c:6]1[cH:1][cH:2][cH:3][cH:4][cH:5]1",
+  "mapped_substrate_smiles": "[c:1]1([H:9])[c:2]([H:10])[c:3]([H:11])[c:4]([H:12])[c:5]([H:13])[c:6]1[C:7](=[C:8]([H:15])[H:16])[H:14]",
+  "mapped_product_smiles": "[H]O[C:8]([C:7]([H])([c:6]1[c:1]([H:9])[c:2]([H:10])[c:3]([H:11])[c:4]([H:12])[c:5]1[H:13])[H:14])([H:15])[H:16]",
   "image": "render/1_project/alkene_hydration/003_row_3.png"
 }
 {
@@ -39,8 +39,8 @@
   "row": 4,
   "label": "row_4",
   "smiles_input": "C(C)(C)=CC",
-  "mapped_substrate_smiles": "[C:1]([CH3:2])([CH3:3])=[CH:4][CH3:5]",
-  "mapped_product_smiles": "O[C:1]([CH3:2])([CH3:3])[CH:4][CH3:5]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([H:6])([H:7])[H:8])([C:3]([H:9])([H:10])[H:11])=[C:4]([C:5]([H:13])([H:14])[H:15])[H:12]",
+  "mapped_product_smiles": "[H]O[C:4]([C:1]([H])([C:2]([H:6])([H:7])[H:8])[C:3]([H:9])([H:10])[H:11])([C:5]([H:13])([H:14])[H:15])[H:12]",
   "image": "render/1_project/alkene_hydration/004_row_4.png"
 }
 {
@@ -48,7 +48,7 @@
   "row": 5,
   "label": "row_5",
   "smiles_input": "C(C)(C)=C",
-  "mapped_substrate_smiles": "[C:1]([CH3:2])([CH3:3])=[CH2:4]",
-  "mapped_product_smiles": "O[C:1]([CH3:2])([CH3:3])[CH2:4]",
+  "mapped_substrate_smiles": "[C:1]([C:2]([H:5])([H:6])[H:7])([C:3]([H:8])([H:9])[H:10])=[C:4]([H:11])[H:12]",
+  "mapped_product_smiles": "[H]O[C:4]([C:1]([H])([C:2]([H:5])([H:6])[H:7])[C:3]([H:8])([H:9])[H:10])([H:11])[H:12]",
   "image": "render/1_project/alkene_hydration/005_row_5.png"
 }

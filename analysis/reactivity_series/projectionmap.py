@@ -1,5 +1,6 @@
 from rdkit import Chem
 from rdkit.Chem import rdChemReactions
+from evodex.astatine import hydrogen_to_astatine_molecule, astatine_to_hydrogen_molecule
 
 
 def add_sequential_isotopes(smiles: str) -> str:
@@ -14,6 +15,11 @@ def add_sequential_isotopes(smiles: str) -> str:
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         raise ValueError(f"Could not parse SMILES: {smiles}")
+
+    # Convert all hydrogens to astatine using the evodex.astatine utilities.
+    # This also makes hydrogens explicit (via AddHs inside hydrogen_to_astatine_molecule),
+    # so the subsequent isotope labeling can treat every atom uniformly.
+    mol = hydrogen_to_astatine_molecule(mol, which_mol="substrate")
 
     for idx, atom in enumerate(mol.GetAtoms(), start=1):
         atom.SetIsotope(idx)
@@ -67,6 +73,10 @@ def project_operator_to_mapped_products(substrate_smiles: str, operator_smirks: 
             for atom in mol.GetAtoms():
                 if atom.GetAtomMapNum() in non_matching:
                     atom.SetAtomMapNum(0)
+
+    # Convert astatine back to hydrogen on both substrate and product
+    isotopic_sub_mol = astatine_to_hydrogen_molecule(isotopic_sub_mol)
+    product_mol = astatine_to_hydrogen_molecule(product_mol)
 
     mapped_substrate_smiles = Chem.MolToSmiles(isotopic_sub_mol)
     mapped_product_smiles = Chem.MolToSmiles(product_mol)
