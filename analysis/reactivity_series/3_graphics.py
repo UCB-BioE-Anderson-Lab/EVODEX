@@ -1,19 +1,41 @@
 #!/usr/bin/env python3
+"""
+Generate SVG summary tables for reactivity series data.
 
-import os
+Inputs
+------
+- JSONL files in analysis/reactivity_series/out/2_ops
+  Each line is a JSON record with fields including:
+    - row: zero-based row index
+    - data: dict with at least a "substrate" key and possibly "value"
+    - evodex_*_smirks, rdchiral_smirks: SMIRKS / SMARTS strings
+
+- CSV files in analysis/reactivity_series/data/tables
+  Column C (zero-based index 2) is used as the "value" column when present.
+
+Outputs
+-------
+- One SVG per input JSONL file in analysis/reactivity_series/out/3_graphics
+- A JSONL error log in out/_logs/3_graphics.errors.jsonl
+
+All layout constants and drawing behavior are fixed to preserve the original figures.
+"""
+
 import html
+import json
+import os
+import re
 import traceback
 from pathlib import Path
-import json
 
 import pandas as pd
 from rdkit import Chem
-from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.Chem import rdChemReactions as Reactions
+from rdkit.Chem.Draw import rdMolDraw2D
 
-# ------------------------------------------------------------
-# Output and logging setup (local version)
-# ------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Output and logging configuration
+# ----------------------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent
 LOG_DIR = BASE_DIR / "out/_logs"
@@ -29,17 +51,32 @@ def log_error(
     row_idx=None,
     label=None,
     extra=None,
-):
+) -> None:
     """
-    Minimal error logger for 3_graphics, modeled on 1_project.log_error.
-    Writes one JSON record per line to the given file handle.
+    Write a single JSON error record to the given file handle.
+
+    Parameters
+    ----------
+    fh
+        Open text file handle for JSONL output.
+    table_id
+        Table identifier, usually derived from the JSONL filename.
+    stage
+        Name of the processing stage, for example "graphics_substrate".
+    error
+        Exception instance or message string.
+    row_idx
+        Optional row index associated with the error.
+    label
+        Optional human readable label for the row.
+    extra
+        Optional dict with additional context (for example a SMIRKS string).
     """
-    rec = {
+    rec: dict[str, object] = {
         "table_id": table_id,
         "stage": stage,
     }
 
-    # Normalize error information
     if isinstance(error, Exception):
         rec["error_type"] = type(error).__name__
         rec["error_message"] = str(error)
@@ -60,19 +97,16 @@ def log_error(
     fh.flush()
 
 
-# ------------------------------------------------------------
-# Low-level drawing utilities (RDKit-only)
-# ------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Low level drawing helpers
+# ----------------------------------------------------------------------
 
 def _draw_mol_svg(pattern: str, w: int, h: int) -> str:
     """
-    Render a substrate-side pattern (SMARTS / mapped SMIRKS or plain SMILES)
-    to an SVG string using RDKit only.
+    Render a substrate side SMARTS or SMILES pattern to an SVG string.
 
-    This function first tries to parse the pattern as SMARTS (including
-    rdchiral-style decorators) via RDKit's MolFromSmarts. If that fails,
-    it falls back to parsing as plain SMILES. An empty or whitespace-only
-    pattern raises a ValueError.
+    The pattern is parsed as SMARTS first, then as SMILES if SMARTS parsing fails.
+    An empty or whitespace only pattern raises ValueError.
     """
     if not pattern or pattern.strip() == "":
         raise ValueError("SMARTS/SMILES render error: empty pattern")
@@ -80,9 +114,10 @@ def _draw_mol_svg(pattern: str, w: int, h: int) -> str:
     mol = Chem.MolFromSmarts(pattern)
     if mol is None:
         mol = Chem.MolFromSmiles(pattern)
-
     if mol is None:
-        raise ValueError(f"SMARTS/SMILES render error: could not parse pattern: {pattern}")
+        raise ValueError(
+            f"SMARTS/SMILES render error: could not parse pattern: {pattern}"
+        )
 
     mol = rdMolDraw2D.PrepareMolForDrawing(mol)
     drawer = rdMolDraw2D.MolDraw2DSVG(w, h)
@@ -91,16 +126,14 @@ def _draw_mol_svg(pattern: str, w: int, h: int) -> str:
     return drawer.GetDrawingText()
 
 
-# Helper: draw RdChiral substrate-side SMARTS with explicit aromaticity and atom-map numbers
 def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
     """
-    Render an RdChiral substrate-side SMARTS pattern to SVG, but keep
-    an explicit indication of aromaticity and atom-map numbers by
-    overriding atom labels.
+    Render an RdChiral substrate side SMARTS pattern with explicit labels.
 
-    This is still RDKit-based, but for atoms it sets a custom
-    'atomLabel' property such as 'c:5' (for aromatic carbon with map 5)
-    instead of the default 'C'.
+    Atom labels preserve:
+    - aromaticity (for example "c" for aromatic carbon)
+    - explicit hydrogen decorators (for example "cH", "nH", "CH")
+    - atom map numbers (for example "c:5", "nH:4").
     """
     if not pattern or pattern.strip() == "":
         raise ValueError("SMARTS/SMILES render error: empty pattern (RdChiral)")
@@ -108,23 +141,22 @@ def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
     mol = Chem.MolFromSmarts(pattern)
     if mol is None:
         mol = Chem.MolFromSmiles(pattern)
-
     if mol is None:
-        raise ValueError(f"SMARTS/SMILES render error: could not parse pattern: {pattern}")
+        raise ValueError(
+            f"SMARTS/SMILES render error: could not parse pattern: {pattern}"
+        )
 
-    import re
-    # Detect which mapped atoms are specified with an explicit H decorator in the SMARTS,
-    # e.g. [cH;...:1], [nH:4], [CH2:3], etc. Store a label like "cH" or "nH" keyed by map number.
-    H_decorated = {}
+    # Map number -> base symbol with explicit H decorator, for example "cH" or "nH".
+    H_decorated: dict[int, str] = {}
     try:
-        for m in re.finditer(r"\[([A-Za-z][a-z]?)H[^:]*:(\d+)\]", pattern):
-            base_sym = m.group(1)  # c, n, C, N, O, etc.
-            mapnum = int(m.group(2))
+        for match in re.finditer(r"\[([A-Za-z][a-z]?)H[^:]*:(\d+)\]", pattern):
+            base_sym = match.group(1)
+            mapnum = int(match.group(2))
             H_decorated[mapnum] = base_sym + "H"
     except Exception:
         H_decorated = {}
 
-    # Work on a copy so we do not mutate any cached templates
+    # Work on a copy so we do not mutate any cached templates.
     mol = Chem.Mol(mol)
 
     for atom in mol.GetAtoms():
@@ -132,13 +164,6 @@ def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
         amap = atom.GetAtomMapNum()
         is_arom = atom.GetIsAromatic()
 
-        # Base symbol selection:
-        #   - if this atom had an explicit H decorator in the SMARTS (e.g. [cH:1], [nH:4]),
-        #     use that combined label (cH, nH, CH, etc.)
-        #   - otherwise:
-        #       * aromatic carbons: "c"
-        #       * explicit hydrogens (if present as atoms): "H"
-        #       * everything else: element symbol (C, N, O, etc.)
         if amap and amap in H_decorated:
             base = H_decorated[amap]
         elif atom_num == 6 and is_arom:
@@ -152,7 +177,6 @@ def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
         if amap:
             label = f"{base}:{amap}"
 
-        # Attach the custom label so RDKit draws it verbosely.
         atom.SetProp("atomLabel", label)
 
     mol = rdMolDraw2D.PrepareMolForDrawing(mol)
@@ -164,14 +188,16 @@ def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
 
 def _draw_rxn_svg(smirks: str, w: int, h: int) -> str:
     """
-    Render a full reaction SMIRKS/SMARTS to SVG via RDKit.
+    Render a full reaction SMIRKS or SMARTS string to an SVG string.
     """
     if not smirks or smirks.strip() == "":
         raise ValueError("Reaction render error: empty SMIRKS")
 
     rxn = Reactions.ReactionFromSmarts(smirks)
     if rxn is None:
-        raise ValueError(f"Reaction render error: could not parse SMIRKS: {smirks}")
+        raise ValueError(
+            f"Reaction render error: could not parse SMIRKS: {smirks}"
+        )
 
     drawer = rdMolDraw2D.MolDraw2DSVG(w, h)
     drawer.drawOptions().addStereoAnnotation = True
@@ -182,35 +208,33 @@ def _draw_rxn_svg(smirks: str, w: int, h: int) -> str:
 
 def _strip_xml_header(svg_text: str) -> str:
     """
-    Remove any XML declaration from the start of the SVG text.
+    Remove any XML declaration at the start of an SVG string.
     """
-    import re
-    return re.sub(r'^\s*<\?xml[^>]*\?>\s*', '', svg_text)
+    return re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", svg_text)
 
 
 def _svg_as_group(svg_text: str, x: int, y: int) -> str:
     """
-    Wrap an RDKit <svg>…</svg> block as a <g transform="translate(x,y)">…</g>,
-    extracting the inner contents to avoid nested <svg> issues.
-    """
-    import re
+    Wrap an RDKit generated <svg> block in a translated <g> element.
 
+    The inner content between <svg> and </svg> is extracted to avoid nested
+    <svg> elements.
+    """
     s = _strip_xml_header(svg_text).strip()
-    m_open = re.search(r'<svg\b[^>]*>', s, flags=re.I)
-    m_close = re.search(r'</svg\s*>', s, flags=re.I)
+    m_open = re.search(r"<svg\b[^>]*>", s, flags=re.I)
+    m_close = re.search(r"</svg\s*>", s, flags=re.I)
 
     if not (m_open and m_close and m_close.start() > m_open.end()):
-        inner = s  # fallback
+        inner = s
     else:
-        inner = s[m_open.end():m_close.start()]
+        inner = s[m_open.end() : m_close.start()]
 
     return f'<g transform="translate({x},{y})">{inner}</g>'
 
 
 def _error_panel(x: int, y: int, w: int, h: int, msg: str = "Error") -> str:
     """
-    Simple light-red rounded panel with a centered error label.
-    Only used when drawing fails.
+    Draw a light red rounded rectangle with a centered error label.
     """
     return (
         f'<g transform="translate({x},{y})">'
@@ -218,8 +242,8 @@ def _error_panel(x: int, y: int, w: int, h: int, msg: str = "Error") -> str:
         f'rx="8" ry="8" fill="#ffe6e6" stroke="#cc0000" stroke-width="1"/>'
         f'<text x="{w/2}" y="{h/2}" text-anchor="middle" '
         f'font-family="Helvetica,Arial,sans-serif" font-size="10" fill="#cc0000">'
-        f'{html.escape(msg)}</text>'
-        f'</g>'
+        f"{html.escape(msg)}</text>"
+        f"</g>"
     )
 
 
@@ -238,21 +262,22 @@ def _safe_mol_group(
     field: str | None = None,
 ) -> str:
     """
-    Wrap a molecule drawing (pattern may be SMARTS/SMILES) in a <g> block.
-    On failure, emits an error panel and logs a message.
+    Draw a molecule pattern in a translated group.
+
+    On success, returns a <g> with drawn content.
+    On failure or missing pattern, returns an error panel and logs the error
+    if an error file handle is provided.
     """
     if not pattern:
         return _error_panel(x, y, w, h, "No pattern")
 
     try:
-        # For RdChiral entries, use a specialized renderer that keeps
-        # aromatic 'c' labels and map numbers visible on atoms.
         if field == "rdchiral_smirks":
             svg = _draw_rdchiral_mol_svg(pattern, w, h)
         else:
             svg = _draw_mol_svg(pattern, w, h)
         return _svg_as_group(svg, x, y)
-    except Exception as e:
+    except Exception as exc:
         if err_f and table_id:
             extra = {"pattern": pattern}
             if field:
@@ -261,13 +286,15 @@ def _safe_mol_group(
                 err_f,
                 table_id=table_id,
                 stage=stage,
-                error=e,
+                error=exc,
                 row_idx=row_idx,
                 label=label,
                 extra=extra,
             )
         else:
-            print(f"[3_graphics] _safe_mol_group error for pattern={pattern!r}: {e}")
+            print(
+                f"[3_graphics] _safe_mol_group error for pattern={pattern!r}: {exc}"
+            )
         return _error_panel(x, y, w, h, "Parse error")
 
 
@@ -283,8 +310,11 @@ def _safe_rxn_group(
     stage: str = "graphics_rxn",
 ) -> str:
     """
-    Wrap a reaction drawing in a <g> block.
-    On failure, emits an error panel and logs a message.
+    Draw a reaction SMIRKS string in a translated group.
+
+    On success, returns a <g> with drawn content.
+    On failure or missing SMIRKS, returns an error panel and logs the error
+    if an error file handle is provided.
     """
     if not smirks:
         return _error_panel(x, y, w, h, "No SMIRKS")
@@ -292,23 +322,25 @@ def _safe_rxn_group(
     try:
         svg = _draw_rxn_svg(smirks, w, h)
         return _svg_as_group(svg, x, y)
-    except Exception as e:
+    except Exception as exc:
         if err_f and table_id:
             log_error(
                 err_f,
                 table_id=table_id,
                 stage=stage,
-                error=e,
+                error=exc,
                 extra={"smirks": smirks},
             )
         else:
-            print(f"[3_graphics] _safe_rxn_group error for smirks={smirks!r}: {e}")
+            print(
+                f"[3_graphics] _safe_rxn_group error for smirks={smirks!r}: {exc}"
+            )
         return _error_panel(x, y, w, h, "Parse error")
 
 
-# ------------------------------------------------------------
+# ----------------------------------------------------------------------
 # Table SVG builder
-# ------------------------------------------------------------
+# ----------------------------------------------------------------------
 
 print(
     "[3_graphics] OUTPUT_DIR:",
@@ -316,20 +348,28 @@ print(
 )
 
 
+def _truncate(text: str | None, max_chars: int = 60) -> str:
+    """
+    Truncate a string to at most max_chars characters with an ellipsis.
+    """
+    if text is None:
+        return ""
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 1] + "…"
+
+
 def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
     """
     Build a single SVG string for one table.
 
-    Columns: Substrate name, Substrate structure, Value, A, B, C, D, E, RdChiral.
-    For each abstraction column we render only the left hand side of the
-    stored SMIRKS (substrate side).
+    Columns
+    -------
+    Substrate name, Substrate structure, Value, A, B, C, D, E, RdChiral.
+
+    For each abstraction column (A through E, RdChiral) only the substrate
+    side of the SMIRKS string is rendered.
     """
-
-    def _truncate(text: str, max_chars: int = 60) -> str:
-        if text is None:
-            return ""
-        return text if len(text) <= max_chars else text[: max_chars - 1] + "…"
-
     # Layout constants
     margin_x = 20
     margin_y = 20
@@ -352,7 +392,7 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
     x_value = x_struct + struct_col_w
     x_ops = [x_value + value_col_w + i * op_col_w for i in range(n_ops)]
 
-    # Compute total size
+    # Total size
     n_rows = len(rows)
     table_height = n_rows * (cell_h + row_gap)
     total_w = x_ops[-1] + op_col_w + margin_x
@@ -402,11 +442,8 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
                 stage="graphics_header",
             )
         )
-    else:
-        # No exemplar reaction found; header will just be blank.
-        pass
 
-    # Caption of full exemplar string below header reaction
+    # Caption for the exemplar SMIRKS
     if exemplar:
         caption = _truncate(exemplar)
         caption_x = total_w / 2
@@ -431,10 +468,10 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
         f'<text x="{x_value}" y="{col_header_y}" font-size="12" '
         f'font-weight="bold" font-family="Helvetica,Arial,sans-serif">Value</text>'
     )
-    for label, x in zip(op_cols, x_ops):
+    for op_label, x in zip(op_cols, x_ops):
         content_parts.append(
             f'<text x="{x}" y="{col_header_y}" font-size="12" '
-            f'font-weight="bold" font-family="Helvetica,Arial,sans-serif">{label}</text>'
+            f'font-weight="bold" font-family="Helvetica,Arial,sans-serif">{op_label}</text>'
         )
 
     # Rows
@@ -458,8 +495,8 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
             f"{html.escape(substrate_name)}</text>"
         )
 
-        # Substrate structure (SMILES/SMARTS): prefer the raw input SMILES
-        # so we do not show atom-map numbers or explicit hydrogens.
+        # Substrate structure pattern:
+        # prefer raw input SMILES to avoid showing map numbers or explicit H.
         sub_pattern = (
             rec.get("smiles_input")
             or rec.get("smiles")
@@ -481,8 +518,8 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
             )
         )
 
-        # Reactivity value: prefer an explicit "value" key (from column C of the CSV),
-        # otherwise fall back to the first non-substrate entry in data.
+        # Reactivity value: use data["value"] when present, otherwise
+        # first non "substrate" entry in the data dict.
         value = None
         data_dict = rec.get("data", {})
         if data_dict:
@@ -500,7 +537,7 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
             f"{html.escape(value_str)}</text>"
         )
 
-        # Abstractions: A..E, RdChiral (substrate side only)
+        # Abstractions: A..E and RdChiral, substrate side only.
         def left_side(field: str) -> str | None:
             smirks = rec.get(field)
             if not smirks:
@@ -516,8 +553,8 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
             "RdChiral": "rdchiral_smirks",
         }
 
-        for label, x in zip(op_cols, x_ops):
-            pattern = left_side(field_map[label])
+        for op_label, x in zip(op_cols, x_ops):
+            pattern = left_side(field_map[op_label])
             content_parts.append(
                 _safe_mol_group(
                     pattern,
@@ -527,10 +564,10 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
                     int(draw_h),
                     err_f=err_f,
                     table_id=table_id,
-                    stage=f"graphics_{label}",
+                    stage=f"graphics_{op_label}",
                     row_idx=rec.get("row", idx),
                     label=substrate_name,
-                    field=field_map[label],
+                    field=field_map[op_label],
                 )
             )
 
@@ -545,15 +582,15 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
     return svg
 
 
-# ------------------------------------------------------------
+# ----------------------------------------------------------------------
 # Main: read JSONL and write SVGs
-# ------------------------------------------------------------
+# ----------------------------------------------------------------------
 
-def main():
+def main() -> None:
     from glob import glob
 
-    OUTPUT_DIR = os.path.abspath("analysis/reactivity_series/out/3_graphics")
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    output_dir = os.path.abspath("analysis/reactivity_series/out/3_graphics")
+    os.makedirs(output_dir, exist_ok=True)
     os.makedirs(LOG_DIR, exist_ok=True)
 
     errors_path = LOG_DIR / "3_graphics.errors.jsonl"
@@ -586,20 +623,19 @@ def main():
         if csv_path.exists():
             try:
                 df = pd.read_csv(csv_path)
-                # Use the third column (index 2) as the value column if it exists
                 if df.shape[1] >= 3:
                     for i in range(len(df)):
                         value_by_row[i] = df.iloc[i, 2]
-            except Exception as e:
+            except Exception as exc:
                 log_error(
                     err_f,
                     table_id=base_id,
                     stage="graphics_value_load",
-                    error=e,
+                    error=exc,
                     extra={"csv_path": str(csv_path)},
                 )
 
-        # Push those values into each record’s data dict under key "value"
+        # Push those values into each record data dict under key "value"
         if value_by_row:
             for rec in rows:
                 idx = rec.get("row")
@@ -608,25 +644,24 @@ def main():
                     data_dict = rec.get("data") or {}
                     if "data" not in rec:
                         rec["data"] = data_dict
-                    # Only set if not already present
                     if "value" not in data_dict:
                         data_dict["value"] = v
 
         print(f"[3_graphics]  - {len(rows)} rows")
         try:
             svg = _build_table_svg(table_id, rows, err_f=err_f)
-        except Exception as e:
+        except Exception as exc:
             print(f"[3_graphics] ERROR building SVG for {table_id}")
             traceback.print_exc()
             log_error(
                 err_f,
                 table_id=table_id,
                 stage="graphics_table",
-                error=e,
+                error=exc,
             )
             continue
 
-        out_path = os.path.join(OUTPUT_DIR, f"{table_id}.svg")
+        out_path = os.path.join(output_dir, f"{table_id}.svg")
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(svg)
         print(f"[3_graphics]  - wrote {out_path}")

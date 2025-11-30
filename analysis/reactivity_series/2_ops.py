@@ -19,18 +19,19 @@ IN_DIR = BASE / "out/1_project"
 OUT_DIR = BASE / "out/2_ops"
 LOG_DIR = BASE / "out/_logs"
 
-# If nonempty, only process tables whose file stem (e.g. "alcohol_pka") is listed here
+# If nonempty, only process tables whose file stem (for example "alcohol_pka") is listed here
 ONLY_TABLES: Iterable[str] = []
 
-# Helper to compute RdChiral operator from a forward SMIRKS string
-def _rdchiral_operator_from_smirks(forward_smirks: str) -> str | None:
-    """Return RdChiral radius=1 (reactants), 0 (products), special_groups=True operator
-    SMIRKS for a forward reaction SMIRKS.
+EVODEX_ABSTRACTION_LEVELS = ("A", "B", "C", "D", "E")
 
-    RdChiral templates are retrosynthetic by design, so we pass the forward
-    reaction to RdChiral with reactants/products swapped (RHS as reactants,
-    LHS as products) and force the desired radius via the internal
-    `get_fragments_for_changed_atoms` helper.
+
+def _rdchiral_operator_from_smirks(forward_smirks: str) -> str | None:
+    """Return a RdChiral operator SMIRKS for a forward reaction SMIRKS.
+
+    The operator uses radius=1 for reactants, radius=0 for products and
+    special_groups=True. RdChiral templates are retrosynthetic, so we pass
+    the forward reaction to RdChiral with reactants and products swapped
+    and force the desired radii via get_fragments_for_changed_atoms.
     """
     if _rdchiral_te is None:
         return None
@@ -47,22 +48,19 @@ def _rdchiral_operator_from_smirks(forward_smirks: str) -> str | None:
 
     te = _rdchiral_te
 
-    # Snapshot rdchiral's global configuration
+    # Snapshot rdchiral global configuration
     orig_VERBOSE = getattr(te, "VERBOSE", False)
     orig_USE_STEREOCHEMISTRY = getattr(te, "USE_STEREOCHEMISTRY", True)
-    orig_MAX_UNMAPPED = getattr(te, "MAXIMUM_NUMBER_UNMAPPED_PRODUCT_ATOMS", 5)
+    orig_MAX_UNMAPPED = getattr(te, "MAXIMUM_NUMBER_UNMAPPED_PRODUCT_ATOMS", 100)
     orig_INCLUDE_ALL_UNMAPPED = getattr(te, "INCLUDE_ALL_UNMAPPED_REACTANT_ATOMS", True)
     orig_get_fragments = te.get_fragments_for_changed_atoms
     orig_get_special_groups = te.get_special_groups
 
-    # Configure for our abstraction: radius=1 (reactants), 0 (products),
-    # special_groups=True, stereo on, and a modest unmapped-atom limit.
+    # Configure radius and other settings
     te.VERBOSE = False
     te.USE_STEREOCHEMISTRY = True
-    te.MAXIMUM_NUMBER_UNMAPPED_PRODUCT_ATOMS = 5
-    te.INCLUDE_ALL_UNMAPPED_REACTANT_ATOMS = True  # or False if we want a tighter core
-
-    # Keep special groups enabled (default behavior) by leaving get_special_groups as-is.
+    te.MAXIMUM_NUMBER_UNMAPPED_PRODUCT_ATOMS = 100
+    te.INCLUDE_ALL_UNMAPPED_REACTANT_ATOMS = True
 
     # Wrap get_fragments_for_changed_atoms to enforce radii
     def _gffca_forced(mols, changed_atom_tags, radius=0, category="reactants", expansion=None):
@@ -95,23 +93,19 @@ def _rdchiral_operator_from_smirks(forward_smirks: str) -> str | None:
         return None
     return tpl["reaction_smarts"]
 
+
 def process_row(row: Dict[str, Any]) -> Dict[str, Any]:
-    """Attach EVODEX operators (A–E) to a single Stage-1 projection row.
+    """Attach EVODEX operators (A to E) and optional RdChiral operator to one row.
 
-    Expects a successful record from 1_project that already contains:
-      - "mapped_substrate_smiles": atom-mapped substrate SMILES
-      - "mapped_product_smiles": atom-mapped product SMILES
+    Expects a successful record from 1_project that already contains
+    "mapped_substrate_smiles" and "mapped_product_smiles". These are combined
+    into a forward EVODEX-P SMIRKS stored as "evodex_p_smirks".
 
-    These are combined into a forward EVODEX-P SMIRKS of the form
-    "evodex_p_smirks" = "{mapped_substrate_smiles}>>{mapped_product_smiles}".
-
-    On success, returns the row augmented with:
-      - "evodex_p_smirks": forward EVODEX-P reaction SMIRKS
-      and for each abstraction level X in {A,B,C,D,E}:
-      - "evodex_x_smirks": operator SMIRKS at abstraction level X
-
-    If RdChiral is available, the row may also be augmented with:
-      - "rdchiral_smirks": RdChiral-style operator SMIRKS
+    On success, returns a copy of the row with the following extra fields:
+      - "evodex_p_smirks"
+      - "evodex_a_smirks", ..., "evodex_e_smirks"
+      - "rdchiral_smirks" (possibly None)
+      - "rdchiral_error" only if RdChiral was unavailable or failed
     """
     mapped_sub = row.get("mapped_substrate_smiles")
     mapped_prod = row.get("mapped_product_smiles")
@@ -119,23 +113,19 @@ def process_row(row: Dict[str, Any]) -> Dict[str, Any]:
     if not mapped_sub or not mapped_prod:
         raise ValueError("Missing mapped_substrate_smiles or mapped_product_smiles in projection row")
 
-    # Forward EVODEX-P SMIRKS constructed directly from projection output
     smirks = f"{mapped_sub}>>{mapped_prod}"
 
     out = dict(row)
+    out["evodeX_p_smirks"] = smirks  # keep spelling consistent with prior stages if applicable
     out["evodex_p_smirks"] = smirks
 
-    # Compute operators for all abstraction levels A–E
-    for level in ("A", "B", "C", "D", "E"):
+    for level in EVODEX_ABSTRACTION_LEVELS:
         op_smirks = extract_operator_by_abstraction(smirks, level)
         key = level.lower()
         out[f"evodex_{key}_smirks"] = op_smirks
 
-    # Optionally compute a RdChiral operator (radius=1, special_groups=True)
-    # from the same fully H-mapped EVODEX-P SMIRKS.
     rdchiral_smirks = None
     if _rdchiral_te is None:
-        # Soft failure: record that RdChiral is unavailable but do not abort the row
         out["rdchiral_error"] = (
             "rdchiral not installed; install with "
             "'pip install git+https://github.com/connorcoley/rdchiral.git'"
@@ -143,34 +133,47 @@ def process_row(row: Dict[str, Any]) -> Dict[str, Any]:
     else:
         try:
             rdchiral_smirks = _rdchiral_operator_from_smirks(smirks)
+            if not rdchiral_smirks:
+                out["rdchiral_error"] = "rdchiral template_extractor returned no template"
         except Exception as e:
-            # Keep the EVODEX fields even if RdChiral fails
+            rdchiral_smirks = None
             out["rdchiral_error"] = f"{type(e).__name__}: {e}"
 
-    if rdchiral_smirks:
-        out["rdchiral_smirks"] = rdchiral_smirks
+    out["rdchiral_smirks"] = rdchiral_smirks
 
     return out
 
 
+def _make_error_record(stage: str, error: str, rec: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a compact error record compatible with earlier pipeline stages."""
+    err_rec: Dict[str, Any] = {
+        "stage": stage,
+        "error": error,
+    }
+    for key in ("table_id", "row", "label"):
+        if key in rec:
+            err_rec[key] = rec[key]
+    return err_rec
+
+
+def _log_rdchiral_error(out_rec: Dict[str, Any], err_f) -> None:
+    """Write a nonfatal RdChiral error record if present in the row."""
+    if "rdchiral_error" not in out_rec:
+        return
+    rd_err = _make_error_record("operator_extraction_rdchiral", out_rec["rdchiral_error"], out_rec)
+    err_f.write(json.dumps(rd_err, ensure_ascii=False) + "\n")
+
+
 def process_file(in_path: Path, out_path: Path, err_f) -> None:
-    """Read a Stage-1 projection JSONL file and write the corresponding Stage-2 operator JSONL file.
+    """Convert a Stage 1 projection JSONL file to a Stage 2 operator JSONL file.
 
-    Error handling is row-local: if operator extraction fails for a row
-    we emit a compact error record of the form used by earlier stages:
-
-      {
-        "table_id": ..., "row": ..., "label": ...,
-        "stage": "operator_extraction",
-        "error": "...stringified exception..."
-      }
-
-    Successful rows are passed through with new EVODEX-E fields added.
+    Error handling is row-local: if operator extraction fails for a row we emit
+    a compact error record with stage set to "operator_extraction". Successful
+    rows are written with EVODEX operator fields added.
     """
-
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with in_path.open("r") as fin, out_path.open("w") as fout:
+    with in_path.open("r", encoding="utf-8") as fin, out_path.open("w", encoding="utf-8") as fout:
         buffer: list[str] = []
 
         def _flush_buffer():
@@ -184,49 +187,35 @@ def process_file(in_path: Path, out_path: Path, err_f) -> None:
         for raw_line in fin:
             line = raw_line.rstrip("\n")
             if not line.strip():
-                # skip blank lines
                 continue
 
-            # Fast path: a single-line JSON object
             stripped = line.strip()
             if not buffer and stripped.startswith("{") and stripped.endswith("}"):
                 rec = json.loads(stripped)
             else:
-                # Accumulate lines until we hit the end of an object (line ending with "}")
                 buffer.append(line)
                 if stripped.endswith("}"):
                     rec = _flush_buffer()
                 else:
-                    # Need more lines to complete this object
                     continue
 
             if rec is None:
-                # Should not happen, but guard anyway
                 continue
 
-            # If a previous stage marked this row as an error, just propagate it
             if "error" in rec:
                 fout.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 continue
 
             try:
                 out_rec = process_row(rec)
+                _log_rdchiral_error(out_rec, err_f)
             except Exception as e:
-                # Fall back to the minimal error schema we have from earlier stages
-                err_rec: Dict[str, Any] = {
-                    "stage": "operator_extraction",
-                    "error": str(e),
-                }
-                # Preserve basic identifiers if present
-                for key in ("table_id", "row", "label"):
-                    if key in rec:
-                        err_rec[key] = rec[key]
+                err_rec = _make_error_record("operator_extraction", str(e), rec)
                 err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
                 fout.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
             else:
                 fout.write(json.dumps(out_rec, ensure_ascii=False) + "\n")
 
-        # In case there is a final buffered object without trailing newline
         if buffer:
             rec = _flush_buffer()
             if rec is not None:
@@ -236,16 +225,11 @@ def process_file(in_path: Path, out_path: Path, err_f) -> None:
                     try:
                         out_rec = process_row(rec)
                     except Exception as e:
-                        err_rec = {
-                            "stage": "operator_extraction",
-                            "error": str(e),
-                        }
-                        for key in ("table_id", "row", "label"):
-                            if key in rec:
-                                err_rec[key] = rec[key]
+                        err_rec = _make_error_record("operator_extraction", str(e), rec)
                         err_f.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
                         fout.write(json.dumps(err_rec, ensure_ascii=False) + "\n")
                     else:
+                        _log_rdchiral_error(out_rec, err_f)
                         fout.write(json.dumps(out_rec, ensure_ascii=False) + "\n")
 
 
@@ -265,7 +249,7 @@ def main() -> None:
         print(f"[2_ops] No input files found in {IN_DIR} (filter={sorted(table_filter)})")
         return
 
-    print(f"[2_ops] Writing Stage-4 operator files to {OUT_DIR}")
+    print(f"[2_ops] Writing Stage 4 operator files to {OUT_DIR}")
 
     with open(errors_path, "w", encoding="utf-8") as err_f:
         for in_path in input_files:
