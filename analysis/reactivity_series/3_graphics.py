@@ -4,21 +4,35 @@ Generate SVG summary tables for reactivity series data.
 
 Inputs
 ------
-- JSONL files in analysis/reactivity_series/out/2_ops
+- JSONL files in out/2_ops relative to this script directory
   Each line is a JSON record with fields including:
     - row: zero-based row index
     - data: dict with at least a "substrate" key and possibly "value"
-    - evodex_*_smirks, rdchiral_smirks: SMIRKS / SMARTS strings
+    - evodex_*_smirks, rdchiral_smirks: SMIRKS or SMARTS strings
 
-- CSV files in analysis/reactivity_series/data/tables
+- CSV files in data/tables
   Column C (zero-based index 2) is used as the "value" column when present.
+
+- YAML metadata in tables_manifest.yaml
+  One or more table definitions with fields including:
+    - table_id
+    - description
+  These are used to construct titles of the form:
+    "<table_id>: <description>".
 
 Outputs
 -------
-- One SVG per input JSONL file in analysis/reactivity_series/out/3_graphics
+- One SVG per input JSONL file in out/3_graphics
 - A JSONL error log in out/_logs/3_graphics.errors.jsonl
 
-All layout constants and drawing behavior are fixed to preserve the original figures.
+Directory layout is assumed to be:
+  analysis/reactivity_series/
+    3_graphics.py              (this script)
+    out/2_ops/                 (JSONL input tables)
+    out/3_graphics/            (SVG output)
+    out/_logs/                 (error logs)
+    data/tables/               (source CSV files)
+    tables_manifest.yaml       (YAML table metadata)
 """
 
 import html
@@ -26,53 +40,46 @@ import json
 import os
 import re
 import traceback
+from glob import glob
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
+import yaml
 from rdkit import Chem
 from rdkit.Chem import rdChemReactions as Reactions
 from rdkit.Chem.Draw import rdMolDraw2D
 
 # ----------------------------------------------------------------------
-# Output and logging configuration
+# Paths and global configuration
 # ----------------------------------------------------------------------
 
+# All paths are resolved relative to the location of this script,
+# which is expected to live in analysis/reactivity_series.
 BASE_DIR = Path(__file__).resolve().parent
 LOG_DIR = BASE_DIR / "out/_logs"
 TABLES_DIR = BASE_DIR / "data/tables"
+OPS_DIR = BASE_DIR / "out/2_ops"
+OUTPUT_DIR = BASE_DIR / "out/3_graphics"
+META_MANIFEST_PATH = BASE_DIR / "tables_manifest.yaml"
 
 
 def log_error(
     fh,
     *,
-    table_id,
-    stage,
-    error,
-    row_idx=None,
-    label=None,
-    extra=None,
+    table_id: str,
+    stage: str,
+    error: Exception | str,
+    row_idx: Optional[int] = None,
+    label: Optional[str] = None,
+    extra: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """
-    Write a single JSON error record to the given file handle.
+    """Write a single JSON error record to an open file handle.
 
-    Parameters
-    ----------
-    fh
-        Open text file handle for JSONL output.
-    table_id
-        Table identifier, usually derived from the JSONL filename.
-    stage
-        Name of the processing stage, for example "graphics_substrate".
-    error
-        Exception instance or message string.
-    row_idx
-        Optional row index associated with the error.
-    label
-        Optional human readable label for the row.
-    extra
-        Optional dict with additional context (for example a SMIRKS string).
+    The caller is responsible for opening and closing the file. This helper
+    serializes a single error record as one JSONL line and flushes the file.
     """
-    rec: dict[str, object] = {
+    rec: Dict[str, Any] = {
         "table_id": table_id,
         "stage": stage,
     }
@@ -80,6 +87,7 @@ def log_error(
     if isinstance(error, Exception):
         rec["error_type"] = type(error).__name__
         rec["error_message"] = str(error)
+        rec["traceback"] = traceback.format_exc()
     else:
         rec["error"] = str(error)
 
@@ -90,9 +98,6 @@ def log_error(
     if extra:
         rec["extra"] = extra
 
-    if isinstance(error, Exception):
-        rec["traceback"] = traceback.format_exc()
-
     fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
     fh.flush()
 
@@ -101,12 +106,12 @@ def log_error(
 # Low level drawing helpers
 # ----------------------------------------------------------------------
 
-def _draw_mol_svg(pattern: str, w: int, h: int) -> str:
-    """
-    Render a substrate side SMARTS or SMILES pattern to an SVG string.
 
-    The pattern is parsed as SMARTS first, then as SMILES if SMARTS parsing fails.
-    An empty or whitespace only pattern raises ValueError.
+def _draw_mol_svg(pattern: str, w: int, h: int) -> str:
+    """Render a substrate side SMARTS or SMILES pattern to an SVG string.
+
+    The pattern is parsed as SMARTS first, then as SMILES if SMARTS parsing
+    fails. An empty or whitespace only pattern raises ValueError.
     """
     if not pattern or pattern.strip() == "":
         raise ValueError("SMARTS/SMILES render error: empty pattern")
@@ -127,8 +132,7 @@ def _draw_mol_svg(pattern: str, w: int, h: int) -> str:
 
 
 def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
-    """
-    Render an RdChiral substrate side SMARTS pattern with explicit labels.
+    """Render an RdChiral substrate side SMARTS pattern with explicit labels.
 
     Atom labels preserve:
     - aromaticity (for example "c" for aromatic carbon)
@@ -147,7 +151,7 @@ def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
         )
 
     # Map number -> base symbol with explicit H decorator, for example "cH" or "nH".
-    H_decorated: dict[int, str] = {}
+    H_decorated: Dict[int, str] = {}
     try:
         for match in re.finditer(r"\[([A-Za-z][a-z]?)H[^:]*:(\d+)\]", pattern):
             base_sym = match.group(1)
@@ -187,8 +191,11 @@ def _draw_rdchiral_mol_svg(pattern: str, w: int, h: int) -> str:
 
 
 def _draw_rxn_svg(smirks: str, w: int, h: int) -> str:
-    """
-    Render a full reaction SMIRKS or SMARTS string to an SVG string.
+    """Render a full reaction SMIRKS or SMARTS string to an SVG string.
+
+    For depiction, each template molecule is converted to a plain SMILES based
+    molecule to avoid ambiguous query style bonds while preserving
+    isomeric and stereochemical information.
     """
     if not smirks or smirks.strip() == "":
         raise ValueError("Reaction render error: empty SMIRKS")
@@ -199,26 +206,39 @@ def _draw_rxn_svg(smirks: str, w: int, h: int) -> str:
             f"Reaction render error: could not parse SMIRKS: {smirks}"
         )
 
+    # Build a depiction only reaction using non query SMILES templates.
+    clean_rxn = Reactions.ChemicalReaction()
+
+    for mol in rxn.GetReactants():
+        smi = Chem.MolToSmiles(mol, isomericSmiles=True)
+        clean_rxn.AddReactantTemplate(Chem.MolFromSmiles(smi))
+
+    for mol in rxn.GetProducts():
+        smi = Chem.MolToSmiles(mol, isomericSmiles=True)
+        clean_rxn.AddProductTemplate(Chem.MolFromSmiles(smi))
+
+    for mol in rxn.GetAgents():
+        smi = Chem.MolToSmiles(mol, isomericSmiles=True)
+        clean_rxn.AddAgentTemplate(Chem.MolFromSmiles(smi))
+
     drawer = rdMolDraw2D.MolDraw2DSVG(w, h)
-    drawer.drawOptions().addStereoAnnotation = True
-    drawer.DrawReaction(rxn)
+    opts = drawer.drawOptions()
+    opts.addStereoAnnotation = True
+    drawer.DrawReaction(clean_rxn)
     drawer.FinishDrawing()
     return drawer.GetDrawingText()
 
 
 def _strip_xml_header(svg_text: str) -> str:
-    """
-    Remove any XML declaration at the start of an SVG string.
-    """
+    """Remove any XML declaration at the start of an SVG string."""
     return re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", svg_text)
 
 
 def _svg_as_group(svg_text: str, x: int, y: int) -> str:
-    """
-    Wrap an RDKit generated <svg> block in a translated <g> element.
+    """Wrap an RDKit generated svg block in a translated group.
 
-    The inner content between <svg> and </svg> is extracted to avoid nested
-    <svg> elements.
+    The inner content between the outer svg tags is extracted to avoid nested
+    svg elements in the final output.
     """
     s = _strip_xml_header(svg_text).strip()
     m_open = re.search(r"<svg\b[^>]*>", s, flags=re.I)
@@ -233,9 +253,7 @@ def _svg_as_group(svg_text: str, x: int, y: int) -> str:
 
 
 def _error_panel(x: int, y: int, w: int, h: int, msg: str = "Error") -> str:
-    """
-    Draw a light red rounded rectangle with a centered error label.
-    """
+    """Draw a light red rounded rectangle with a centered error label."""
     return (
         f'<g transform="translate({x},{y})">'
         f'<rect x="0" y="0" width="{w}" height="{h}" '
@@ -248,25 +266,25 @@ def _error_panel(x: int, y: int, w: int, h: int, msg: str = "Error") -> str:
 
 
 def _safe_mol_group(
-    pattern: str | None,
+    pattern: Optional[str],
     x: int,
     y: int,
     w: int,
     h: int,
     *,
     err_f=None,
-    table_id: str | None = None,
+    table_id: Optional[str] = None,
     stage: str = "graphics_mol",
-    row_idx: int | None = None,
-    label: str | None = None,
-    field: str | None = None,
+    row_idx: Optional[int] = None,
+    label: Optional[str] = None,
+    field: Optional[str] = None,
 ) -> str:
-    """
-    Draw a molecule pattern in a translated group.
+    """Draw a molecule pattern in a translated group.
 
-    On success, returns a <g> with drawn content.
-    On failure or missing pattern, returns an error panel and logs the error
-    if an error file handle is provided.
+    On success this returns a group with the drawn content. On failure or when
+    the pattern is missing this returns an error panel. Errors are reported as
+    debug prints on standard output only. The extra metadata arguments are
+    accepted for symmetry with other helpers but are not used for JSON logging.
     """
     if not pattern:
         return _error_panel(x, y, w, h, "No pattern")
@@ -278,43 +296,32 @@ def _safe_mol_group(
             svg = _draw_mol_svg(pattern, w, h)
         return _svg_as_group(svg, x, y)
     except Exception as exc:
-        if err_f and table_id:
-            extra = {"pattern": pattern}
-            if field:
-                extra["field"] = field
-            log_error(
-                err_f,
-                table_id=table_id,
-                stage=stage,
-                error=exc,
-                row_idx=row_idx,
-                label=label,
-                extra=extra,
-            )
-        else:
-            print(
-                f"[3_graphics] _safe_mol_group error for pattern={pattern!r}: {exc}"
-            )
+        # Keep this lightweight: print for interactive debugging, but do not
+        # write per molecule failures to the JSONL error log.
+        print(
+            f"[3_graphics] _safe_mol_group error for pattern={pattern!r}: {exc}"
+        )
         return _error_panel(x, y, w, h, "Parse error")
 
 
 def _safe_rxn_group(
-    smirks: str | None,
+    smirks: Optional[str],
     x: int,
     y: int,
     w: int,
     h: int,
     *,
     err_f=None,
-    table_id: str | None = None,
+    table_id: Optional[str] = None,
     stage: str = "graphics_rxn",
 ) -> str:
-    """
-    Draw a reaction SMIRKS string in a translated group.
+    """Draw a reaction SMIRKS string in a translated group.
 
-    On success, returns a <g> with drawn content.
-    On failure or missing SMIRKS, returns an error panel and logs the error
-    if an error file handle is provided.
+    On success this returns a group with the drawn content. On failure or when
+    the SMIRKS string is missing this returns an error panel. Errors are
+    reported as debug prints on standard output only. The extra metadata
+    arguments are accepted for symmetry with other helpers but are not used
+    for JSON logging.
     """
     if not smirks:
         return _error_panel(x, y, w, h, "No SMIRKS")
@@ -323,51 +330,86 @@ def _safe_rxn_group(
         svg = _draw_rxn_svg(smirks, w, h)
         return _svg_as_group(svg, x, y)
     except Exception as exc:
-        if err_f and table_id:
-            log_error(
-                err_f,
-                table_id=table_id,
-                stage=stage,
-                error=exc,
-                extra={"smirks": smirks},
-            )
-        else:
-            print(
-                f"[3_graphics] _safe_rxn_group error for smirks={smirks!r}: {exc}"
-            )
+        # Likewise, avoid per SMIRKS logging and just print a debug line.
+        print(
+            f"[3_graphics] _safe_rxn_group error for smirks={smirks!r}: {exc}"
+        )
         return _error_panel(x, y, w, h, "Parse error")
+
+
+# ----------------------------------------------------------------------
+# Metadata loading (YAML)
+# ----------------------------------------------------------------------
+
+
+def _load_table_metadata() -> Dict[str, Dict[str, Any]]:
+    """Load YAML table metadata from the manifest file and index by table_id.
+
+    The manifest file tables_manifest.yaml may have one of several shapes:
+      - a top level list of table dicts
+      - a top level dict with a "tables" key containing that list
+      - a top level dict mapping table_id to table dicts
+
+    Each table entry with a string table_id is stored in a dict keyed by
+    that table_id. A short debug line is printed for each entry found.
+    """
+    meta_by_id: Dict[str, Dict[str, Any]] = {}
+
+    manifest = META_MANIFEST_PATH
+    if not manifest.exists():
+        print(f"[3_graphics] YAML: manifest not found at {manifest}")
+        return meta_by_id
+
+    try:
+        with open(manifest, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+    except Exception as exc:
+        print(f"[3_graphics] WARNING: failed to read YAML manifest {manifest}: {exc}")
+        return meta_by_id
+
+    def _consume_entry(entry: Any) -> None:
+        if not isinstance(entry, dict):
+            return
+        table_id = entry.get("table_id")
+        if not isinstance(table_id, str):
+            return
+        meta_by_id[table_id] = entry
+
+    if isinstance(data, list):
+        for entry in data:
+            _consume_entry(entry)
+    elif isinstance(data, dict):
+        if "tables" in data and isinstance(data["tables"], list):
+            for entry in data["tables"]:
+                _consume_entry(entry)
+        else:
+            for entry in data.values():
+                _consume_entry(entry)
+
+    if not meta_by_id:
+        print(f"[3_graphics] YAML: no table_id entries found in manifest {manifest}")
+    return meta_by_id
 
 
 # ----------------------------------------------------------------------
 # Table SVG builder
 # ----------------------------------------------------------------------
 
-print(
-    "[3_graphics] OUTPUT_DIR:",
-    os.path.abspath("analysis/reactivity_series/out/3_graphics"),
-)
 
-
-def _truncate(text: str | None, max_chars: int = 60) -> str:
-    """
-    Truncate a string to at most max_chars characters with an ellipsis.
-    """
-    if text is None:
-        return ""
-    if len(text) <= max_chars:
-        return text
-    return text[: max_chars - 1] + "…"
-
-
-def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
-    """
-    Build a single SVG string for one table.
+def _build_table_svg(
+    table_id: str,
+    rows: List[Dict[str, Any]],
+    *,
+    err_f=None,
+    description: Optional[str] = None,
+) -> str:
+    """Build a single SVG string for one table.
 
     Columns
     -------
     Substrate name, Substrate structure, Value, A, B, C, D, E, RdChiral.
 
-    For each abstraction column (A through E, RdChiral) only the substrate
+    For each abstraction column (A through E and RdChiral) only the substrate
     side of the SMIRKS string is rendered.
     """
     # Layout constants
@@ -398,7 +440,7 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
     total_w = x_ops[-1] + op_col_w + margin_x
     total_h = margin_y + header_reaction_h + header_gap + table_height + margin_y
 
-    # Choose an exemplar reaction for the header (full SMIRKS)
+    # Choose an exemplar reaction for the header (full SMIRKS).
     exemplar = None
     exemplar_keys = [
         "evodex_p_smirks",
@@ -417,10 +459,19 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
         if exemplar:
             break
 
-    content_parts: list[str] = []
+    content_parts: List[str] = []
 
-    # Title
-    title = f"Table: {table_id}"
+    # Title: use the YAML style table identifier, plus optional description.
+    # Filename identifiers may include a .project suffix that does not appear
+    # in the CSV or YAML metadata, so strip that here.
+    base_id = table_id.replace(".project", "")
+    title_id = base_id or table_id
+
+    if description:
+        title = f"{title_id}: {description}"
+    else:
+        title = title_id
+
     content_parts.append(
         f'<text x="{total_w/2}" y="{margin_y}" text-anchor="middle" '
         f'font-size="20" font-family="Helvetica,Arial,sans-serif">'
@@ -443,9 +494,9 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
             )
         )
 
-    # Caption for the exemplar SMIRKS
+    # Caption for the exemplar SMIRKS (no truncation; show full string).
     if exemplar:
-        caption = _truncate(exemplar)
+        caption = exemplar
         caption_x = total_w / 2
         caption_y = margin_y + header_reaction_h + 15
         content_parts.append(
@@ -478,6 +529,15 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
     y0 = col_header_y + 20
     draw_h = cell_h - 26
 
+    field_map = {
+        "A": "evodex_a_smirks",
+        "B": "evodex_b_smirks",
+        "C": "evodex_c_smirks",
+        "D": "evodex_d_smirks",
+        "E": "evodex_e_smirks",
+        "RdChiral": "rdchiral_smirks",
+    }
+
     for idx, rec in enumerate(rows):
         row_y = y0 + idx * (cell_h + row_gap)
         label_y = row_y + cell_h / 2 + 4
@@ -495,8 +555,8 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
             f"{html.escape(substrate_name)}</text>"
         )
 
-        # Substrate structure pattern:
-        # prefer raw input SMILES to avoid showing map numbers or explicit H.
+        # Substrate structure pattern: prefer raw input SMILES to avoid showing
+        # map numbers or explicit hydrogen labels.
         sub_pattern = (
             rec.get("smiles_input")
             or rec.get("smiles")
@@ -519,7 +579,7 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
         )
 
         # Reactivity value: use data["value"] when present, otherwise
-        # first non "substrate" entry in the data dict.
+        # the first non "substrate" entry in the data dict.
         value = None
         data_dict = rec.get("data", {})
         if data_dict:
@@ -537,21 +597,12 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
             f"{html.escape(value_str)}</text>"
         )
 
-        # Abstractions: A..E and RdChiral, substrate side only.
-        def left_side(field: str) -> str | None:
+        # Abstractions: A to E and RdChiral, substrate side only.
+        def left_side(field: str) -> Optional[str]:
             smirks = rec.get(field)
             if not smirks:
                 return None
             return smirks.split(">>", 1)[0]
-
-        field_map = {
-            "A": "evodex_a_smirks",
-            "B": "evodex_b_smirks",
-            "C": "evodex_c_smirks",
-            "D": "evodex_d_smirks",
-            "E": "evodex_e_smirks",
-            "RdChiral": "rdchiral_smirks",
-        }
 
         for op_label, x in zip(op_cols, x_ops):
             pattern = left_side(field_map[op_label])
@@ -583,31 +634,31 @@ def _build_table_svg(table_id: str, rows: list[dict], err_f=None) -> str:
 
 
 # ----------------------------------------------------------------------
-# Main: read JSONL and write SVGs
+# Main
 # ----------------------------------------------------------------------
 
-def main() -> None:
-    from glob import glob
 
-    output_dir = os.path.abspath("analysis/reactivity_series/out/3_graphics")
-    os.makedirs(output_dir, exist_ok=True)
+def main() -> None:
+    """Entry point for building SVG tables for all JSONL inputs."""
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(LOG_DIR, exist_ok=True)
 
     errors_path = LOG_DIR / "3_graphics.errors.jsonl"
     err_f = open(errors_path, "w", encoding="utf-8")
 
-    input_dir = "analysis/reactivity_series/out/2_ops"
-    paths = sorted(glob(os.path.join(input_dir, "*.jsonl")))
+    # Load YAML metadata once and index by table_id.
+    meta_by_id = _load_table_metadata()
+
+    paths = sorted(glob(str(OPS_DIR / "*.jsonl")))
     if not paths:
-        print(f"[3_graphics] No input files found in {input_dir}")
+        print(f"[3_graphics] No input files found in {OPS_DIR}")
         return
 
     for path in paths:
         table_id = os.path.splitext(os.path.basename(path))[0]
-        print(f"[3_graphics] Processing {table_id} from {path}")
-        rows: list[dict] = []
+        rows: List[Dict[str, Any]] = []
 
-        # Load JSONL rows from 2_ops
+        # Load JSONL rows from out/2_ops.
         with open(path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -615,10 +666,12 @@ def main() -> None:
                     continue
                 rows.append(json.loads(line))
 
-        # Attach values from the original CSV (column C) if available
+        # Attach values from the original CSV (column C) if available.
+        # Filenames may include a .project suffix that CSV files and YAML
+        # entries do not, so use the base identifier for those lookups.
         base_id = table_id.replace(".project", "")
         csv_path = TABLES_DIR / f"{base_id}.csv"
-        value_by_row: dict[int, object] = {}
+        value_by_row: Dict[int, Any] = {}
 
         if csv_path.exists():
             try:
@@ -635,7 +688,7 @@ def main() -> None:
                     extra={"csv_path": str(csv_path)},
                 )
 
-        # Push those values into each record data dict under key "value"
+        # Push those values into each record data dict under key "value".
         if value_by_row:
             for rec in rows:
                 idx = rec.get("row")
@@ -647,9 +700,16 @@ def main() -> None:
                     if "value" not in data_dict:
                         data_dict["value"] = v
 
-        print(f"[3_graphics]  - {len(rows)} rows")
+        # Lookup table level description from YAML metadata using base_id.
+        description: Optional[str] = None
+        meta = meta_by_id.get(base_id)
+        if isinstance(meta, dict):
+            desc = meta.get("description")
+            if isinstance(desc, str):
+                description = desc
+
         try:
-            svg = _build_table_svg(table_id, rows, err_f=err_f)
+            svg = _build_table_svg(table_id, rows, err_f=err_f, description=description)
         except Exception as exc:
             print(f"[3_graphics] ERROR building SVG for {table_id}")
             traceback.print_exc()
@@ -661,10 +721,9 @@ def main() -> None:
             )
             continue
 
-        out_path = os.path.join(output_dir, f"{table_id}.svg")
+        out_path = OUTPUT_DIR / f"{table_id}.svg"
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(svg)
-        print(f"[3_graphics]  - wrote {out_path}")
 
 
 if __name__ == "__main__":

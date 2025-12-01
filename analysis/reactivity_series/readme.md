@@ -116,6 +116,9 @@ All output files are written to the `out/` directory, which is created automatic
 - **Campodonico_2020**  
   Campodónico, P. R.; Olivares, B.; Tapia, R. A. *Experimental Analyses Emphasize the Stability of the Meisenheimer Complex in a SNAr Reaction Toward Trends in Reaction Pathways.* **Front. Chem.** 2020, 8, 583. https://doi.org/10.3389/fchem.2020.00583.
 
+- **deGrip_and_Lugtenburg_2022**  
+  de Grip, W. J.; Lugtenburg, J. *Isorhodopsin: An Undervalued Visual Pigment Analog.* **Colorants** 2022, 1 (3), 256–279. https://doi.org/10.3390/colorants1030016.
+
 - **Howard_Ingold_2011**  
   Howard, J. A.; Ingold, K. U. *Absolute Rate Constants for Hydrocarbon Autoxidation. VI. Alkyl Aromatic and Olefinic Hydrocarbons.* **Can. J. Chem.** 1967, 45, 793–802. https://doi.org/10.1139/v67-132.
 

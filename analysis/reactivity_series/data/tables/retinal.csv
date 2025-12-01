@@ -1,0 +1,4 @@
+substrate,smiles,quantum_yield
+"11-cis-retinal",CC1=C(/C=C/C(C)=C/C=C\C(C)=C\C=O)C(C)(C)CCC1,0.65
+"rhodopsin",CC1=C(/C=C/C(C)=C/C=C\C(C)=C\\C=[N+]([At])C)C(C)(C)CCC1,0.2-0.3
+"isorhodopsin",CC1=C(/C=C/C(C)=C\C=C\C(C)=C\C=[N+]([At])C)C(C)(C)CCC1,0.25

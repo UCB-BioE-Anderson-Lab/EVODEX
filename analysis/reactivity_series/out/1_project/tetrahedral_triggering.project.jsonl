@@ -1,0 +1,9 @@
+{
+  "table_id": "tetrahedral_triggering",
+  "row": 0,
+  "label": "bromochlorobutane",
+  "smiles_input": "[C@]([Br])([Cl])([At])CCC",
+  "mapped_substrate_smiles": "[C@:1]([Br:2])([Cl:3])([H:4])[C:5]([C:6]([C:7]([H:12])([H:13])[H:14])([H:10])[H:11])([H:8])[H:9]",
+  "mapped_product_smiles": "[C@@:1]([Br:2])([Cl:3])([H:4])[C:5]([C:6]([C:7]([H:12])([H:13])[H:14])([H:10])[H:11])([H:8])[H:9]",
+  "image": "render/1_project/tetrahedral_triggering/000_bromochlorobutane.png"
+}

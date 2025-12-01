@@ -1,0 +1,9 @@
+{
+  "table_id": "cis_trans_triggering",
+  "row": 0,
+  "label": "hexene",
+  "smiles_input": "C/C=C\\\\CCC",
+  "mapped_substrate_smiles": "[C:1]([C:2](=[C:3]([C:4]([C:5]([C:6]([H:16])([H:17])[H:18])([H:14])[H:15])([H:12])[H:13])[H:11])[H:10])([H:7])([H:8])[H:9]",
+  "mapped_product_smiles": "[C:1](/[C:2](=[C:3](/[C:4]([C:5]([C:6]([H:16])([H:17])[H:18])([H:14])[H:15])([H:12])[H:13])[H:11])[H:10])([H:7])([H:8])[H:9]",
+  "image": "render/1_project/cis_trans_triggering/000_hexene.png"
+}

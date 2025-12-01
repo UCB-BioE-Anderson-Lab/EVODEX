@@ -1,3 +1,31 @@
+- table_id: tetrahedral_triggering
+  description: "Epimerization of a bromochloromethyl stereocenter"
+  reaction_template: "[C@:1]([Br:2])([Cl:3])([At:4])[C:5]>>[C@@:1]([Br:2])([Cl:3])([At:4])[C:5]"
+  reactivity_type: "NA"
+  units: "NA"
+  context: "Toy epimerization example"
+  source_ref: "NA"
+  provenance_type: "model_constructed"
+
+- table_id: cis_trans_triggering
+  description: "cis/trans isomerization"
+  reaction_template: "[C:1]/[C:2]=[C:3]\\[C:4]>>[C:1]/[C:2]=[C:3]/[C:4]"
+  reactivity_type: "NA"
+  units: "NA"
+  context: "Toy isomerization example"
+  source_ref: "NA"
+  provenance_type: "model_constructed"
+
+- table_id: retinal
+  description: "Relative photochemical reactivity (quantum yield) of retinal and opsin-bound retinals."
+  reaction_template: "[C:1]/[C:2]([At])=[C:3]([At])\\[C:4]>>[C:1]/[C:2]([Cl])=[C:3]([Cl])/[C:4]"
+  reactivity_type: "quantum_yield"
+  units: "dimensionless"
+  context: "This table compares cis→trans photoisomerization of retinal in solution and in the opsin active site, emphasizing that isomerization efficiency depends on how the chromophore is positioned and preorganized rather than on conjugation alone. Free retinal isomerizes with modest efficiency because the chain is flexible and unconstrained. In rhodopsin, 11‑cis retinal is pre-twisted and aligned so that excitation directly drives the reactive bond, giving high efficiency. In isorhodopsin, 9‑cis retinal is forced into a less favorable geometry, lowering reactivity. The Ts atoms in the reaction template are included to ensure RdChiral correctly triggers on the transformation."
+  source_ref: "deGrip_and_Lugtenburg_2022"
+  source_page: 262
+  provenance_type: "data_extracted"
+
 - table_id: steric_sn2
   description: "Relative SN2 rates for primary alkyl bromides with ethanol."
   reaction_template: "[C:1][Br]>>[C:1][O]C([At])([At])C([At])([At])([At])"

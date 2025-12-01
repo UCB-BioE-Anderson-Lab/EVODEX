@@ -1,0 +1,2 @@
+{"stage": "operator_extraction_rdchiral", "error": "rdchiral template_extractor returned no template", "table_id": "cis_trans_triggering", "row": 0, "label": "hexene"}
+{"stage": "operator_extraction_rdchiral", "error": "rdchiral template_extractor returned no template", "table_id": "tetrahedral_triggering", "row": 0, "label": "bromochlorobutane"}
