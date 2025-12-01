@@ -151,7 +151,7 @@
   reaction_template: "[C:1]=[C:2]>>[C:1][C:2]OO"
   reactivity_type: "k_rel"
   units: "relative rate (dimensionless)"
-  context: "Peroxyl radicals abstract allylic and doubly allylic C–H bonds far more rapidly than non-conjugated alkenes because conjugation stabilizes the resulting carbon radical. The trend matches biological autoxidation and lipoxygenase catalysis, where allylic radical stabilization controls selectivity."
+  context: "Warning: this table does not get mapped correctly. Peroxyl radicals abstract allylic and doubly allylic C–H bonds far more rapidly than non-conjugated alkenes because conjugation stabilizes the resulting carbon radical. The trend matches biological autoxidation and lipoxygenase catalysis, where allylic radical stabilization controls selectivity."
   source_ref: "Howard_Ingold_2011"
   source_page: 796
   provenance_type: "data_extracted"
