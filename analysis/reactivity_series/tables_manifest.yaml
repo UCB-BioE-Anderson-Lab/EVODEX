@@ -158,7 +158,7 @@
 
 - table_id: aryl_bromination
   description: "Relative rates of electrophilic aromatic bromination of benzene derivatives."
-  reaction_template: "[c:1]([*:7])1[c:2]([At])[c:3][c:4]([At])[c:5][c:6]([At])1>>[c:1]([*:7])1[c:2]([At])[c:3][c:4](Br)[c:5][c:6]([At])1"
+  reaction_template: "[c:1]([*:7])1[c:2]([At])[c:3]([At])[c:4]([At])[c:5]([At])[c:6]([At])1>>[c:1]([*:7])1[c:2]([At])[c:3]([At])[c:4]([Br])[c:5]([At])[c:6]([At])1"
   reactivity_type: "k"
   units: "1/M·s"
   context: "This table reports relative rates of bromination for para-substituted benzene derivatives, illustrating the strong activating influence of electron-donating substituents. Electron-donating groups stabilize the σ-complex intermediate formed during electrophilic attack by delocalizing positive charge into the ring, greatly accelerating substitution. Methyl (inductive) and especially methoxy or hydroxy (resonance) groups show dramatic rate enhancement compared to unsubstituted benzene, while dimethylamino provides an even stronger resonance donation. The comparable reactivity of OH and OCH₃ highlights that both groups donate through resonance to a similar extent."
