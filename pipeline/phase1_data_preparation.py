@@ -1,184 +1,389 @@
+"""
+Phase 1: EVODEX-R data preparation.
+
+This script prepares the EVODEX-R dataset from raw mapped reactions.
+It performs the following steps:
+
+1. Read raw mapped reaction SMILES from data/raw/raw_reactions.csv.
+2. Validate that each reaction parses and can be hashed.
+3. Write a normalized filtered CSV with basic error logging.
+4. Add explicit hydrogens and hydrogen atom maps using hydrogen_mapper.
+5. Deduplicate reactions by hash and compute mining statistics.
+6. Write:
+   - data/processed/hydrogen_mapped_reactions.csv (intermediate)
+   - data/processed/temp_evodex_r_preliminary.csv (deduplicated EVODEX-R)
+   - data/errors/Phase1_evodex_report.txt (summary report)
+   - data/errors/data_preparation_errors.csv (detailed error log, if any).
+"""
+
 import csv
 import os
 import time
-from collections import defaultdict, Counter
 import statistics
-from evodex.astatine import hydrogen_to_astatine_reaction
-from evodex.mapping import map_atoms
+from collections import Counter
+from typing import Dict, List, Tuple
+
+from evodex.hydrogen_mapper import map_hydrogens_in_reaction
 from evodex.utils import reaction_hash
-from pipeline.config import load_paths
 from pipeline.version import __version__
 
-# Phase 1: Data Preparation
-# This script starts from the BRENDA dataset (downloaded via EnzymeMap) and reduces it to a deduplicated bag of unique reactions.
-# The reactions are stripped of enzyme-specific information, retaining only substrate and product SMILES.
-# Reactions come with atom maps already applied. Hydrogens are replaced with astatines, and new atom maps are assigned to the 
-# astatines using the next available map index.
+
+# ---------------------------------------------------------------------------
+# Path configuration (simple hard-coded relative paths)
+# ---------------------------------------------------------------------------
+
+# Project root (.. from pipeline/)
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+RAW_DIR = os.path.join(DATA_DIR, "raw")
+PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
+ERRORS_DIR = os.path.join(DATA_DIR, "errors")
+
+# Phase 1 inputs / outputs
+RAW_DATA = os.path.join(RAW_DIR, "raw_reactions.csv")
+FILTERED_DATA = os.path.join(PROCESSED_DIR, "filtered_reactions.csv")
+HYDROGEN_MAPPED_DATA = os.path.join(PROCESSED_DIR, "hydrogen_mapped_reactions.csv")
+
+# Deduplicated EVODEX-R (Phase 1 product)
+EVODEX_R_PRELIMINARY = os.path.join(
+    PROCESSED_DIR, "temp_evodex_r_preliminary.csv"
+)
+
+# Reports / logs
+PHASE1_REPORT = os.path.join(ERRORS_DIR, "Phase1_evodex_report.txt")
+ERROR_LOG_CSV = os.path.join(ERRORS_DIR, "data_preparation_errors.csv")
 
 
-def ensure_directories(paths: dict):
+# ---------------------------------------------------------------------------
+# Utility helpers
+# ---------------------------------------------------------------------------
+
+
+def ensure_directories() -> None:
     """Ensure that all necessary directories exist."""
-    for path in paths.values():
-        dir_path = os.path.dirname(path)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
+    for path in [RAW_DIR, PROCESSED_DIR, ERRORS_DIR]:
+        os.makedirs(path, exist_ok=True)
 
-def write_row(writer, data):
-    """Write a row to the CSV file."""
+
+def write_row(writer: csv.DictWriter, data: Dict) -> None:
     writer.writerow(data)
 
-def process_raw_data(input_file, output_file):
-    """Process the initial raw data file."""
-    total_raw_reactions = 0
-    valid_reactions = 0
 
-    with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+def log_progress(prefix: str, idx: int, step: int = 100) -> None:
+    if idx % step == 0:
+        print(f"[{time.strftime('%H:%M:%S')}] {prefix} {idx}...")
+
+
+# ---------------------------------------------------------------------------
+# Stage 0: validate and normalize raw reactions
+# ---------------------------------------------------------------------------
+
+
+def process_raw_data(input_file: str, output_file: str) -> Tuple[int, int]:
+    """
+    Validate raw mapped reaction SMILES and write a normalized CSV.
+
+    Parameters
+    ----------
+    input_file:
+        CSV file containing at least columns "rxn_idx" and "mapped".
+    output_file:
+        Destination CSV with columns id, smirks, sources, error.
+
+    Returns
+    -------
+    total_raw, valid
+        The number of raw rows processed and the number that passed validation.
+    """
+    total_raw = 0
+    valid = 0
+
+    with open(input_file, "r") as infile, open(output_file, "w", newline="") as outfile:
         reader = csv.DictReader(infile)
-        fieldnames = ['id', 'smirks', 'sources', 'error']
+        fieldnames = ["id", "smirks", "sources", "error"]
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
+
         for row in reader:
+            # Skip completely empty lines
             if not any(row.values()):
                 continue
-            total_raw_reactions += 1
-            if total_raw_reactions % 100 == 0:
-                print(f"[{time.strftime('%H:%M:%S')}] Processed {total_raw_reactions} raw reactions...")
-            try:
-                # This is a validation step to exclude any malformed data
-                reaction_hash(row['mapped'])
-                valid_reactions += 1
 
-                # Write the validated data row
-                new_row = {'id': row['rxn_idx'], 'smirks': row['mapped'], 'sources': row.get('rxn_idx', ''), 'error': ''}
-            except Exception as e:
-                # Write an erroneous data row
-                new_row = {'id': row['rxn_idx'], 'smirks': '', 'sources': '', 'error': str(e)}
+            total_raw += 1
+            log_progress("Processed raw reactions", total_raw)
+
+            rxn_id = row.get("rxn_idx", "")
+            mapped = row.get("mapped", "")
+
+            if not mapped:
+                new_row = {
+                    "id": rxn_id,
+                    "smirks": "",
+                    "sources": "",
+                    "error": "Missing mapped reaction SMILES.",
+                }
+                write_row(writer, new_row)
+                continue
+
+            try:
+                # Sanity check that the reaction can be hashed
+                reaction_hash(mapped)
+                valid += 1
+                new_row = {
+                    "id": rxn_id,
+                    "smirks": mapped,
+                    "sources": rxn_id,
+                    "error": "",
+                }
+            except Exception as exc:
+                new_row = {
+                    "id": rxn_id,
+                    "smirks": "",
+                    "sources": "",
+                    "error": str(exc),
+                }
+
             write_row(writer, new_row)
 
-    return total_raw_reactions, valid_reactions
+    return total_raw, valid
 
-def process_data(input_file, output_file, transformation_function, stage_name, error_log):
-    """General function to process data with transformation."""
-    with open(input_file, 'r') as infile, open(output_file, 'w', newline='') as outfile:
+
+# ---------------------------------------------------------------------------
+# Generic row-wise processing helper
+# ---------------------------------------------------------------------------
+
+
+def process_data(
+    input_file: str,
+    output_file: str,
+    transformation_function,
+    stage_name: str,
+    error_log: List[Dict],
+) -> None:
+    """
+    Apply a row-wise transformation function to a CSV file with columns
+    id, smirks, sources, error.
+
+    Rows that already have a non-empty error field are passed through
+    unchanged. Errors raised by the transformation are captured and
+    written to the error log.
+    """
+    import traceback
+
+    with open(input_file, "r") as infile, open(output_file, "w", newline="") as outfile:
         reader = csv.DictReader(infile)
-        fieldnames = ['id', 'smirks', 'sources', 'error']
+        fieldnames = ["id", "smirks", "sources", "error"]
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
+
         for idx, row in enumerate(reader, start=1):
-            if idx % 100 == 0:
-                print(f"[{time.strftime('%H:%M:%S')}] {stage_name} processing row {idx}...")
-            if row['error']:  # Skip processing if there's an existing error
+            log_progress(f"{stage_name} processing row", idx)
+
+            if row.get("error"):
                 write_row(writer, row)
                 continue
+
             try:
                 new_data = transformation_function(row)
                 write_row(writer, new_data)
-            except Exception as e:
-                import traceback
-                error_msg = f"{str(e)}\n{traceback.format_exc()}"
-                row['error'] = error_msg
-                error_log.append({**row, 'stage': stage_name})
+            except Exception as exc:
+                error_msg = f"{exc}\n{traceback.format_exc()}"
+                row["error"] = error_msg
+                error_log.append({**row, "stage": stage_name})
                 write_row(writer, row)
 
 
-def main():
-    start_time = time.time()
-    print("Phase 1 data preparation started...")
+# ---------------------------------------------------------------------------
+# Stage 1: add explicit hydrogens and hydrogen atom maps
+# ---------------------------------------------------------------------------
 
-    paths = load_paths('pipeline/config/paths.yaml')
-    ensure_directories(paths)
 
-    # Process initial raw data
-    total_raw_reactions, valid_reactions = process_raw_data(paths['raw_data'], paths['filtered_data'])
+def hydrogen_mapping_transform(row: Dict) -> Dict:
+    """
+    Add explicit hydrogens and hydrogen atom maps to a heavy-atom-mapped
+    reaction.
 
-    error_log = []
+    Parameters
+    ----------
+    row:
+        A dictionary with keys id, smirks, sources, error.
 
-    # Subsequent processing steps
-    process_data(paths['filtered_data'], paths['astatine_data'], lambda row: {
-        'id': row['id'],
-        'smirks': hydrogen_to_astatine_reaction(row['smirks']),
-        'sources': row['sources'],
-        'error': ''
-    }, 'astatine', error_log)
+    Returns
+    -------
+    dict
+        A new row with updated smirks and cleared error.
+    """
+    mapped_with_h = map_hydrogens_in_reaction(row["smirks"])
+    return {
+        "id": row["id"],
+        "smirks": mapped_with_h,
+        "sources": row["sources"],
+        "error": "",
+    }
 
-    process_data(paths['astatine_data'], paths['mapped_data'], lambda row: {
-        'id': row['id'],
-        'smirks': map_atoms(row['smirks']),
-        'sources': row['sources'],
-        'error': ''
-    }, 'mapping', error_log)
 
-    # Calculate statistics
-    percentage_loss = ((total_raw_reactions - valid_reactions) / total_raw_reactions) * 100
+# ---------------------------------------------------------------------------
+# Mining summary and deduplication
+# ---------------------------------------------------------------------------
 
-    # Generate mining report
-    smirks_counts = Counter()
-    with open(paths['mapped_data'], 'r') as infile:
+
+def summarize_mining(mapped_file: str) -> Tuple[List[str], Dict[str, Dict]]:
+    """
+    Compute EVODEX-R mining statistics and collect unique reactions.
+
+    Parameters
+    ----------
+    mapped_file:
+        CSV file with hydrogen-mapped reactions.
+
+    Returns
+    -------
+    report_lines:
+        Human-readable report lines.
+    unique_reactions:
+        Mapping from reaction hash to a representative row dict.
+    """
+    smirks_counts: Counter = Counter()
+
+    with open(mapped_file, "r") as infile:
         reader = csv.DictReader(infile)
         for row in reader:
-            if not row['error']:
-                smirks = row['smirks']
-                rxn_hash = reaction_hash(smirks)
-                smirks_counts[rxn_hash] += 1
+            if row.get("error"):
+                continue
+            smirks = row["smirks"]
+            rxn_hash = reaction_hash(smirks)
+            smirks_counts[rxn_hash] += 1
 
     unique_ev_r = len(smirks_counts)
     counts = list(smirks_counts.values())
 
-    report_lines = [
+    report_lines: List[str] = [
         f"EVODEX-R Mining Report (version {__version__})",
         "============================================",
-        f"Total raw reactions: {total_raw_reactions}",
-        f"Valid reactions after sanitization: {valid_reactions}",
-        f"Compression rate due to reaction deduplication: {percentage_loss:.2f}%",
-        f"(i.e., only {100 - percentage_loss:.2f}% of raw reactions are unique after hashing)",
-        "",
         f"Total unique EVODEX-R entries: {unique_ev_r}",
-        f"Min reactions per EVODEX-R: {min(counts) if counts else 0}",
-        f"Max reactions per EVODEX-R: {max(counts) if counts else 0}",
-        f"Mean reactions per EVODEX-R: {statistics.mean(counts) if counts else 0:.2f}",
-        f"Median reactions per EVODEX-R: {statistics.median(counts) if counts else 0}",
-        "",
     ]
 
-    for line in report_lines:
-        print(line)
+    if counts:
+        report_lines.extend(
+            [
+                f"Min reactions per EVODEX-R: {min(counts)}",
+                f"Max reactions per EVODEX-R: {max(counts)}",
+                f"Mean reactions per EVODEX-R: {statistics.mean(counts):.2f}",
+                f"Median reactions per EVODEX-R: {statistics.median(counts)}",
+            ]
+        )
+    else:
+        report_lines.extend(
+            [
+                "Min reactions per EVODEX-R: 0",
+                "Max reactions per EVODEX-R: 0",
+                "Mean reactions per EVODEX-R: 0.00",
+                "Median reactions per EVODEX-R: 0",
+            ]
+        )
 
-    report_path = os.path.join(paths['errors_dir'], 'Phase1_evodex_report.txt')
-    with open(report_path, 'w') as report_file:
-        report_file.write('\n'.join(report_lines))
+    report_lines.append("")
 
-    # Write evodex_r_raw.csv with deduplicated reactions
-    unique_reactions = {}
-    with open(paths['mapped_data'], 'r') as infile:
+    # Build a representative set of unique reactions
+    unique_reactions: Dict[str, Dict] = {}
+    with open(mapped_file, "r") as infile:
         reader = csv.DictReader(infile)
         for row in reader:
-            if not row['error']:
-                rxn_hash = reaction_hash(row['smirks'])
-                if rxn_hash not in unique_reactions:
-                    unique_reactions[rxn_hash] = {
-                        'id': rxn_hash,
-                        'smirks': row['smirks'],
-                        'sources': row['sources']
-                    }
+            if row.get("error"):
+                continue
+            smirks = row["smirks"]
+            rxn_hash = reaction_hash(smirks)
+            if rxn_hash not in unique_reactions:
+                unique_reactions[rxn_hash] = {
+                    "id": rxn_hash,
+                    "smirks": smirks,
+                    "sources": row["sources"],
+                }
 
-    with open(paths['evodex_r_preliminary'], 'w', newline='') as outfile:
-        fieldnames = ['id', 'smirks', 'sources']
+    return report_lines, unique_reactions
+
+
+def write_deduplicated_evodex(unique_reactions: Dict[str, Dict]) -> None:
+    """Write the deduplicated EVODEX-R reactions to CSV."""
+    with open(EVODEX_R_PRELIMINARY, "w", newline="") as outfile:
+        fieldnames = ["id", "smirks", "sources"]
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
         for data in unique_reactions.values():
             writer.writerow(data)
 
+
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
+    start_time = time.time()
+    print("Phase 1 data preparation started...")
+
+    ensure_directories()
+
+    # Stage 0: validate raw reactions
+    print(f"Reading raw reactions from: {RAW_DATA}")
+    total_raw, valid_reactions = process_raw_data(RAW_DATA, FILTERED_DATA)
+
+    # Stage 1: hydrogen mapping
+    error_log: List[Dict] = []
+    print(f"Running hydrogen mapping on: {FILTERED_DATA}")
+    process_data(
+        FILTERED_DATA,
+        HYDROGEN_MAPPED_DATA,
+        hydrogen_mapping_transform,
+        "hydrogen_mapping",
+        error_log,
+    )
+
+    # Mining summary and deduplication
+    print(f"Summarizing mining statistics from: {HYDROGEN_MAPPED_DATA}")
+    report_lines, unique_reactions = summarize_mining(HYDROGEN_MAPPED_DATA)
+
+    percentage_loss = (
+        (total_raw - valid_reactions) / total_raw * 100 if total_raw else 0.0
+    )
+
+    header_lines = [
+        f"Total raw reactions: {total_raw}",
+        f"Valid reactions after sanitization: {valid_reactions}",
+        f"Compression rate due to reaction deduplication: {percentage_loss:.2f}%",
+        (
+            f"(i.e., only {100 - percentage_loss:.2f}% of raw reactions are "
+            "unique after hashing)"
+        ),
+        "",
+    ]
+
+    full_report = header_lines + report_lines
+
+    for line in full_report:
+        print(line)
+
+    # Write report
+    with open(PHASE1_REPORT, "w") as report_file:
+        report_file.write("\n".join(full_report))
+
+    # Write deduplicated EVODEX-R
+    write_deduplicated_evodex(unique_reactions)
+
+    # Write error log if needed
     if error_log:
-        error_file_path = os.path.join(paths['errors_dir'], 'data_preparation_errors.csv')
-        fieldnames = list(error_log[0].keys())
-        with open(error_file_path, 'w', newline='') as f:
+        fieldnames = sorted(error_log[0].keys())
+        with open(ERROR_LOG_CSV, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(error_log)
+    if not error_log:
+        print("✓ No errors encountered.")
 
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Phase 1 data preparation completed in {elapsed_time:.2f} seconds.")
+    elapsed = time.time() - start_time
+    print(f"Phase 1 data preparation completed in {elapsed:.2f} seconds.")
+
 
 if __name__ == "__main__":
     main()
