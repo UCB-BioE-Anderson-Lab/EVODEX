@@ -83,11 +83,15 @@ def mechanistic_label_reaction(rxn, operator) -> Dict:
     single-product transformation and uses the first reactant and first product
     templates in each ChemicalReaction. It identifies atom-level
     correspondences between the operator and the reaction and classifies
-    reaction atoms by their role in the transformation.
+    reaction atoms by their parity in the transformation.
 
-    In contrast to a strict complete-operator labeler that requires the
+    In contrast to a strict complete-operator reaction_labeler that requires the
     non-transformed remainder of the substrate and product to be identical, this
-    mechanistic labeler allows extra material on either side. The key steps are:
+    mechanistic labeler allows extra material on either side. Thus it can be used
+    on both matched and complete forms of partial reaction operators, such both
+    E and Em. 
+    
+    The key steps are:
 
       1. Substructure matching:
          - Find all substructure matches of the operator reactant in the reaction

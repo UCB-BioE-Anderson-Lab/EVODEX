@@ -3,13 +3,17 @@ from rdkit.Chem import rdChemReactions
 from evodex.astatine import hydrogen_to_astatine_molecule, astatine_to_hydrogen_molecule
 
 """
-Utilities for projecting a reaction operator (SMIRKS) onto a substrate.
-A temporary labeling scheme uses sequential isotopes applied to an astatinated
-form of the molecule. After reaction application, isotopes are transferred to
-atom map numbers on both substrate and product, restricted to atoms present on
-both sides, and astatine atoms are finally converted back to hydrogens.
+Projection map inputs a reaction operator (SMIRKS) and a substrate (SMILES) and outputs a
+fully mapped reaction smiles for the substrate-to-product reaction SMILES. For this, it first
+converts the hydrogens to astatines such that all atoms are heavy and explicit. It then assigns
+sequential atom map values to each substrate atom, including the astatine/hydrogens.
+This information as stored in the isotope field of each atom. It then projects the operator 
+on the substrate to generate the product SMILES. This will also project the isotope fields such
+that these are now paired between substrate and product except where atoms are removed or added
+during the reaction. The isotope fields are transferred to the atom maps, and unmatched atom maps
+are removed. The astatines are converted back to hydrogens and the fully mapped partial reaction
+is returned.
 """
-
 
 def add_sequential_isotopes(smiles: str) -> str:
     """Assign sequential isotopes starting at 1 across all atoms in the molecule.
