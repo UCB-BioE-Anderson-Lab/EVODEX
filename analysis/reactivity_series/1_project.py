@@ -64,7 +64,7 @@ import pandas as pd
 import yaml
 from rdkit import Chem, RDLogger
 
-from .projectionmap import project_operator_to_mapped_products
+from ...evodex.projection_map import project_operator_to_mapped_products
 
 RDLogger.DisableLog("rdApp.warning")
 
