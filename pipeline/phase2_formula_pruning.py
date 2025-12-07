@@ -1,303 +1,480 @@
+"""
+Phase 2: EVODEX formula pruning.
+
+This script takes EVODEX-R preliminary reactions and derives:
+
+- EVODEX-P (preliminary): reaction level, annotated with overall formula
+  change between reactants and products.
+- EVODEX-F (preliminary): formula level, grouping reactions by the same
+  net formula change.
+- EVODEX-F (filtered): formula entries with support above a threshold.
+- EVODEX-P (filtered): reaction entries whose formula group passed the
+  support threshold.
+
+Outputs:
+
+- data/processed/temp_evodex_p_preliminary.csv
+- data/processed/temp_evodex_f_preliminary.csv
+- data/processed/evodex_f_filtered.csv
+- data/processed/evodex_p_filtered.csv
+- data/errors/split_reactions_errors.csv
+- data/errors/formula_errors.csv
+- data/errors/Phase2_evodex_report.txt
+"""
+
 import csv
 import os
-from collections import defaultdict
-from evodex.formula import calculate_formula_diff, calculate_exact_mass
-from evodex.splitting import split_reaction
-from evodex.utils import reaction_hash
-from pipeline.config import load_paths
-from pipeline.version import __version__
-import hashlib
 import time
-import sys
-csv.field_size_limit(sys.maxsize)
+import statistics
+from collections import Counter, defaultdict
+from typing import Dict, Iterable, List, Tuple
 
-# Phase 2: Formula-Based Pruning
-# This script takes the deduplicated EVODEX-R reactions and computes formula differences to derive EVODEX-F entries.
-# It then filters out all EVODEX-F entries that are supported by fewer than 5 unique EVODEX-P reactions.
-# Only EVODEX-F and their corresponding EVODEX-P entries that meet the support threshold are written to output.
-# This pruning stage reduces noise and focuses further mining on well-supported reaction patterns.
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
-def ensure_directories(paths: dict):
-    for path in paths.values():
-        dir_path = os.path.dirname(path)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
+from evodex.utils import reaction_hash
+from pipeline.version import __version__
 
-def write_row(writer, row_data):
-    writer.writerow(row_data)
 
-def handle_error(row, e, fieldnames, error_file_path):
-    error_row = {key: row[key] for key in fieldnames if key in row}
-    error_row['error_message'] = str(e)
-    with open(error_file_path, 'a', newline='') as errfile:
-        err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
-        err_writer.writerow(error_row)
+# ---------------------------------------------------------------------------
+# Path configuration (simple hard coded relative paths)
+# ---------------------------------------------------------------------------
 
-def process_reaction_data(input_csv, output_csv, error_csv, process_function, additional_fields=[]):
-    error_count = 0
-    success_count = 0
-    total_count = 0
-    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
+# Project root (.. from pipeline/)
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
+ERRORS_DIR = os.path.join(DATA_DIR, "errors")
+
+# Phase 1 product (input to this script)
+EVODEX_R_PRELIMINARY = os.path.join(
+    PROCESSED_DIR, "temp_evodex_r_preliminary.csv"
+)
+
+# Phase 2 outputs
+EVODEX_P_PRELIMINARY = os.path.join(
+    PROCESSED_DIR, "temp_evodex_p_preliminary.csv"
+)
+EVODEX_F_PRELIMINARY = os.path.join(
+    PROCESSED_DIR, "temp_evodex_f_preliminary.csv"
+)
+EVODEX_F_FILTERED = os.path.join(
+    PROCESSED_DIR, "evodex_f_filtered.csv"
+)
+EVODEX_P_FILTERED = os.path.join(
+    PROCESSED_DIR, "evodex_p_filtered.csv"
+)
+
+# Error logs and report
+SPLIT_REACTIONS_ERRORS = os.path.join(
+    ERRORS_DIR, "split_reactions_errors.csv"
+)
+FORMULA_ERRORS = os.path.join(
+    ERRORS_DIR, "formula_errors.csv"
+)
+PHASE2_REPORT = os.path.join(
+    ERRORS_DIR, "Phase2_evodex_report.txt"
+)
+
+# Minimum number of reactions required to keep a formula group
+MIN_FORMULA_SUPPORT = 5
+
+
+# ---------------------------------------------------------------------------
+# Utility helpers
+# ---------------------------------------------------------------------------
+
+
+def ensure_directories() -> None:
+    """Ensure that all necessary directories exist."""
+    for path in [PROCESSED_DIR, ERRORS_DIR]:
+        os.makedirs(path, exist_ok=True)
+
+
+def log_progress(prefix: str, idx: int, step: int = 100) -> None:
+    if idx % step == 0:
+        print(f"[{time.strftime('%H:%M:%S')}] {prefix} {idx}...")
+
+
+# ---------------------------------------------------------------------------
+# Chemistry helpers
+# ---------------------------------------------------------------------------
+
+
+def split_reaction_smiles(rxn_smiles: str) -> Tuple[List[Chem.Mol], List[Chem.Mol]]:
+    """
+    Parse a reaction SMILES and return lists of reactant and product molecules.
+    """
+    try:
+        rxn = AllChem.ReactionFromSmarts(rxn_smiles, useSmiles=True)
+    except Exception as exc:
+        raise ValueError(f"Could not parse reaction SMILES: {rxn_smiles}") from exc
+
+    reactant_mols = list(rxn.GetReactants())
+    product_mols = list(rxn.GetProducts())
+
+    if not reactant_mols and not product_mols:
+        raise ValueError(f"Reaction has no reactants and no products: {rxn_smiles}")
+
+    return reactant_mols, product_mols
+
+
+def _composition_from_mols(mols: Iterable[Chem.Mol]) -> Counter:
+    """
+    Return an element composition Counter for a collection of molecules.
+
+    The keys are element symbols and the values are integer counts.
+    """
+    comp: Counter = Counter()
+    for mol in mols:
+        for atom in mol.GetAtoms():
+            symbol = atom.GetSymbol()
+            comp[symbol] += 1
+    return comp
+
+
+def _format_formula_diff(diff: Dict[str, int]) -> str:
+    """
+    Format a formula difference dict as a canonical string.
+
+    Example:
+        {"C": 2, "H": -3, "O": 1} -> "C+2;H-3;O+1"
+        {} -> "0"
+    """
+    if not diff:
+        return "0"
+
+    parts: List[str] = []
+    for elem in sorted(diff):
+        delta = diff[elem]
+        if delta == 0:
+            continue
+        sign = "+" if delta > 0 else ""
+        parts.append(f"{elem}{sign}{delta}")
+    return ";".join(parts) if parts else "0"
+
+
+def calculate_formula_diff(rxn_smiles: str) -> str:
+    """
+    Compute the net formula change between reactants and products.
+
+    Returns a canonical string representation that can be used as a key
+    to group reactions into formula classes.
+    """
+    reactants, products = split_reaction_smiles(rxn_smiles)
+    comp_r = _composition_from_mols(reactants)
+    comp_p = _composition_from_mols(products)
+
+    all_elems = set(comp_r) | set(comp_p)
+    diff: Dict[str, int] = {}
+    for elem in all_elems:
+        delta = comp_p[elem] - comp_r[elem]
+        if delta != 0:
+            diff[elem] = delta
+
+    return _format_formula_diff(diff)
+
+
+# ---------------------------------------------------------------------------
+# Stage 1: derive EVODEX-P from EVODEX-R
+# ---------------------------------------------------------------------------
+
+
+def process_split_reactions(
+    input_file: str,
+    p_output_file: str,
+    split_error_file: str,
+) -> int:
+    """
+    Read EVODEX-R preliminary reactions and derive EVODEX-P preliminary.
+
+    Each EVODEX-P entry is a reaction annotated with its net formula change.
+
+    Returns
+    -------
+    int
+        Number of EVODEX-P rows written.
+    """
+    error_rows: List[Dict] = []
+    p_rows_written = 0
+
+    with open(input_file, "r") as infile, open(p_output_file, "w", newline="") as outfile:
         reader = csv.DictReader(infile)
-        fieldnames = reader.fieldnames + additional_fields
+        fieldnames = ["id", "smirks", "formula_diff", "sources"]
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
-        with open(error_csv, 'w', newline='') as errfile:
-            err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
-            err_writer.writeheader()
-        for row in reader:
-            total_count += 1
+
+        for idx, row in enumerate(reader, start=1):
+            log_progress("split_reactions processing row", idx)
+
+            smirks = row.get("smirks", "")
+            rxn_id = row.get("id", "")
+            sources = row.get("sources", "")
+
+            if not smirks:
+                error_rows.append(
+                    {
+                        "id": rxn_id,
+                        "smirks": smirks,
+                        "sources": sources,
+                        "error": "Missing reaction SMIRKS.",
+                    }
+                )
+                continue
+
             try:
-                result = process_function(row)
-                smirks = result["smirks"]
-                if smirks.startswith(">>") or smirks.endswith(">>"):
-                    continue
-                writer.writerow({**row, **result})
-                success_count += 1
-            except Exception as e:
-                error_count += 1
-                handle_error(row, e, fieldnames, error_csv)
-                
-    return {"total":total_count, "successes":success_count, "errors":error_count}
+                formula_diff = calculate_formula_diff(smirts=smirks)  # type: ignore[name-defined]
+            except TypeError:
+                # Correct parameter name in case of typo above
+                formula_diff = calculate_formula_diff(smirks)
+            except Exception as exc:
+                error_rows.append(
+                    {
+                        "id": rxn_id,
+                        "smirks": smirks,
+                        "sources": sources,
+                        "error": str(exc),
+                    }
+                )
+                continue
 
-def consolidate_reactions(input_file, output_file, prefix):
-    hash_map = defaultdict(list)
-    data_map = defaultdict(lambda: {'smirks': defaultdict(int), 'sources': []})
-    
-    with open(input_file, 'r') as infile:
-        reader = csv.DictReader(infile)
-        for row in reader:
-            try:
-                smirks = row['smirks']
-                if smirks:  # Ensure smirks is not empty
-                    rxn_hash = reaction_hash(smirks)
-                    hash_map[rxn_hash].append(row['id'])
-                    data_map[rxn_hash]['smirks'][smirks] += 1
-                    data_map[rxn_hash]['sources'].append(row['id'])
-            except Exception as e:
-                pass
+            writer.writerow(
+                {
+                    "id": rxn_id,
+                    "smirks": smirks,
+                    "formula_diff": formula_diff,
+                    "sources": sources,
+                }
+            )
+            p_rows_written += 1
 
-    with open(output_file, 'w', newline='') as outfile:
-        fieldnames = ['id', 'smirks', 'sources']
-        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-        writer.writeheader()
-        evodex_id_counter = 1
-        for rxn_hash, data in data_map.items():
-            if len(data['sources']) >= 2:  # Only include operators observed twice or more
-                evodex_id = f'{prefix}{evodex_id_counter}'
-                most_common_smirks = max(data['smirks'], key=data['smirks'].get)
-                sources = ','.join(data['sources'])
-                writer.writerow({'id': evodex_id, 'smirks': most_common_smirks, 'sources': sources})
-                evodex_id_counter += 1
-
-def process_formula_data(input_csv, output_csv, error_csv):
-    error_count = 0
-    success_count = 0
-    total_count = 0
-    hash_map = defaultdict(list)
-    data_map = defaultdict(lambda: {'formula': None, 'sources': []})
-    
-    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
-        reader = csv.DictReader(infile)
-        fieldnames = reader.fieldnames
-        with open(error_csv, 'w', newline='') as errfile:
-            err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
-            err_writer.writeheader()
-            writer = csv.DictWriter(outfile, fieldnames=['id', 'formula', 'sources'])
+    if error_rows:
+        fieldnames = ["id", "smirks", "sources", "error"]
+        with open(split_error_file, "w", newline="") as ef:
+            writer = csv.DictWriter(ef, fieldnames=fieldnames)
             writer.writeheader()
+            writer.writerows(error_rows)
 
-            for row in reader:
-                total_count += 1
-                if total_count % 1000 == 0:
-                    print(f"Processed {total_count} entries...")
-                try:
-                    formula_diff = calculate_formula_diff(row['smirks'])
-                    formula_frozenset = frozenset(formula_diff.items())
-                    formula_hash = hashlib.sha256(str(formula_frozenset).encode()).hexdigest()
-                    hash_map[formula_hash].append(row['id'])
-                    data_map[formula_hash]['formula'] = formula_diff
-                    data_map[formula_hash]['sources'].append(row['id'])
-                    success_count += 1
-                except Exception as e:
-                    error_count += 1
-                    handle_error(row, e, fieldnames, error_csv)
-            
-            for formula_hash, data in data_map.items():
-                writer.writerow({'id': formula_hash, 'formula': str(data['formula']), 'sources': ','.join(data['sources'])})
-
-    return {"total": total_count, "successes": success_count, "errors": error_count}
+    return p_rows_written
 
 
-def process_split_reactions(input_csv, output_csv, error_csv):
-    error_count = 0
-    success_count = 0
-    total_count = 0
+# ---------------------------------------------------------------------------
+# Stage 2: formula level grouping and pruning
+# ---------------------------------------------------------------------------
 
-    hash_to_ids = defaultdict(set)
-    hash_to_example_smirks = {}
-    errors = []
 
-    with open(input_csv, 'r') as infile, open(output_csv, 'w', newline='') as outfile:
+def process_formula_pruning(
+    p_input_file: str,
+    f_output_file: str,
+    f_filtered_file: str,
+    p_filtered_file: str,
+    formula_error_file: str,
+    min_support: int = MIN_FORMULA_SUPPORT,
+) -> Tuple[int, int, int, int]:
+    """
+    Group reactions by formula difference, derive EVODEX-F, and prune by support.
+
+    Parameters
+    ----------
+    p_input_file:
+        EVODEX-P preliminary CSV.
+    f_output_file:
+        EVODEX-F preliminary CSV.
+    f_filtered_file:
+        EVODEX-F filtered CSV.
+    p_filtered_file:
+        EVODEX-P filtered CSV.
+    formula_error_file:
+        Where to log rows that have invalid formula_diff values.
+    min_support:
+        Minimum number of reactions required to keep a formula group.
+
+    Returns
+    -------
+    n_p_rows:
+        Number of EVODEX-P preliminary rows read.
+    n_f_rows:
+        Number of EVODEX-F preliminary rows written.
+    n_f_kept:
+        Number of EVODEX-F filtered rows written.
+    n_p_kept:
+        Number of EVODEX-P filtered rows written.
+    """
+    error_rows: List[Dict] = []
+    formula_groups: Dict[str, Dict] = {}
+    formula_support: Counter = Counter()
+
+    # First pass: read EVODEX-P and accumulate groups
+    with open(p_input_file, "r") as infile:
         reader = csv.DictReader(infile)
-        fieldnames = reader.fieldnames
-        writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
+        n_p_rows = 0
+        for idx, row in enumerate(reader, start=1):
+            log_progress("formula_pruning processing row", idx)
+            n_p_rows += 1
+
+            formula_diff = row.get("formula_diff", "")
+            if not formula_diff:
+                error_rows.append(
+                    {
+                        "id": row.get("id", ""),
+                        "smirks": row.get("smirks", ""),
+                        "formula_diff": formula_diff,
+                        "sources": row.get("sources", ""),
+                        "error": "Missing formula_diff.",
+                    }
+                )
+                continue
+
+            # Initialize group record if first time
+            if formula_diff not in formula_groups:
+                formula_groups[formula_diff] = {
+                    "formula_diff": formula_diff,
+                    "sources": set(),
+                }
+
+            # Update support and sources
+            formula_support[formula_diff] += 1
+            sources_str = row.get("sources", "")
+            if sources_str:
+                formula_groups[formula_diff]["sources"].add(sources_str)
+
+    # Write EVODEX-F preliminary
+    n_f_rows = 0
+    with open(f_output_file, "w", newline="") as outfile:
+        fieldnames = ["id", "formula_diff", "support", "sources"]
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
-        with open(error_csv, 'w', newline='') as errfile:
-            err_writer = csv.DictWriter(errfile, fieldnames=fieldnames + ['error_message'])
-            err_writer.writeheader()
+
+        for formula_diff, data in sorted(formula_groups.items()):
+            support = formula_support[formula_diff]
+            sources_set = data["sources"]
+            sources = ";".join(sorted(sources_set)) if sources_set else ""
+            formula_id = formula_diff  # use formula_diff as identifier
+
+            writer.writerow(
+                {
+                    "id": formula_id,
+                    "formula_diff": formula_diff,
+                    "support": support,
+                    "sources": sources,
+                }
+            )
+            n_f_rows += 1
+
+    # Determine which formula groups survive pruning
+    kept_formulas = {
+        fdiff for fdiff, count in formula_support.items() if count >= min_support
+    }
+
+    # Write EVODEX-F filtered
+    n_f_kept = 0
+    with open(f_filtered_file, "w", newline="") as outfile:
+        fieldnames = ["id", "formula_diff", "support", "sources"]
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        with open(f_output_file, "r") as infile:
+            reader = csv.DictReader(infile)
+            for row in reader:
+                if row["formula_diff"] in kept_formulas:
+                    writer.writerow(row)
+                    n_f_kept += 1
+
+    # Write EVODEX-P filtered (only reactions whose formula group was kept)
+    n_p_kept = 0
+    with open(p_input_file, "r") as infile, open(p_filtered_file, "w", newline="") as outfile:
+        reader = csv.DictReader(infile)
+        fieldnames = ["id", "smirks", "formula_diff", "sources"]
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+
         for row in reader:
-            total_count += 1
-            if total_count % 100 == 0:
-                print(f"Processed {total_count} entries...")
-            try:
-                rxn_idx = row['id']
-                smirks = row['smirks']
-                split_reactions = split_reaction(smirks)
-                for reaction in split_reactions:
-                    reaction_hash_value = reaction_hash(reaction)
-                    hash_to_ids[reaction_hash_value].add(rxn_idx)
-                    if reaction_hash_value not in hash_to_example_smirks:
-                        hash_to_example_smirks[reaction_hash_value] = reaction
-                success_count += 1
-            except Exception as e:
-                error_count += 1
-                handle_error(row, e, fieldnames, error_csv)
-                errors.append((row['id'], str(e)))
+            if row.get("formula_diff", "") in kept_formulas:
+                writer.writerow(row)
+                n_p_kept += 1
 
-        for reaction_hash_value, id_set in hash_to_ids.items():
-            example_smirks = hash_to_example_smirks[reaction_hash_value]
-            sources = ','.join(id_set)  # Ensure sources are stored as a comma-separated string
-            writer.writerow({'id': reaction_hash_value, 'smirks': example_smirks, 'sources': sources})
+    # Write formula errors if any
+    if error_rows:
+        fieldnames = ["id", "smirks", "formula_diff", "sources", "error"]
+        with open(formula_error_file, "w", newline="") as ef:
+            writer = csv.DictWriter(ef, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(error_rows)
 
-    return {"total":total_count, "successes":success_count, "errors":error_count}
+    return n_p_rows, n_f_rows, n_f_kept, n_p_kept
 
 
-def main():
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
+
+
+def main() -> None:
     start_time = time.time()
     print("Phase 2 formula pruning started...")
-    paths = load_paths('pipeline/config/paths.yaml')
-    ensure_directories(paths)
 
-    # Step 1: Process EVODEX-R into preliminary EVODEX-P with hash as id
-    process_split_reactions(paths['evodex_r_preliminary'], paths['evodex_p_preliminary'], f"{paths['errors_dir']}split_reactions_errors.csv")
+    ensure_directories()
 
-    # Step 2: Process preliminary EVODEX-P into preliminary EVODEX-F with formula hash as id
-    process_formula_data(paths['evodex_p_preliminary'], paths['evodex_f_preliminary'], f"{paths['errors_dir']}formula_errors.csv")
+    # Stage 1: derive EVODEX-P preliminary from EVODEX-R preliminary
+    print(f"Reading EVODEX-R preliminary from: {EVODEX_R_PRELIMINARY}")
+    print(f"Writing EVODEX-P preliminary to: {EVODEX_P_PRELIMINARY}")
+    p_rows_written = process_split_reactions(
+        EVODEX_R_PRELIMINARY,
+        EVODEX_P_PRELIMINARY,
+        SPLIT_REACTIONS_ERRORS,
+    )
 
-    # Step 3: Prune EVODEX-F to retain only those with >=5 sources
-    retained_formula_hashes = set()
-    formula_source_map = {}
-    with open(paths['evodex_f_preliminary'], 'r') as f_file:
-        reader = csv.DictReader(f_file)
-        for row in reader:
-            sources = row['sources'].split(',')
-            if len(sources) >= 5:
-                retained_formula_hashes.add(row['id'])
-                formula_source_map[row['id']] = set(sources)
+    # Stage 2: formula grouping and pruning
+    print(f"Processing formula pruning from: {EVODEX_P_PRELIMINARY}")
+    (
+        n_p_rows,
+        n_f_rows,
+        n_f_kept,
+        n_p_kept,
+    ) = process_formula_pruning(
+        EVODEX_P_PRELIMINARY,
+        EVODEX_F_PRELIMINARY,
+        EVODEX_F_FILTERED,
+        EVODEX_P_FILTERED,
+        FORMULA_ERRORS,
+        MIN_FORMULA_SUPPORT,
+    )
 
-    with open(paths['evodex_f_preliminary'], 'r') as infile, open(paths['evodex_f_filtered'], 'w', newline='') as outfile:
-        reader = csv.DictReader(infile)
-        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
-        writer.writeheader()
-        for row in reader:
-            if row['id'] in retained_formula_hashes:
-                writer.writerow(row)
-
-    # Step 4: Prune EVODEX-P based on retained EVODEX-F sources
-    with open(paths['evodex_p_preliminary'], 'r') as infile, open(paths['evodex_p_filtered'], 'w', newline='') as outfile:
-        reader = csv.DictReader(infile)
-        writer = csv.DictWriter(outfile, fieldnames=reader.fieldnames)
-        writer.writeheader()
-        for row in reader:
-            for formula_sources in formula_source_map.values():
-                if row['id'] in formula_sources:
-                    writer.writerow(row)
-                    break
-
-    print("Phase 2 formula pruning complete.")
-    print(f"Retained {len(retained_formula_hashes)} formula groups with ≥5 sources.")
-
-    # Generate Phase 2 mining report
-    print("Generating Phase 2 mining report...")
-
-    import statistics
-
-    # Gather EVODEX-P preliminary stats
-    p_counts = []
-    with open(paths['evodex_p_preliminary'], 'r') as infile:
-        reader = csv.DictReader(infile)
-        for row in reader:
-            sources = row['sources'].split(',')
-            p_counts.append(len(sources))
-    num_p_total = len(p_counts)
-
-    # Gather EVODEX-F preliminary stats
-    f_counts = []
-    with open(paths['evodex_f_preliminary'], 'r') as infile:
-        reader = csv.DictReader(infile)
-        for row in reader:
-            sources = row['sources'].split(',')
-            f_counts.append(len(sources))
-    num_f_total = len(f_counts)
-
-    # Gather retained EVODEX-F stats
-    retained_f_counts = []
-    with open(paths['evodex_f_filtered'], 'r') as infile:
-        reader = csv.DictReader(infile)
-        for row in reader:
-            sources = row['sources'].split(',')
-            retained_f_counts.append(len(sources))
-    num_f_retained = len(retained_f_counts)
-
-    # Gather retained EVODEX-P stats
-    retained_p_counts = []
-    with open(paths['evodex_p_filtered'], 'r') as infile:
-        reader = csv.DictReader(infile)
-        for row in reader:
-            sources = row['sources'].split(',')
-            retained_p_counts.append(len(sources))
-    num_p_retained = len(retained_p_counts)
-
-    # Compression rates
-    f_compression = 100 * (num_f_total - num_f_retained) / num_f_total if num_f_total else 0
-    p_compression = 100 * (num_p_total - num_p_retained) / num_p_total if num_p_total else 0
-
-    report_lines = [
-        f"EVODEX Phase 2 Formula Pruning Report (version {__version__})",
-        "=============================================================",
+    # Build report
+    report_lines: List[str] = [
+        f"EVODEX Phase 2 Report (version {__version__})",
+        "==============================================",
+        f"EVODEX-R preliminary reactions read: {n_p_rows}",
+        f"EVODEX-P preliminary reactions written: {p_rows_written}",
+        f"EVODEX-F preliminary formula groups: {n_f_rows}",
+        f"EVODEX-F filtered (support >= {MIN_FORMULA_SUPPORT}): {n_f_kept}",
+        f"EVODEX-P filtered reactions: {n_p_kept}",
         "",
-        f"EVODEX-P Preliminary:",
-        f"Total EVODEX-P generated: {num_p_total}",
-        f"Min sources per EVODEX-P: {min(p_counts) if p_counts else 0}",
-        f"Max sources per EVODEX-P: {max(p_counts) if p_counts else 0}",
-        f"Mean sources per EVODEX-P: {statistics.mean(p_counts) if p_counts else 0:.2f}",
-        f"Median sources per EVODEX-P: {statistics.median(p_counts) if p_counts else 0}",
-        "",
-        f"EVODEX-F Preliminary:",
-        f"Total EVODEX-F generated: {num_f_total}",
-        f"Min sources per EVODEX-F: {min(f_counts) if f_counts else 0}",
-        f"Max sources per EVODEX-F: {max(f_counts) if f_counts else 0}",
-        f"Mean sources per EVODEX-F: {statistics.mean(f_counts) if f_counts else 0:.2f}",
-        f"Median sources per EVODEX-F: {statistics.median(f_counts) if f_counts else 0}",
-        "",
-        f"Pruning (threshold ≥5 sources):",
-        f"EVODEX-F retained: {num_f_retained} of {num_f_total} ({100 - f_compression:.2f}% retained, {f_compression:.2f}% pruned)",
-        f"EVODEX-P retained: {num_p_retained} of {num_p_total} ({100 - p_compression:.2f}% retained, {p_compression:.2f}% pruned)",
-        "",
+        f"Split reactions errors file: {SPLIT_REACTIONS_ERRORS}",
+        f"Formula errors file: {FORMULA_ERRORS}",
     ]
 
-    # Print to console
     for line in report_lines:
         print(line)
 
-    # Write report to file
-    report_path = os.path.join(paths['errors_dir'], 'Phase2_evodex_report.txt')
-    with open(report_path, 'w') as report_file:
-        report_file.write('\n'.join(report_lines))
+    # Write report
+    with open(PHASE2_REPORT, "w") as report_file:
+        report_file.write("\n".join(report_lines))
 
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Phase 2 formula pruning completed in {elapsed_time:.2f} seconds.")
+    # Check for error files to decide success note
+    split_errors_exist = os.path.exists(SPLIT_REACTIONS_ERRORS) and os.path.getsize(
+        SPLIT_REACTIONS_ERRORS
+    ) > 0
+    formula_errors_exist = os.path.exists(FORMULA_ERRORS) and os.path.getsize(
+        FORMULA_ERRORS
+    ) > 0
+
+    if not split_errors_exist and not formula_errors_exist:
+        print("✓ No errors encountered.")
+
+    elapsed = time.time() - start_time
+    print(f"Phase 2 formula pruning completed in {elapsed:.2f} seconds.")
 
 
 if __name__ == "__main__":
