@@ -27,10 +27,12 @@ import os
 import time
 import statistics
 from collections import Counter, defaultdict
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Set
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
+
+from evodex.splitting import split_reaction
 
 from evodex.utils import reaction_hash
 from pipeline.version import __version__
@@ -189,7 +191,8 @@ def process_split_reactions(
     """
     Read EVODEX-R preliminary reactions and derive EVODEX-P preliminary.
 
-    Each EVODEX-P entry is a reaction annotated with its net formula change.
+    Each EVODEX-P entry is a split reaction (from evodex.splitting.split_reaction),
+    aggregated by reaction hash with sources tracking which R entries contributed.
 
     Returns
     -------
@@ -197,14 +200,11 @@ def process_split_reactions(
         Number of EVODEX-P rows written.
     """
     error_rows: List[Dict] = []
-    p_rows_written = 0
+    hash_to_ids: Dict[str, Set[str]] = defaultdict(set)
+    hash_to_example_smirks: Dict[str, str] = {}
 
-    with open(input_file, "r") as infile, open(p_output_file, "w", newline="") as outfile:
+    with open(input_file, "r") as infile:
         reader = csv.DictReader(infile)
-        fieldnames = ["id", "smirks", "formula_diff", "sources"]
-        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
-        writer.writeheader()
-
         for idx, row in enumerate(reader, start=1):
             log_progress("split_reactions processing row", idx)
 
@@ -224,10 +224,7 @@ def process_split_reactions(
                 continue
 
             try:
-                formula_diff = calculate_formula_diff(smirts=smirks)  # type: ignore[name-defined]
-            except TypeError:
-                # Correct parameter name in case of typo above
-                formula_diff = calculate_formula_diff(smirks)
+                split_reactions = split_reaction(smirks)
             except Exception as exc:
                 error_rows.append(
                     {
@@ -239,12 +236,39 @@ def process_split_reactions(
                 )
                 continue
 
+            for reaction in split_reactions:
+                try:
+                    rxn_hash = reaction_hash(reaction)
+                except Exception as exc:
+                    error_rows.append(
+                        {
+                            "id": rxn_id,
+                            "smirks": reaction,
+                            "sources": sources,
+                            "error": f"Failed to hash split reaction: {exc}",
+                        }
+                    )
+                    continue
+
+                hash_to_ids[rxn_hash].add(rxn_id)
+                if rxn_hash not in hash_to_example_smirks:
+                    hash_to_example_smirks[rxn_hash] = reaction
+
+    # Write EVODEX-P preliminary: one row per unique split reaction hash
+    p_rows_written = 0
+    with open(p_output_file, "w", newline="") as outfile:
+        fieldnames = ["id", "smirks", "sources"]
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for rxn_hash, id_set in hash_to_ids.items():
+            example_smirks = hash_to_example_smirks[rxn_hash]
+            sources_str = ",".join(sorted(id_set))
             writer.writerow(
                 {
-                    "id": rxn_id,
-                    "smirks": smirks,
-                    "formula_diff": formula_diff,
-                    "sources": sources,
+                    "id": rxn_hash,
+                    "smirks": example_smirks,
+                    "sources": sources_str,
                 }
             )
             p_rows_written += 1
@@ -304,6 +328,7 @@ def process_formula_pruning(
     error_rows: List[Dict] = []
     formula_groups: Dict[str, Dict] = {}
     formula_support: Counter = Counter()
+    p_id_to_formula: Dict[str, str] = {}
 
     # First pass: read EVODEX-P and accumulate groups
     with open(p_input_file, "r") as infile:
@@ -313,18 +338,39 @@ def process_formula_pruning(
             log_progress("formula_pruning processing row", idx)
             n_p_rows += 1
 
-            formula_diff = row.get("formula_diff", "")
-            if not formula_diff:
+            p_id = row.get("id", "")
+            smirks = row.get("smirks", "")
+            sources = row.get("sources", "")
+
+            if not smirks:
                 error_rows.append(
                     {
-                        "id": row.get("id", ""),
-                        "smirks": row.get("smirks", ""),
-                        "formula_diff": formula_diff,
-                        "sources": row.get("sources", ""),
-                        "error": "Missing formula_diff.",
+                        "id": p_id,
+                        "smirks": smirks,
+                        "formula_diff": "",
+                        "sources": sources,
+                        "error": "Missing reaction SMIRKS.",
                     }
                 )
                 continue
+
+            try:
+                formula_diff = calculate_formula_diff(smirks)
+            except Exception as exc:
+                error_rows.append(
+                    {
+                        "id": p_id,
+                        "smirks": smirks,
+                        "formula_diff": "",
+                        "sources": sources,
+                        "error": str(exc),
+                    }
+                )
+                continue
+
+            # Track formula for this P id
+            if p_id:
+                p_id_to_formula[p_id] = formula_diff
 
             # Initialize group record if first time
             if formula_diff not in formula_groups:
@@ -333,11 +379,10 @@ def process_formula_pruning(
                     "sources": set(),
                 }
 
-            # Update support and sources
+            # Update support and sources (F sources are P ids)
             formula_support[formula_diff] += 1
-            sources_str = row.get("sources", "")
-            if sources_str:
-                formula_groups[formula_diff]["sources"].add(sources_str)
+            if p_id:
+                formula_groups[formula_diff]["sources"].add(p_id)
 
     # Write EVODEX-F preliminary
     n_f_rows = 0
@@ -349,7 +394,7 @@ def process_formula_pruning(
         for formula_diff, data in sorted(formula_groups.items()):
             support = formula_support[formula_diff]
             sources_set = data["sources"]
-            sources = ";".join(sorted(sources_set)) if sources_set else ""
+            sources = ",".join(sorted(sources_set)) if sources_set else ""
             formula_id = formula_diff  # use formula_diff as identifier
 
             writer.writerow(
@@ -390,9 +435,20 @@ def process_formula_pruning(
         writer.writeheader()
 
         for row in reader:
-            if row.get("formula_diff", "") in kept_formulas:
-                writer.writerow(row)
-                n_p_kept += 1
+            p_id = row.get("id", "")
+            formula_diff = p_id_to_formula.get(p_id)
+            if not formula_diff or formula_diff not in kept_formulas:
+                continue
+
+            writer.writerow(
+                {
+                    "id": p_id,
+                    "smirks": row.get("smirks", ""),
+                    "formula_diff": formula_diff,
+                    "sources": row.get("sources", ""),
+                }
+            )
+            n_p_kept += 1
 
     # Write formula errors if any
     if error_rows:
