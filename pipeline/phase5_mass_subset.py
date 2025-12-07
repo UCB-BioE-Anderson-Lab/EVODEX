@@ -1,34 +1,72 @@
 import csv
 import os
-from collections import defaultdict
 from evodex.formula import calculate_exact_mass
-from pipeline.config import load_paths
 from pipeline.version import __version__
 import time
 import sys
 csv.field_size_limit(sys.maxsize)
 
-# Phase 5: Mass Spec Subset
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+RAW_DIR = os.path.join(DATA_DIR, "raw")
+PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
+ERRORS_DIR = os.path.join(DATA_DIR, "errors")
+EVODEX_DATA_DIR = os.path.join(BASE_DIR, "evodex", "data")
+
+# Inputs (from Phase 3d)
+EVODEX_F_PHASE3D_FINAL = os.path.join(PROCESSED_DIR, "evodex_f_phase3d_final.csv")
+EVODEX_P_PHASE3D_FINAL = os.path.join(PROCESSED_DIR, "evodex_p_phase3d_final.csv")
+
+# Outputs (pipeline)
+EVODEX_M = os.path.join(PROCESSED_DIR, "EVODEX-M_unique_masses.csv")
+EVODEX_M_SUBSET = os.path.join(PROCESSED_DIR, "EVODEX-M_mass_spec_subset.csv")
+
+# Phase 5: Mass Spec Subset for EVODEX.2
 # This phase generates EVODEX_M and EVODEX_M_SUBSET tables.
 # EVODEX_M contains exact mass differences for all formula differences in EVODEX_F.
 # EVODEX_M_SUBSET filters these to reaction patterns (EVODEX_P) compatible with single-species
 # mass spec observations (i.e., at least one side of the reaction is a single fragment).
+# EVODEX_M IDs are now EVODEX.2-M* using __version__ from pipeline.version.
 
-def ensure_directories(paths: dict):
-    for path in paths.values():
-        dir_path = os.path.dirname(path)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
+def ensure_directories():
+    for path in [PROCESSED_DIR, ERRORS_DIR, EVODEX_DATA_DIR]:
+        os.makedirs(path, exist_ok=True)
 
 def print_stats(label, value):
     print(f"{label}: {value:,}")
+
+def parse_formula_diff_string(formula_str):
+    """Parse a formula_diff string like 'C+1;H-2;N+3' into a dict.
+
+    Returns a mapping {element: int_delta} suitable for calculate_exact_mass.
+    """
+    formula_str = (formula_str or "").strip()
+    if not formula_str:
+        return {}
+
+    atom_diff = {}
+    for term in formula_str.split(';'):
+        term = term.strip()
+        if not term:
+            continue
+        # Split element symbol (letters) from signed integer part
+        i = 0
+        while i < len(term) and term[i].isalpha():
+            i += 1
+        element = term[:i]
+        delta_str = term[i:]
+        if not element or not delta_str:
+            raise ValueError(f"Malformed formula_diff term: {term!r}")
+        delta = int(delta_str)  # e.g. '+1', '-14'
+        atom_diff[element] = atom_diff.get(element, 0) + delta
+    return atom_diff
 
 def main():
     start_time = time.time()
     print("Phase 5 mass subset generation started...")
 
-    paths = load_paths('pipeline/config/paths.yaml')
-    ensure_directories(paths)
+    ensure_directories()
 
     total_f_rows = 0
     total_m_rows = 0
@@ -40,17 +78,18 @@ def main():
     
     # Step 1: generate evodex_m
     evodex_m_map = {}
-    with open(paths['evodex_f_phase3c_final'], 'r') as infile:
+    with open(EVODEX_F_PHASE3D_FINAL, 'r') as infile:
         reader = csv.DictReader(infile)
         for row in reader:
             total_f_rows += 1
             try:
-                formula_diff = eval(row['formula'])
-                mass_diff = calculate_exact_mass(formula_diff)
+                atom_diff = parse_formula_diff_string(row['formula_diff'])
+                mass_diff = calculate_exact_mass(atom_diff)
                 evodex_m_map[row['id']] = {
                     'mass': mass_diff,
                     'sources': set(row['sources'].split(',')),
-                    'formula': row['formula']
+                    # Store a repr of the atom_diff dict under the original name "formula"
+                    'formula': repr(atom_diff),
                 }
                 total_m_rows += 1
             except Exception:
@@ -61,11 +100,11 @@ def main():
     sorted_m_entries = sorted(evodex_m_map.items(), key=lambda x: len(x[1]['sources']), reverse=True)
     m_id_map = {}
     for i, (orig_id, data) in enumerate(sorted_m_entries, start=1):
-        assigned_id = f"EVODEX.1-M{i}"
+        assigned_id = f"EVODEX.{__version__}-M{i}"
         m_id_map[orig_id] = assigned_id
 
-    # Write EVODEX_M with new IDs
-    with open(paths['evodex_m'], 'w', newline='') as outfile:
+    # Write EVODEX_M with new IDs (matching original schema: formula as a stringified dict)
+    with open(EVODEX_M, 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=['id', 'mass', 'sources', 'formula'])
         writer.writeheader()
         for orig_id, data in sorted_m_entries:
@@ -74,12 +113,12 @@ def main():
                 'id': assigned_id,
                 'mass': data['mass'],
                 'sources': ','.join(sorted(data['sources'])),
-                'formula': data['formula']
+                'formula': data['formula'],
             })
 
     # Step 2: filter evodex_p for mass-spec compatible ones
     valid_p_ids = set()
-    with open(paths['evodex_p_phase3c_final'], 'r') as infile:
+    with open(EVODEX_P_PHASE3D_FINAL, 'r') as infile:
         reader = csv.DictReader(infile)
         for row in reader:
             try:
@@ -93,7 +132,7 @@ def main():
                 continue
 
     # Step 3: generate evodex_m_subset
-    with open(paths['evodex_m_subset'], 'w', newline='') as outfile:
+    with open(EVODEX_M_SUBSET, 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=['id', 'mass', 'sources'])
         writer.writeheader()
         for orig_id, data in evodex_m_map.items():
@@ -121,14 +160,14 @@ def main():
     print("\nPublishing to evodex/data...")
 
     # EVODEX-M
-    dst_m = os.path.join('evodex', 'data', 'EVODEX-M_unique_masses.csv')
-    with open(paths['evodex_m'], 'r') as src_file, open(dst_m, 'w', newline='') as dst_file:
+    dst_m = os.path.join(EVODEX_DATA_DIR, 'EVODEX-M_unique_masses.csv')
+    with open(EVODEX_M, 'r') as src_file, open(dst_m, 'w', newline='') as dst_file:
         dst_file.write(src_file.read())
     print(f"Published EVODEX-M to {dst_m}")
 
     # EVODEX-M_SUBSET
-    dst_m_subset = os.path.join('evodex', 'data', 'EVODEX-M_mass_spec_subset.csv')
-    with open(paths['evodex_m_subset'], 'r') as src_file, open(dst_m_subset, 'w', newline='') as dst_file:
+    dst_m_subset = os.path.join(EVODEX_DATA_DIR, 'EVODEX-M_mass_spec_subset.csv')
+    with open(EVODEX_M_SUBSET, 'r') as src_file, open(dst_m_subset, 'w', newline='') as dst_file:
         dst_file.write(src_file.read())
     print(f"Published EVODEX-M_SUBSET to {dst_m_subset}")
 
