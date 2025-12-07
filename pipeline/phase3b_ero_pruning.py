@@ -35,7 +35,7 @@ from rdkit.Chem import AllChem
 from pipeline.version import __version__
 
 # Pruning thresholds
-MIN_SOURCES_PER_OPERATOR = 2
+MIN_SOURCES_PER_OPERATOR = 10
 MAX_SOURCES_PER_OPERATOR = 5
 
 
