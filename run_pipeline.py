@@ -4,7 +4,6 @@ import os
 import requests
 import gzip
 import shutil
-from pipeline.config import load_paths
 
 # Define pipeline steps
 PIPELINE_STEPS = [
@@ -26,7 +25,6 @@ def run_pipeline():
     step_timings = {}
 
     # Step 1: Clear out data and website folders
-    paths = load_paths('pipeline/config/paths.yaml')
 
     data_dir = 'data'
     evodex_data_dir = 'evodex/data'
@@ -97,8 +95,7 @@ def run_pipeline():
         print("{:<50} {:>10.2f}".format(step, elapsed))
 
     # Write timings to file
-    paths = load_paths('pipeline/config/paths.yaml')
-    errors_dir = paths.get('errors_dir', 'data/errors')
+    errors_dir = "data/errors"
     os.makedirs(errors_dir, exist_ok=True)
     timings_file = os.path.join(errors_dir, "pipeline_timings.txt")
 
