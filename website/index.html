@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EVODEX reaction viewer</title>
+
+  <!-- SmilesDrawer 1.0.10 (global SmilesDrawer) -->
+  <script src="https://unpkg.com/smiles-drawer@1.0.10/dist/smiles-drawer.min.js"></script>
+
+  <!-- Reaction renderer (depends on SmilesDrawer) -->
+  <script src="reaction_renderer.js"></script>
+
+  <!-- Optional font for consistent text rendering -->
+  <link
+    href="https://fonts.googleapis.com/css?family=Droid+Sans:400,700"
+    rel="stylesheet"
+  >
+
+  <style>
+    body {
+      font-family: "Droid Sans", sans-serif;
+      margin: 20px;
+    }
+
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+
+    #controls {
+      margin-bottom: 1rem;
+    }
+
+    #reaction-container {
+      border: 1px solid #ccc;
+      padding: 10px;
+      min-height: 260px;
+    }
+
+    input[type="text"] {
+      padding: 4px 6px;
+      font-size: 0.9rem;
+      width: 260px;
+    }
+
+    button {
+      padding: 4px 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .meta {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>EVODEX reaction viewer</h1>
+
+  <div id="controls">
+    <label for="rxn-id">Reaction ID:</label>
+    <input id="rxn-id" type="text" value="EVODEX.2-E1">
+    <button id="load-btn">Load</button>
+  </div>
+
+  <div id="reaction-container">
+    <!-- Reaction view will be injected here -->
+  </div>
+
+  <div class="meta" id="rxn-meta"></div>
+
+  <script>
+    // ---------- 1. Data loader (lazy-load JSON) ----------
+
+    let reactionCache = null;
+    let loadPromise = null;
+
+    function loadReactionsOnce(url) {
+      if (reactionCache) return Promise.resolve(reactionCache);
+      if (!loadPromise) {
+        loadPromise = fetch(url)
+          .then(r => {
+            if (!r.ok) {
+              throw new Error("Failed to fetch reactions JSON: " + r.status);
+            }
+            return r.json();
+          })
+          .then(data => {
+            reactionCache = data;
+            return reactionCache;
+          });
+      }
+      return loadPromise;
+    }
+
+    function getReactionById(id, url) {
+      return loadReactionsOnce(url).then(data => data[id] || null);
+    }
+
+    // ---------- 2. Wiring to the page ----------
+
+    function showReactionById(id) {
+      const container = document.getElementById("reaction-container");
+      const meta = document.getElementById("rxn-meta");
+      container.innerHTML = "";
+      meta.textContent = "";
+
+      getReactionById(id, "data/e_reactions.json")
+        .then(reaction => {
+          if (!reaction) {
+            container.textContent = "No reaction found for ID " + id;
+            return;
+          }
+
+          // Use the external renderer to build and draw the reaction view
+          EVODEXReactionRenderer.renderReactionInto(container, reaction);
+
+          const infoLines = [];
+          infoLines.push("ID: " + id);
+          infoLines.push("SMIRKS: " + reaction.smirks);
+          if (reaction.sources && reaction.sources.length) {
+            infoLines.push("Sources: " + reaction.sources.join(", "));
+          }
+          meta.textContent = infoLines.join("  |  ");
+        })
+        .catch(err => {
+          console.error(err);
+          container.textContent = "Error loading reaction JSON.";
+        });
+    }
+
+    window.onload = function () {
+      const input = document.getElementById("rxn-id");
+      const button = document.getElementById("load-btn");
+
+      button.addEventListener("click", function () {
+        const id = input.value.trim();
+        if (id) showReactionById(id);
+      });
+
+      // Load an example on startup
+      showReactionById(input.value.trim());
+    };
+  </script>
+</body>
+</html>
