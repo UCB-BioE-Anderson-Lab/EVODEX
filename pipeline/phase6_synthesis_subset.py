@@ -3,10 +3,22 @@ import os
 import shutil
 import time
 from collections import defaultdict
-from pipeline.config import load_paths
 from pipeline.version import __version__
 import sys
 csv.field_size_limit(sys.maxsize)
+
+# Project root (.. from pipeline/)
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
+EVODEX_DATA_DIR = os.path.join(BASE_DIR, "evodex", "data")
+
+# Inputs from Phase 3d
+EVODEX_D_PHASE3D_FINAL = os.path.join(PROCESSED_DIR, "evodex_d_complete.csv")
+
+# Synthesis subset output (processed)
+EVODEX_D_SYNTHESIS = os.path.join(PROCESSED_DIR, "EVODEX-D_synthesis_subset.csv")
 
 # Phase 6: Synthesis Subset
 # This phase filters EVODEX-E operators to a subset usable for synthesis algorithms.
@@ -27,14 +39,11 @@ def main():
     start_time = time.time()
     print("Phase 6 synthesis subset generation started...")
 
-    paths = load_paths('pipeline/config/paths.yaml')
-    ensure_directories(paths)
-
     print("Starting Phase 6: Synthesis subset generation (compatibility filtering)...")
 
     evodex_p_map = {}
-    evodex_e_map = {}
-    evodex_e_full_map = {}
+    evodex_d_map = {}
+    evodex_d_full_map = {}
 
     # Load EVODEX-P reactions
     with open('evodex/data/EVODEX-P_partial_reactions.csv', 'r') as p_file:
@@ -42,60 +51,60 @@ def main():
         for row in p_reader:
             evodex_p_map[row['id']] = row['smirks']
 
-    # Load EVODEX-E operators mapping from EVODEX-P IDs
-    with open(paths['evodex_e_phase3c_final'], 'r') as e_file:
+    # Load EVODEX-D operators mapping from EVODEX-P IDs
+    with open(EVODEX_D_PHASE3D_FINAL, 'r') as e_file:
         e_reader = csv.DictReader(e_file)
         for row in e_reader:
             sources = row['sources'].split(',')
-            evodex_e_full_map[row['id']] = {
+            evodex_d_full_map[row['id']] = {
                 'smirks': row['smirks'],
                 'sources': sources
             }
             for source in sources:
-                evodex_e_map.setdefault(source, []).append(row['id'])
+                evodex_d_map.setdefault(source, []).append(row['id'])
 
-    evodex_e_subset = set()
-    evodex_e_sources = {}
+    evodex_d_subset = set()
+    evodex_d_sources = {}
 
     # Process EVODEX-P reactions, filtering based on single-substrate/single-product compatibility
     for p_id, smirks in evodex_p_map.items():
-        evodex_e_ids = evodex_e_map.get(p_id)
-        if evodex_e_ids:
-            for eid in evodex_e_ids:
-                e_smirks = evodex_e_full_map[eid]['smirks']
-                if '.' in e_smirks:
+        evodex_d_ids = evodex_d_map.get(p_id)
+        if evodex_d_ids:
+            for did in evodex_d_ids:
+                d_smirks = evodex_d_full_map[did]['smirks']
+                if '.' in d_smirks:
                     continue
-                evodex_e_subset.add(eid)
-                evodex_e_sources.setdefault(eid, set()).add(p_id)
+                evodex_d_subset.add(did)
+                evodex_d_sources.setdefault(did, set()).add(p_id)
 
-    # Write filtered EVODEX-E synthesis subset
-    with open(paths['evodex_e_synthesis'], 'w', newline='') as outfile:
+    # Write filtered EVODEX-D synthesis subset
+    with open(EVODEX_D_SYNTHESIS, 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=['id', 'smirks', 'sources'])
         writer.writeheader()
-        for eid in sorted(evodex_e_subset):
-            row_data = evodex_e_full_map[eid]
+        for did in sorted(evodex_d_subset):
+            row_data = evodex_d_full_map[did]
             writer.writerow({
-                'id': eid,
-                'sources': ','.join(sorted(evodex_e_sources[eid])),
+                'id': did,
+                'sources': ','.join(sorted(evodex_d_sources[did])),
                 'smirks': row_data['smirks']
             })
 
     # Summary statistics
     total_evode_p = len(evodex_p_map)
-    total_evode_p_filtered = len(set().union(*evodex_e_sources.values())) if evodex_e_sources else 0
-    total_evode_e_written = len(evodex_e_subset)
+    total_evode_p_filtered = len(set().union(*evodex_d_sources.values())) if evodex_d_sources else 0
+    total_evode_d_written = len(evodex_d_subset)
 
     print(f"Phase 6 Statistics:")
     print(f"  Total EVODEX-P entries processed: {total_evode_p}")
     print(f"  Total EVODEX-P entries after compatibility filtering: {total_evode_p_filtered}")
-    print(f"  Total EVODEX-E synthesis operators written: {total_evode_e_written}")
+    print(f"  Total EVODEX-D synthesis operators written: {total_evode_d_written}")
 
     print("Phase 6 complete: Synthesis subset written.")
 
     # === Publish to evodex/data/ ===
-    dst_e_synthesis = os.path.join('evodex', 'data', 'EVODEX-E_synthesis_subset.csv')
-    shutil.copyfile(paths['evodex_e_synthesis'], dst_e_synthesis)
-    print(f"Published synthesis subset to {dst_e_synthesis}")
+    dst_d_synthesis = os.path.join('evodex', 'data', 'EVODEX-D_synthesis_subset.csv')
+    shutil.copyfile(EVODEX_D_SYNTHESIS, dst_d_synthesis)
+    print(f"Published synthesis subset to {dst_d_synthesis}")
 
     end_time = time.time()
     elapsed_time = end_time - start_time

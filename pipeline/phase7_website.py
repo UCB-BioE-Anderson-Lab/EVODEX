@@ -1,100 +1,195 @@
-import os
-import sys
+#!/usr/bin/env python3
+"""
+Convert EVODEX CSV tables into JSON for the website.
+
+- Inputs (hard-coded relative paths):
+    EVODEX/evodex/data/*.csv
+
+- Outputs:
+    EVODEX/website/data/<CSV_STEM>.json
+
+Behavior:
+- For any CSV that has a 'smirks' column (A, Am, ..., E, Em, P, R, E subsets, etc.),
+  each JSON entry is keyed by the CSV 'id' field and contains:
+    {
+      "<EVODEX-ID>": {
+        "smirks": "...original SMIRKS...",
+        "substrates": [... isotope-encoded SMILES ...],
+        "products":  [... isotope-encoded SMILES ...],
+        "sources":   [... parsed source IDs ...],
+        "meta":      {<any additional columns from the CSV, if present>}
+      }
+    }
+
+- For CSVs without a 'smirks' column (e.g. EVODEX-M, EVODEX-F, selected_reactions),
+  each JSON entry is keyed by 'id' and the value is simply the remaining CSV fields
+  from that row (no special processing).
+"""
+
 import csv
+import json
+import os
 from pathlib import Path
-import time
-import sys
-csv.field_size_limit(sys.maxsize)
+import re
 
-# Phase 7: Website Generation
-# This phase generates the full EVODEX website. For each operator type (R, P, F, E, C, N, EM, CM, NM, M),
-# it reads the corresponding CSV file, generates SVGs for each entry, and builds an HTML index page.
-# All output is written to website/EVODEX_{TYPE}/ folders.
-
-sys.path.append(os.path.join(os.path.dirname(__file__), "web_generation"))
-import pipeline.web_generation.generate_svg as generate_svg
-import pipeline.web_generation.generate_html as generate_html
-import pipeline.web_generation.generate_css as generate_css
-
-from pipeline.config.load_paths import load_paths
-
-paths = load_paths('pipeline/config/paths.yaml')
-start_time = time.time()
-print("Phase 7 website generation started...")
-
-# Define operator types to process
-operator_types = ['R', 'P', 'F', 'E', 'C', 'N', 'Em', 'Cm', 'Nm', 'M']
-
-# Map operator types to paths.yaml keys
-operator_path_keys = {
-    'R': 'evodex_r_published',
-    'P': 'evodex_p_published',
-    'F': 'evodex_f_published',
-    'E': 'evodex_e_published',
-    'C': 'evodex_c_published',
-    'N': 'evodex_n_published',
-    'Em': 'evodex_em_published',
-    'Cm': 'evodex_cm_published',
-    'Nm': 'evodex_nm_published',
-    'M': 'evodex_m_subset_published',
-}
-
-# Resolve full paths using paths.yaml
-operator_csv_paths = {
-    op_type: paths[operator_path_keys[op_type]] for op_type in operator_types
-}
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
 
-# Output folder
-website_root = os.path.join(os.path.dirname(__file__), '..', 'website')
-# Clear the website_root directory before generation
-import shutil
-if os.path.exists(website_root):
-    shutil.rmtree(website_root)
-os.makedirs(website_root)
-generate_css.generate_css(website_root)
+def mol_to_isotope_smiles(mol: Chem.Mol) -> str:
+    """
+    Copy a template mol and convert atom-map numbers into isotopes so that
+    SmilesDrawer will render map indices as isotope labels.
+
+    [C:23] -> [23C]
+    """
+    mol = Chem.Mol(mol)  # shallow copy
+
+    for atom in mol.GetAtoms():
+        # Move atom-map numbers into isotopes (so SmilesDrawer shows them as labels)
+        amap = atom.GetAtomMapNum()
+        if amap:
+            atom.SetIsotope(amap)
+            atom.SetAtomMapNum(0)
+
+        # For non-hydrogen atoms, suppress implicit/aggregated hydrogens.
+        # We only want hydrogens that were explicitly present in the SMIRKS
+        # (as separate [#1:map] atoms) to appear. Otherwise RDKit will
+        # generate things like [23CH3], which show up as "H3" on the carbon.
+        if atom.GetAtomicNum() != 1:
+            atom.SetNoImplicit(True)
+            atom.SetNumExplicitHs(0)
+
+    # Keep stereochemistry if present
+    return Chem.MolToSmiles(mol, isomericSmiles=True)
 
 
-# Ensure images dir exists
-images_dir = os.path.join(website_root, 'images')
-os.makedirs(images_dir, exist_ok=True)
+def split_smirks_to_smiles(smirks: str):
+    """
+    Given a SMIRKS string, return (substrate_smiles_list, product_smiles_list).
 
-# Copy logo image to images dir
-logo_src = paths['logo_image']
-logo_dest = os.path.join(images_dir, 'evodex_logo.png')
-from shutil import copyfile
-copyfile(logo_src, logo_dest)
-print(f"Copied logo: {logo_src} -> {logo_dest}")
+    Uses RDKit's reaction SMARTS parser, then converts each reactant and
+    product template to a SMILES where the atom-map numbers are encoded
+    as isotopes.
+    """
+    try:
+        rxn = AllChem.ReactionFromSmarts(smirks, useSmiles=False)
+    except Exception as e:
+        raise ValueError(f"Failed to parse SMIRKS: {smirks}") from e
 
-print("Starting Phase 7 Website Generation...")
-print("=======================================")
+    substrates = []
+    products = []
 
-# Process each operator type
-for operator_type in operator_types:
-    print(f"\nProcessing EVODEX-{operator_type}...")
+    for i in range(rxn.GetNumReactantTemplates()):
+        tmpl = rxn.GetReactantTemplate(i)
+        substrates.append(mol_to_isotope_smiles(tmpl))
 
-    csv_path = operator_csv_paths[operator_type]
-    output_dir = os.path.join(website_root, f'EVODEX_{operator_type}')
+    for i in range(rxn.GetNumProductTemplates()):
+        tmpl = rxn.GetProductTemplate(i)
+        products.append(mol_to_isotope_smiles(tmpl))
 
-    # Read CSV
-    entries = []
-    with open(csv_path, 'r', newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            entries.append(row)
+    return substrates, products
 
-    print(f"  Total entries: {len(entries)}")
 
-    # Guard clause: skip SVG generation for F and M types
-    if operator_type in ['F', 'M']:
-        continue
+def parse_sources_field(raw) -> list[str]:
+    """
+    Turn the CSV 'sources' field into a list of IDs.
 
-    for row in entries:
-        generate_svg.generate_svg(row['smirks'], f"{row['id']}.svg", images_dir)
+    Handles single IDs or multiple IDs separated by ',' or ';'.
+    """
+    if raw is None:
+        return []
+    s = str(raw).strip()
+    if not s:
+        return []
+    parts = re.split(r"[;,]", s)
+    return [p.strip() for p in parts if p.strip()]
 
-generate_html.generate_html_pages(paths, website_root, os.path.join(website_root, 'pages'), operator_types)
 
-print("\nPhase 7 Website Generation complete.")
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f"Phase 7 website generation completed in {elapsed_time:.2f} seconds.")
+def build_paths():
+    """
+    Compute input/output base directories relative to this script.
+
+    Script is at:
+        EVODEX/pipeline/phase7_website.py
+
+    We want:
+        input dir:  EVODEX/evodex/data/
+        output dir: EVODEX/website/data/
+    """
+    script_path = Path(__file__).resolve()
+    repo_root = script_path.parent.parent  # .. from pipeline/
+
+    evodex_data_dir = repo_root / "evodex" / "data"
+    website_data_dir = repo_root / "website" / "data"
+
+    return evodex_data_dir, website_data_dir
+
+
+def csv_to_json():
+    """
+    Convert all EVODEX CSVs under evodex/data into JSON files under website/data.
+    """
+    evodex_data_dir, website_data_dir = build_paths()
+
+    if not evodex_data_dir.is_dir():
+        raise FileNotFoundError(f"EVODEX data directory not found: {evodex_data_dir}")
+
+    website_data_dir.mkdir(parents=True, exist_ok=True)
+
+    for csv_path in sorted(evodex_data_dir.glob("*.csv")):
+        output: dict[str, dict] = {}
+
+        with csv_path.open(newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
+            has_smirks = "smirks" in fieldnames
+
+            for row in reader:
+                eid = str(row.get("id", "")).strip()
+                if not eid:
+                    continue
+
+                if has_smirks:
+                    smirks = (row.get("smirks") or "").strip()
+                    if not smirks:
+                        continue
+
+                    try:
+                        substrates, products = split_smirks_to_smiles(smirks)
+                    except Exception as e:
+                        print(f"[WARN] {csv_path.name}: skipping {eid}: {e}")
+                        continue
+
+                    sources_raw = row.get("sources", "")
+                    entry = {
+                        "smirks": smirks,
+                        "substrates": substrates,
+                        "products": products,
+                        "sources": parse_sources_field(sources_raw),
+                    }
+
+                    # Preserve any additional columns as metadata
+                    meta = {
+                        k: v
+                        for k, v in row.items()
+                        if k not in ("id", "smirks", "sources") and v not in (None, "")
+                    }
+                    if meta:
+                        entry["meta"] = meta
+
+                    output[eid] = entry
+                else:
+                    # Generic CSV: just map id -> remaining fields
+                    value = {k: v for k, v in row.items() if k != "id"}
+                    output[eid] = value
+
+        json_path = website_data_dir / f"{csv_path.stem}.json"
+        with json_path.open("w") as jf:
+            json.dump(output, jf, indent=2)
+
+        print(f"Wrote {len(output)} entries from {csv_path.name} to {json_path}")
+
+
+if __name__ == "__main__":
+    csv_to_json()
