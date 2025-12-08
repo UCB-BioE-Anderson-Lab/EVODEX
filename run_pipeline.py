@@ -46,13 +46,13 @@ def run_pipeline():
     #     if os.path.isfile(file_path) and (filename.endswith('.csv') or filename.endswith('.json')):
     #         os.remove(file_path)
 
-    # Clear website/data directory only
-    website_data_dir = os.path.join(website_dir, "data")
-    os.makedirs(website_data_dir, exist_ok=True)
-    for root, dirs, files in os.walk(website_data_dir):
-        for filename in files:
-            file_path = os.path.join(root, filename)
-            os.remove(file_path)
+    # # Clear website/data directory only
+    # website_data_dir = os.path.join(website_dir, "data")
+    # os.makedirs(website_data_dir, exist_ok=True)
+    # for root, dirs, files in os.walk(website_data_dir):
+    #     for filename in files:
+    #         file_path = os.path.join(root, filename)
+    #         os.remove(file_path)
 
     # print("--- Data and website folders cleared ---")
 
