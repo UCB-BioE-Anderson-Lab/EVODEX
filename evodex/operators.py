@@ -530,7 +530,7 @@ def _compile_operator(
 
     return rdChemReactions.ReactionToSmarts(new_reaction)
 
-def extract_operator_by_abstraction(smirks: str, abstraction: str):
+def extract_operator_by_abstraction(smirks: str, abstraction: str, matched: bool = False):
     """Dispatch into `operator_extractor` using a discrete EVODEX abstraction level.
 
     Parameters
@@ -541,6 +541,10 @@ def extract_operator_by_abstraction(smirks: str, abstraction: str):
         EVODEX abstraction code. A is implemented by first computing the
         B abstraction and then erasing atom identity (wildcards) while
         preserving atom-map numbers.
+    matched : bool, optional
+        Placeholder flag for matched vs complete operator families.
+        Currently this is not used to change the operator_extractor
+        settings, but it is accepted for API compatibility (e.g. A vs Am).
     """
     level = abstraction.upper()
 
