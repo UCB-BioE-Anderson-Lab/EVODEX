@@ -43,6 +43,7 @@ from evodex.operators import extract_operator_by_abstraction
 from evodex.utils import reaction_hash
 
 from pipeline.version import __version__
+csv.field_size_limit(10**7)
 
 
 # ---------------------------------------------------------------------------

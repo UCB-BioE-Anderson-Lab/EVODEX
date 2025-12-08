@@ -15,6 +15,9 @@ from collections import Counter
 from evodex.operators import extract_operator_by_abstraction
 from evodex.utils import reaction_hash
 
+# Allow very large CSV fields (needed for long SMIRKS strings)
+csv.field_size_limit(10**7)
+
 """
 Phase 3c: EVODEX-E Validation and Trimming
 This phase performs a multi-step refinement of the EVODEX-E reaction operators after initial source-based pruning in Phase 3b.

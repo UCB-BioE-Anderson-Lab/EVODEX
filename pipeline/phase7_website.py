@@ -34,6 +34,7 @@ import re
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
+csv.field_size_limit(10**7)
 
 
 def mol_to_isotope_smiles(mol: Chem.Mol) -> str:

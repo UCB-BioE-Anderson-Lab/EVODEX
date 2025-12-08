@@ -38,6 +38,8 @@ from pipeline.version import __version__
 MIN_SOURCES_PER_OPERATOR = 10
 MAX_SOURCES_PER_OPERATOR = 5
 
+# Allow very large CSV fields (needed for long SMIRKS strings)
+csv.field_size_limit(10**7)
 
 # ---------------------------------------------------------------------------
 # Path configuration (simple hard-coded relative paths)
