@@ -29,6 +29,9 @@ import statistics
 from collections import Counter, defaultdict
 from typing import Dict, Iterable, List, Tuple, Set
 
+# Allow very large SMIRKS / sources fields
+csv.field_size_limit(10**7)
+
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
