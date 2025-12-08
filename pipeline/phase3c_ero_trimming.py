@@ -122,6 +122,9 @@ def group_by_formula(evodex_e_df, evodex_f_df):
     return formula_groups
 
 def dominance_prune_within_formula(f_group):
+    total_ops = len(f_group)
+    extract_failures = 0
+
     def count_substrate_atoms(smirks):
         try:
             substrate_part = smirks.split(">>")[0]
@@ -147,7 +150,8 @@ def dominance_prune_within_formula(f_group):
             n_hash = reaction_hash(n_repr)
             n_hash_to_ops.setdefault(n_hash, []).append(e)
         except Exception as ex:
-            print(f"[dominance_prune] Failed to extract N for {e.get('id', 'UNKNOWN')}: {ex}")
+            extract_failures += 1
+            print(f"[dominance_prune] Failed to extract N/C for {e.get('id', 'UNKNOWN')}: {ex}")
 
     non_dominated = []
     for n_hash, ops in n_hash_to_ops.items():
@@ -164,6 +168,14 @@ def dominance_prune_within_formula(f_group):
             if not is_dominated:
                 group_non_dominated.append(candidate)
         non_dominated.extend(group_non_dominated)
+
+    # Record dominance pruning statistics across all F groups
+    dom_stats = statistics.setdefault('dominance', {'total_ops': 0, 'extract_failures': 0})
+    dom_stats['total_ops'] += total_ops
+    dom_stats['extract_failures'] += extract_failures
+
+    if extract_failures == total_ops and total_ops > 0:
+        print("[WARNING] dominance_prune: all operators in this F group failed C-abstraction.")
 
     return non_dominated
 
@@ -199,6 +211,11 @@ def main():
     raw_evodex_e_df = pd.read_csv(EVODEX_E_PHASE3B_PRELIM)
     statistics['initial'] = {'total_raw_e': len(raw_evodex_e_df)}
 
+    if raw_evodex_e_df.empty:
+        raise RuntimeError(
+            f"Phase 3c: EVODEX-E input '{EVODEX_E_PHASE3B_PRELIM}' is empty; aborting instead of writing an empty output."
+        )
+
     # Load dataframes
     evodex_e_df = raw_evodex_e_df.copy()
     evodex_f_df = pd.read_csv(EVODEX_F_FILTERED)
@@ -209,6 +226,12 @@ def main():
 
     # Step 2: Group by formula
     formula_groups = group_by_formula(valid_e_df, evodex_f_df)
+
+    if not formula_groups and len(valid_e_df):
+        raise RuntimeError(
+            "Phase 3c: group_by_formula produced no groups despite non-empty E input. "
+            "Check EVODEX-F sources and EVODEX-E sources for mismatches."
+        )
 
     # Step 3: Dominance prune within F groups
     if os.path.exists(EVODEX_E_PHASE3C_FINAL):
@@ -225,6 +248,12 @@ def main():
     # Deduplicate by 'id' before writing
     retained_operators = list({row['id']: row for row in retained_operators}.values())
 
+    # Safety fallback: if pruning removed everything but we had input EROs,
+    # fall back to the unpruned set so we never write an empty E file.
+    if not retained_operators and len(valid_e_df):
+        print("[WARNING] Phase 3c: dominance pruning removed all operators; falling back to unpruned E set.")
+        retained_operators = valid_e_df.to_dict(orient='records')
+
     # Step 4: Save final pruned E, P, F, R
     # -- Placeholder --
     print(f"Total retained operators: {len(retained_operators)}")
@@ -235,7 +264,13 @@ def main():
         'retained_ratio': f"{len(retained_operators) / len(valid_e_df):.2%}" if len(valid_e_df) else "N/A"
     }
 
-    pruned_df = pd.DataFrame(retained_operators)
+    if retained_operators:
+        pruned_df = pd.DataFrame(retained_operators)
+    else:
+        # This should only happen if both pruning and inputs were empty and earlier guards did not trigger.
+        # Create an empty DataFrame with the same columns as the raw input so at least headers are written.
+        pruned_df = pd.DataFrame(columns=raw_evodex_e_df.columns)
+
     # Final pruned EROs saved as evodex_e_phase3c_retained
     pruned_df.to_csv(EVODEX_E_PHASE3C_FINAL, index=False)
 
@@ -271,7 +306,7 @@ def main():
     with open(PHASE3C_REPORT, "w") as f:
         f.write("Phase 3c Statistics Summary\n")
         f.write("=====================================\n\n")
-        for section in ['initial', 'group_by_formula', 'conversion', 'retained']:
+        for section in ['initial', 'group_by_formula', 'conversion', 'retained', 'dominance']:
             stat = statistics.get(section)
             if not stat:
                 continue
@@ -292,6 +327,9 @@ def main():
                 f.write(f"{'Total EVODEX-E operators before pruning':>60}: {stat['total_initial']}\n")
                 f.write(f"{'EVODEX-E operators retained after pruning':>60}: {stat['total_retained']}\n")
                 f.write(f"{'Percentage of EROs retained after pruning':>60}: {stat['retained_ratio']}\n")
+            elif section == 'dominance':
+                f.write(f"{'Total operators examined during dominance pruning':>60}: {stat.get('total_ops', 0)}\n")
+                f.write(f"{'Operators that failed C-abstraction (extract_operator_by_abstraction)':>60}: {stat.get('extract_failures', 0)}\n")
             f.write("\n")
 
         conversion_losses = statistics.get('conversion', {}).get('evodex_e_invalid_count', 0)
