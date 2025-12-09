@@ -123,18 +123,45 @@ def compute_operators_for_p(
         {family_key: (operator_smirks, operator_hash)}
     """
     result = {}
+
     for key, level, matched in OPERATOR_FAMILIES:
+        # Try to extract operator for this abstraction family
         try:
-            # operators.extract_operator_by_abstraction(smirks: str, abstraction: str)
-            op_smirks = extract_operator_by_abstraction(smirks, level, matched=matched)
-        except Exception:
+            op_smirks = extract_operator_by_abstraction(
+                smirks,
+                level,
+                matched=matched
+            )
+        except Exception as e:
+            print(
+                f"[WARNING] Phase 4: operator extraction failed for P {p_id}, "
+                f"family {key}: {e}"
+            )
             continue
 
-        # skip malformed operators
-        if not op_smirks or op_smirks.startswith(">>") or op_smirks.endswith(">>"):
+        # Skip malformed empty/partial operators
+        if (
+            not op_smirks
+            or op_smirks.startswith(">>")
+            or op_smirks.endswith(">>")
+        ):
+            print(
+                f"[WARNING] Phase 4: malformed operator for P {p_id}, "
+                f"family {key}: '{op_smirks}'"
+            )
             continue
 
-        op_hash = reaction_hash(op_smirks)
+        # Hash operator; catch invalid SMILES / RDKit failures
+        try:
+            op_hash = reaction_hash(op_smirks)
+        except Exception as e:
+            print(
+                f"[WARNING] Phase 4: skipping operator family {key} for P {p_id} "
+                f"due to reaction_hash failure: {e}"
+            )
+            continue
+
+        # Store successful operator + hash
         result[key] = (op_smirks, op_hash)
 
     return result
@@ -198,25 +225,37 @@ def fragmentation_analysis(
 # Reporting
 # ---------------------------------------------------------------------------
 
-def write_fragmentation_report(frag: Dict[str, Dict[str, List[str]]]) -> None:
-    with open(FRAGMENTATION_REPORT, "w") as f:
-        f.write("EVODEX.2 Phase 4 Fragmentation Report\n")
-        f.write("=====================================\n\n")
+def write_fragmentation_report(fragmentation) -> None:
+    """
+    Write a human-readable summary of fragmentation / completion results.
+    """
+    report_path = os.path.join(ERRORS_DIR, "phase4_fragmentation_report.txt")
+    os.makedirs(ERRORS_DIR, exist_ok=True)
 
-        total_frag = 0
+    with open(report_path, "w") as f:
+        f.write("Phase 4 Fragmentation / Completion Report\n")
+        f.write("=========================================\n\n")
 
-        for fam, items in frag.items():
-            f.write(f"\nOperator family {fam}:\n")
-            f.write("-------------------------------------\n")
-            for e_id, hashes in items.items():
-                total_frag += 1
-                f.write(f"EVODEX-E {e_id}: {len(hashes)} distinct operator hashes\n")
-                f.write(f"  Hashes: {', '.join(hashes)}\n")
-            if not items:
-                f.write("No fragmentation detected.\n")
+        for family_key, fam_data in fragmentation.items():
+            f.write(f"Family: {family_key}\n")
+            total = fam_data.get("total", 0)
+            completed = fam_data.get("completed", 0)
+            fragmented = fam_data.get("fragmented", 0)
+            hashes = fam_data.get("hashes", [])
 
-        f.write(f"\nTotal fragmented EVODEX-E entries: {total_frag}\n")
+            f.write(f"  Total P reactions: {total}\n")
+            f.write(f"  Completed operators: {completed}\n")
+            f.write(f"  Fragmented operators: {fragmented}\n")
 
+            # Ensure all hashes are converted to strings before joining
+            if hashes:
+                f.write(
+                    "  Hashes: "
+                    + ", ".join(str(h) for h in hashes)
+                    + "\n"
+                )
+
+            f.write("\n")
 
 def write_summary_report(
     operators: Dict[str, Dict[str, Dict]],

@@ -16,6 +16,7 @@ EVODEX_DATA_DIR = os.path.join(BASE_DIR, "evodex", "data")
 
 # Inputs from Phase 3d
 EVODEX_D_PHASE3D_FINAL = os.path.join(PROCESSED_DIR, "evodex_d_complete.csv")
+EVODEX_P_PHASE3D_FINAL = os.path.join(PROCESSED_DIR, "evodex_p_phase3d_final.csv")
 
 # Synthesis subset output (processed)
 EVODEX_D_SYNTHESIS = os.path.join(PROCESSED_DIR, "EVODEX-D_synthesis_subset.csv")
