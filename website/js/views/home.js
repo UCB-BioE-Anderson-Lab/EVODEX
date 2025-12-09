@@ -46,6 +46,8 @@ function buildTypeListItems() {
     "Cm",
     "D",
     "Dm",
+    "E",
+    "Em",
     "F",    // formula operators
     "M",    // mass operators
     "M_SUBSET"
@@ -67,7 +69,6 @@ function typeListItem(type) {
   const labelMap = {
     R: "EVODEX-R (full reactions)",
     P: "EVODEX-P (partial reactions)",
-    E: "EVODEX-E (operators)",
     A: "EVODEX-A",
     Am: "EVODEX-Am",
     B: "EVODEX-B",
@@ -75,7 +76,9 @@ function typeListItem(type) {
     C: "EVODEX-C",
     Cm: "EVODEX-Cm",
     D: "EVODEX-D",
-    Dm: "EVODEX-Dm",
+    Dm: "EVODEX-Em",
+    E: "EVODEX-E",
+    Em: "EVODEX-Dm",
     F: "EVODEX-F (formula operators)",
     M: "EVODEX-M (mass operators)",
     M_SUBSET: "EVODEX-M (MS subset)"
