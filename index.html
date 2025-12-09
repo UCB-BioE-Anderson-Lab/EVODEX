@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>EVODEX.2</title>
+
+  <!-- Note the website/ prefix now -->
+  <link rel="stylesheet" href="website/styles.css">
+
+  <!-- Optional: favicon using the EVODEX logo -->
+  <link rel="icon" href="website/images/evodex_logo.png" type="image/png">
+
+  <!-- RDKit WebAssembly (must be loaded so initRDKitModule exists) -->
+  <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+
+  <!-- Core logic -->
+  <script src="website/js/data_loader.js" defer></script>
+
+  <!-- Components -->
+  <script src="website/js/components/header.js" defer></script>
+  <script src="website/js/components/card.js" defer></script>
+  <script src="website/js/components/reaction.js" defer></script>
+
+  <!-- Views -->
+  <script src="website/js/views/home.js" defer></script>
+  <script src="website/js/views/type_index.js" defer></script>
+  <script src="website/js/views/operator_detail.js" defer></script>
+
+  <!-- Router LAST (must load after all views/components) -->
+  <script src="website/js/router.js" defer></script>
+</head>
+<body>
+
+  <header id="site-header"></header>
+  <main id="app"></main>
+  <footer></footer>
+
+</body>
+</html>

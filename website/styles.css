@@ -1,0 +1,235 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap');
+
+body {
+    font-family: 'Source Code Pro', Courier, monospace;
+    margin: 0;
+    padding: 0;
+    background-color: #2c3e50;
+}
+
+/* Header (SPA uses <header id="site-header">) */
+#site-header {
+    background-color: #f0f4f8;   /* same light header as EVODEX.1 */
+    color: #2c3e50;
+    padding: 20px;
+    text-align: left;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* Inner layout for EVODEX.2 header */
+.evodex-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.evodex-logo-link {
+    display: inline-flex;
+    align-items: center;
+}
+
+.evodex-logo {
+    height: 70px;
+    width: auto;
+    margin-right: 0;
+}
+
+.evodex-title-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.evodex-title {
+    margin: 0;
+    padding: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.evodex-subtitle {
+    margin-top: -4px;
+    font-size: 14px;
+    color: #667B93;
+}
+
+/* Responsive tweaks for header */
+@media (max-width: 600px) {
+    .evodex-logo {
+        height: 48px;
+    }
+    .evodex-header-inner {
+        gap: 12px;
+    }
+    .evodex-title {
+        font-size: 24px;
+    }
+}
+
+h1, h2 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+main {
+    padding: 20px;
+    background-color: #f0f4f8;
+    margin: 20px auto;
+    border-radius: 5px;
+    width: 80%;
+}
+
+section {
+    background-color: #ffffff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+/* Tables */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ABBBC6;
+}
+
+th, td {
+    border: 1px solid #ABBBC6;
+    padding: 8px;
+    text-align: left;
+    font-size: 1.1em;
+}
+
+.table-formula {
+    width: auto;
+    border-collapse: collapse;
+    margin-left: 0;  /* Align table to the left */
+}
+
+.table-formula th, .table-formula td {
+    width: auto;  /* Auto width based on content */
+}
+
+/* Footer */
+
+footer {
+    text-align: center;
+    padding: 10px 0;
+    background-color: #2c3e50;
+    color: #FAFFFF;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+}
+
+/* Hyperlink styles */
+
+a,
+a:visited {
+    color: #2c3e50;       /* Dark blue used in headers */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;  /* Adds underline on hover for emphasis */
+}
+
+a:visited {
+    color: #667B93;       /* Color for visited links */
+}
+
+/* SVG / images */
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+svg {
+    max-width: 100%;
+    height: auto;
+    width: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* card.js helpers */
+
+.evodex-card {
+    /* section already styled globally, but this class allows targeting later */
+}
+
+.evodex-card-body {
+    margin-top: 12px;
+}
+
+/* Reaction layout helpers */
+
+.reaction-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.reaction-side {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.reaction-canvas {
+    background-color: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 4px;
+}
+
+.reaction-arrow {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.reaction-plus {
+    margin: 0 4px;
+    font-size: 18px;
+    color: #2c3e50;
+}
+
+.reaction-none {
+    font-style: italic;
+    color: #999;
+}
+
+
+.evodex-type-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 12px;
+}
+
+.evodex-type-list li {
+    margin: 4px 0;
+}
+
+/* SMIRKS / formula text blocks */
+
+.smirks-text {
+    background-color: #f8f9fb;
+    border-radius: 4px;
+    padding: 8px;
+    font-family: 'Source Code Pro', Courier, monospace;
+    font-size: 0.9em;
+    white-space: pre-wrap;
+}
+
+/* Reaction container spacing */
+
+.evodex-reaction-container {
+    margin-bottom: 12px;
+}
