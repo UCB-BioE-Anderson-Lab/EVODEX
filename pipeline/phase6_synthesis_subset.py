@@ -18,8 +18,8 @@ EVODEX_DATA_DIR = os.path.join(BASE_DIR, "evodex", "data")
 EVODEX_D_PHASE3D_FINAL = os.path.join(PROCESSED_DIR, "evodex_d_complete.csv")
 EVODEX_P_PHASE3D_FINAL = os.path.join(PROCESSED_DIR, "evodex_p_phase3d_final.csv")
 
-# Synthesis subset output (processed)
-EVODEX_D_SYNTHESIS = os.path.join(PROCESSED_DIR, "EVODEX-D_synthesis_subset.csv")
+# Synthesis subset output (write directly into evodex/data)
+EVODEX_D_SYNTHESIS = os.path.join(EVODEX_DATA_DIR, "EVODEX-D_synthesis_subset.csv")
 
 # Phase 6: Synthesis Subset
 # This phase filters EVODEX-E operators to a subset usable for synthesis algorithms.
