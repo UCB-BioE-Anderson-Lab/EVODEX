@@ -166,7 +166,7 @@ def main():
         for row in e_updated_rows:
             writer.writerow({key: row[key] for key in fieldnames})
     print("Publishing EVODEX-E to evodex/data...")
-    shutil.copyfile(EVODEX_E_PHASE3D_FINAL, os.path.join(EVODEX_DATA_DIR, "EVODEX-E_reaction_operators.csv"))
+    shutil.copyfile(EVODEX_E_PHASE3D_FINAL, os.path.join(EVODEX_DATA_DIR, "EVODEX-E.csv"))
 
     # EVODEX-P: Write updated rows to phase3d_final, convert to H for publishing
     print("Writing EVODEX-P phase3d_final file...")
@@ -182,7 +182,7 @@ def main():
     for col in list(p_df_h.columns):
         if col not in ['id', 'smirks', 'formula_diff', 'sources']:
             p_df_h = p_df_h.drop(columns=[col])
-    with open(os.path.join(EVODEX_DATA_DIR, "EVODEX-P_partial_reactions.csv"), 'w', newline='') as outfile:
+    with open(os.path.join(EVODEX_DATA_DIR, "EVODEX-P.csv"), 'w', newline='') as outfile:
         fieldnames = ['id', 'smirks', 'formula_diff', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -202,7 +202,7 @@ def main():
     for col in list(r_df_h.columns):
         if col not in ['id', 'smirks', 'sources']:
             r_df_h = r_df_h.drop(columns=[col])
-    with open(os.path.join(EVODEX_DATA_DIR, "EVODEX-R_full_reactions.csv"), 'w', newline='') as outfile:
+    with open(os.path.join(EVODEX_DATA_DIR, "EVODEX-R.csv"), 'w', newline='') as outfile:
         fieldnames = ['id', 'smirks', 'sources']
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
@@ -217,7 +217,7 @@ def main():
         for row in f_updated_rows:
             writer.writerow({key: row[key] for key in fieldnames})
     print("Publishing EVODEX-F to evodex/data...")
-    shutil.copyfile(EVODEX_F_PHASE3D_FINAL, os.path.join(EVODEX_DATA_DIR, "EVODEX-F_unique_formulas.csv"))
+    shutil.copyfile(EVODEX_F_PHASE3D_FINAL, os.path.join(EVODEX_DATA_DIR, "EVODEX-F.csv"))
 
     # --- Write raw_data_published ---
     print("Writing raw_data_published (selected_reactions.csv)...")

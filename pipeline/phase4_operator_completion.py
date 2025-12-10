@@ -1,12 +1,12 @@
 """
 Phase 4: EVODEX.2 Operator Completion
 
-This phase generates the full EVODEX.2 operator suite for abstractions
-A, B, C, D, and E, in two forms:
-    - complete families: A, B, C, D, E
-    - matched families:  Am, Bm, Cm, Dm, Em
+This phase generates the EVODEX.2 operator suite for abstractions
+B, C, and D in two forms, plus matched E:
+    - complete families: B, C, D
+    - matched families:  Bm, Cm, Dm, Em
 
-For each EVODEX-P reaction (from Phase 3c or 3d), operators are computed
+For each EVODEX-P reaction (from Phase 3d), operators are computed
 using extract_operator_by_abstraction.
 
 Operators are deduplicated by reaction_hash and recorded with their
@@ -14,7 +14,7 @@ supporting EVODEX-P sources.
 
 This phase also performs fragmentation analysis with respect to EVODEX-E:
 for each ERO, we test whether all its P-reaction members produce a single
-unique operator at each abstraction family (A, Am, B, Bm, C, Cm, D, Dm, E, Em).
+unique operator at each abstraction family (B, Bm, C, Cm, D, Dm, Em).
 
 All results are written to:
     data/processed/evodex_<family>.csv
@@ -28,6 +28,9 @@ Reports:
 Branding:
     Operator IDs are assigned using EVODEX.2-* prefixes, using __version__
 as defined in pipeline.version.
+
+The E set was calculated earlier in 3d and not repeated.
+The A and Am abstractions cannot be deduplicated with the current reaction_hash algorithm and are not calculated.
 """
 
 import csv
@@ -63,15 +66,13 @@ E_INPUT = os.path.join(PROCESSED_DIR, "evodex_e_phase3d_final.csv")
 
 # Outputs (processed)
 OUT_PROCESSED = {
-    "A": os.path.join(PROCESSED_DIR, "evodex_a_complete.csv"),
-    "Am": os.path.join(PROCESSED_DIR, "evodex_a_matched.csv"),
     "B": os.path.join(PROCESSED_DIR, "evodex_b_complete.csv"),
     "Bm": os.path.join(PROCESSED_DIR, "evodex_b_matched.csv"),
     "C": os.path.join(PROCESSED_DIR, "evodex_c_complete.csv"),
     "Cm": os.path.join(PROCESSED_DIR, "evodex_c_matched.csv"),
     "D": os.path.join(PROCESSED_DIR, "evodex_d_complete.csv"),
     "Dm": os.path.join(PROCESSED_DIR, "evodex_d_matched.csv"),
-    "E": os.path.join(PROCESSED_DIR, "evodex_e_complete.csv"),
+    # E was computed at a previous step, so only Em is computed here
     "Em": os.path.join(PROCESSED_DIR, "evodex_e_matched.csv"),
 }
 
@@ -96,15 +97,13 @@ def ensure_directories() -> None:
 # ---------------------------------------------------------------------------
 
 OPERATOR_FAMILIES = [
-    ("A", "A", False),
-    ("Am", "A", True),
     ("B", "B", False),
     ("Bm", "B", True),
     ("C", "C", False),
     ("Cm", "C", True),
     ("D", "D", False),
     ("Dm", "D", True),
-    ("E", "E", False),
+    # No complete E family; only matched E (Em) is computed
     ("Em", "E", True),
 ]
 
@@ -229,7 +228,7 @@ def write_fragmentation_report(fragmentation) -> None:
     """
     Write a human-readable summary of fragmentation / completion results.
     """
-    report_path = os.path.join(ERRORS_DIR, "phase4_fragmentation_report.txt")
+    report_path = FRAGMENTATION_REPORT
     os.makedirs(ERRORS_DIR, exist_ok=True)
 
     with open(report_path, "w") as f:
@@ -257,12 +256,15 @@ def write_fragmentation_report(fragmentation) -> None:
 
             f.write("\n")
 
+
 def write_summary_report(
     operators: Dict[str, Dict[str, Dict]],
     frag: Dict[str, Dict[str, List[str]]],
 ) -> None:
     with open(SUMMARY_REPORT, "w") as f:
-        f.write(f"EVODEX.2 Phase 4 Operator Completion Report (version {__version__})\n")
+        f.write(
+            f"EVODEX.2 Phase 4 Operator Completion Report (version {__version__})\n"
+        )
         f.write("===============================================================\n\n")
 
         for fam, opmap in operators.items():
@@ -337,17 +339,23 @@ def main() -> None:
                 "hash": h,
             })
 
-        rows = sorted(rows, key=lambda r: len(r["sources"].split(",")), reverse=True)
+        rows = sorted(
+            rows,
+            key=lambda r: len(r["sources"].split(",")),
+            reverse=True
+        )
 
         with open(out_path, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=["id", "smirks", "sources", "hash"])
+            writer = csv.DictWriter(
+                f,
+                fieldnames=["id", "smirks", "sources", "hash"]
+            )
             writer.writeheader()
             writer.writerows(rows)
 
     # ----------------------------------------------------------------------
     # Fragmentation analysis
     # ----------------------------------------------------------------------
-
     fragmentation = fragmentation_analysis(e_df, operators)
     write_fragmentation_report(fragmentation)
     write_summary_report(operators, fragmentation)
