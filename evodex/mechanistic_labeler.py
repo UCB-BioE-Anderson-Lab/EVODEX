@@ -1,8 +1,13 @@
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional, Any
 from collections import Counter
+from pathlib import Path
+import csv
 
 from rdkit import Chem
 from rdkit.Chem import rdChemReactions, AllChem
+
+# Allow very large CSV fields (needed for long SMIRKS strings)
+csv.field_size_limit(10**7)
 
 
 def prepare_operator(operator_smirks: str):
@@ -254,6 +259,17 @@ def mechanistic_label_reaction(rxn, operator) -> Dict:
     }
 
 
+def _has_nontrivial_match(result: Dict) -> bool:
+    """
+    Return True if the mechanistic labeling contains any matched atoms
+    (mapped or unmapped). Used to decide whether an operator matches
+    a concrete reaction.
+    """
+    mapped_r, mapped_p = result["mapped_atoms"]
+    unmapped_r, unmapped_p = result["unmapped_matched_atoms"]
+    return bool(mapped_r or mapped_p or unmapped_r or unmapped_p)
+
+
 def _reduced_fragment_smiles(mol: Chem.Mol, remove_indices) -> List[str]:
     """
     Remove atoms in remove_indices, then return canonical SMILES for each
@@ -357,6 +373,89 @@ def _pretty_print_mechanistic_result(result: Dict) -> None:
     print()
 
 
+def find_mechanistic_match_in_dataset(
+    reaction_smiles: str,
+    abstraction: str,
+    data_dir: Optional[Path] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    Scan an EVODEX mechanistic operator dataset (Bm, Cm, Dm, Em) from top to
+    bottom and return the first operator whose mechanistic labeling matches
+    the given reaction.
+
+    Parameters
+    ----------
+    reaction_smiles : str
+        Concrete reaction SMILES to be labeled (reactants>>products).
+    abstraction : str
+        Mechanistic abstraction level. Expected values are "Bm", "Cm", "Dm",
+        or "Em". Case insensitive.
+    data_dir : pathlib.Path, optional
+        Directory containing the EVODEX CSV files. Defaults to the "data"
+        subdirectory next to this module.
+
+    Returns
+    -------
+    dict or None
+        On success, returns a dict with keys:
+
+          - "dataset_id": EVODEX operator id (for example "EVODEX.2-Em1").
+          - "operator_smirks": operator SMIRKS from the CSV.
+          - "sources": sources field from the CSV (if present).
+          - "hash": hash field from the CSV (if present).
+          - "labeling": full mechanistic labeler result dict.
+
+        If no operator matches the reaction, returns None.
+    """
+    abstraction_clean = abstraction.strip().lower()
+
+    file_map = {
+        "bm": "EVODEX-Bm.csv",
+        "cm": "EVODEX-Cm.csv",
+        "dm": "EVODEX-Dm.csv",
+        "em": "EVODEX-Em.csv",
+    }
+
+    if abstraction_clean not in file_map:
+        raise ValueError(
+            f"Unsupported abstraction level {abstraction!r}. "
+            f"Expected one of {sorted(file_map.keys())} (case insensitive)."
+        )
+
+    if data_dir is None:
+        data_dir = Path(__file__).resolve().parent / "data"
+
+    csv_path = data_dir / file_map[abstraction_clean]
+
+    if not csv_path.is_file():
+        raise FileNotFoundError(f"EVODEX dataset not found at {csv_path}")
+
+    # Prepare the concrete reaction once
+    rxn = prepare_reaction(reaction_smiles)
+
+    with csv_path.open("r", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            smirks = row.get("smirks")
+            if not smirks:
+                continue
+
+            operator = prepare_operator(smirks)
+            result = mechanistic_label_reaction(rxn, operator)
+
+            if _has_nontrivial_match(result):
+                return {
+                    "dataset_id": row.get("id"),
+                    "operator_smirks": smirks,
+                    "sources": row.get("sources"),
+                    "hash": row.get("hash"),
+                    "labeling": result,
+                }
+
+    # No match found
+    return None
+
+
 if __name__ == "__main__":
     # Verbose example: kinase like complete operator with explicit hydrogens.
     # This is meant for interactive inspection, not for unit tests.
@@ -387,3 +486,16 @@ if __name__ == "__main__":
 
     print("\n=== Mechanistic labeler result ===")
     _pretty_print_mechanistic_result(result)
+
+    # Example of scanning the Em dataset for a mechanistic match
+    # (requires EVODEX-Em.csv in evodex/data)
+    try:
+        match = find_mechanistic_match_in_dataset(reaction_smiles, "Em")
+        if match is not None:
+            print("\nFirst Em dataset match:")
+            print("  id:", match["dataset_id"])
+            print("  operator:", match["operator_smirks"])
+        else:
+            print("\nNo Em dataset match found for this reaction.")
+    except FileNotFoundError as e:
+        print("\nSkipping dataset scan:", e)
