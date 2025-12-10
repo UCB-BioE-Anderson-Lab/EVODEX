@@ -50,7 +50,8 @@ function buildTypeListItems() {
     "Em",
     "F",    // formula operators
     "M",    // mass operators
-    "M_SUBSET"
+    "M_SUBSET",
+    "D_SYNTHESIS"
   ];
 
   // TYPE_CONFIG comes from data_loader.js
@@ -79,7 +80,9 @@ function typeListItem(type) {
     Em: "EVODEX-Em",
     F: "EVODEX-F (formula operators)",
     M: "EVODEX-M (mass operators)",
-    M_SUBSET: "EVODEX-M (MS subset)"
+    M_SUBSET: "EVODEX-M (MS subset)",
+    D_SYNTHESIS: "EVODEX-D (synthesis subset)"
+
   };
   const text = labelMap[type] || `EVODEX-${type}`;
   return `

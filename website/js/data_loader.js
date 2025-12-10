@@ -42,6 +42,9 @@ const TYPE_CONFIG = {
   M:        { file: "../evodex/data/EVODEX-M_unique_masses.csv" },
   M_SUBSET: { file: "../evodex/data/EVODEX-M_mass_spec_subset.csv" },
 
+  // D synthesis subset
+  D_SYNTHESIS: { file: "../evodex/data/EVODEX-D_synthesis_subset.csv" },
+
   // Additional helper data
   SELECTED: { file: "../evodex/data/selected_reactions.csv" }
   // ubiquitous_metabolites.txt is not CSV, so leave it out here
