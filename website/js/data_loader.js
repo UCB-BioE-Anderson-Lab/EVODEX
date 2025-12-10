@@ -20,13 +20,11 @@
  */
 const TYPE_CONFIG = {
   // core reaction and partial-reaction operators
-  R:  { file: "../evodex/data/EVODEX-R_full_reactions.csv" },
-  P:  { file: "../evodex/data/EVODEX-P_partial_reactions.csv" },
+  R:  { file: "../evodex/data/EVODEX-R.csv" },
+  P:  { file: "../evodex/data/EVODEX-P.csv" },
   E:  { file: "../evodex/data/EVODEX-E.csv" },
 
-  // A/B/C/D families and their "m" variants
-  A:  { file: "../evodex/data/EVODEX-A.csv" },
-  Am: { file: "../evodex/data/EVODEX-Am.csv" },
+  // B/C/D families and their "m" variants
   B:  { file: "../evodex/data/EVODEX-B.csv" },
   Bm: { file: "../evodex/data/EVODEX-Bm.csv" },
   C:  { file: "../evodex/data/EVODEX-C.csv" },
@@ -34,21 +32,19 @@ const TYPE_CONFIG = {
   D:  { file: "../evodex/data/EVODEX-D.csv" },
   Dm: { file: "../evodex/data/EVODEX-Dm.csv" },
 
-  // E "meta" operators (if you want to expose them separately later)
+  // E operators and meta-operators
   Em: { file: "../evodex/data/EVODEX-Em.csv" },
 
-  // Special subsets / operators
-  E_OPS:    { file: "../evodex/data/EVODEX-E_reaction_operators.csv" },
-
   // Formula operators
-  F:  { file: "../evodex/data/EVODEX-F_unique_formulas.csv" },
+  F:  { file: "../evodex/data/EVODEX-F.csv" },
 
   // Mass operators
   M:        { file: "../evodex/data/EVODEX-M_unique_masses.csv" },
   M_SUBSET: { file: "../evodex/data/EVODEX-M_mass_spec_subset.csv" },
 
-  // Additional helper data if you convert it to CSV later
-  // SELECTED: { file: "../evodex/data/selected_reactions.csv" }
+  // Additional helper data
+  SELECTED: { file: "../evodex/data/selected_reactions.csv" }
+  // ubiquitous_metabolites.txt is not CSV, so leave it out here
 };
 
 /**

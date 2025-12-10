@@ -13,7 +13,7 @@ function renderHeader(el) {
         </a>
         <div class="evodex-title-block">
           <h1 class="evodex-title">EVODEX.2</h1>
-          <div class="evodex-subtitle">Evolutionary Decomposition of Chemical Transformations</div>
+          <div class="evodex-subtitle">Enzymatic Validation Operator Differentiation and Extraction</div>
         </div>
       </div>
     `;
