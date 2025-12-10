@@ -29,7 +29,6 @@ Branding:
     Operator IDs are assigned using EVODEX.2-* prefixes, using __version__
 as defined in pipeline.version.
 
-The E set was calculated earlier in 3d and not repeated.
 The A and Am abstractions cannot be deduplicated with the current reaction_hash algorithm and are not calculated.
 """
 
@@ -72,7 +71,7 @@ OUT_PROCESSED = {
     "Cm": os.path.join(PROCESSED_DIR, "evodex_c_matched.csv"),
     "D": os.path.join(PROCESSED_DIR, "evodex_d_complete.csv"),
     "Dm": os.path.join(PROCESSED_DIR, "evodex_d_matched.csv"),
-    # E was computed at a previous step, so only Em is computed here
+    "E": os.path.join(PROCESSED_DIR, "evodex_e_complete.csv"),
     "Em": os.path.join(PROCESSED_DIR, "evodex_e_matched.csv"),
 }
 
@@ -103,7 +102,7 @@ OPERATOR_FAMILIES = [
     ("Cm", "C", True),
     ("D", "D", False),
     ("Dm", "D", True),
-    # No complete E family; only matched E (Em) is computed
+    ("E", "E", False),
     ("Em", "E", True),
 ]
 

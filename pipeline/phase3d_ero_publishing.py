@@ -165,8 +165,6 @@ def main():
         writer.writeheader()
         for row in e_updated_rows:
             writer.writerow({key: row[key] for key in fieldnames})
-    print("Publishing EVODEX-E to evodex/data...")
-    shutil.copyfile(EVODEX_E_PHASE3D_FINAL, os.path.join(EVODEX_DATA_DIR, "EVODEX-E.csv"))
 
     # EVODEX-P: Write updated rows to phase3d_final, convert to H for publishing
     print("Writing EVODEX-P phase3d_final file...")
