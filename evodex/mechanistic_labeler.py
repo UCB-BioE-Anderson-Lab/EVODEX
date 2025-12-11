@@ -32,49 +32,43 @@ def prepare_reaction(reaction_smiles: str):
     """
     Prepare an RDKit ChemicalReaction object from a reaction SMILES string.
 
-    This helper:
-      - Splits the reaction SMILES into reactant and product parts.
-      - Parses individual molecules on each side.
-      - Adds explicit hydrogens to all atoms.
-      - Constructs a ChemicalReaction with one or more reactant and product templates.
-
-    Note
-    ----
-    Downstream labelers such as mechanistic_label_reaction assume a
-    single-substrate and single-product viewpoint and operate on
-    rxn.GetReactants()[0] and rxn.GetProducts()[0]. This helper does not
-    enforce that there is exactly one reactant or product template, so callers
-    that rely on a 1-to-1 substrate to product mapping must handle that
-    assumption explicitly.
+    This function only supports single-molecule reactions (one substrate to one product).
+    If the reaction SMILES contains multiple molecules (indicated by '.' separators),
+    a ValueError will be raised.
 
     Parameters
     ----------
     reaction_smiles : str
-        A reaction SMILES string of the form 'reactants>>products'.
+        A reaction SMILES string of the form 'reactant>>product' where both
+        reactant and product must be single molecules.
 
     Returns
     -------
     rdkit.Chem.rdChemReactions.ChemicalReaction
-        An RDKit ChemicalReaction object with hydrogens added to all
+        An RDKit ChemicalReaction object with hydrogens added to the
         reactant and product molecules.
+
+    Raises
+    ------
+    ValueError
+        If the reaction SMILES contains '.' indicating multiple molecules
+        on either side of the reaction.
     """
+    if '.' in reaction_smiles:
+        raise ValueError(
+            "Multi-molecule reactions are not supported. "
+            "Reaction SMILES must be single substrate to single product. "
+            f"Got: {reaction_smiles}"
+        )
+    
     reactant_smiles, product_smiles = reaction_smiles.split(">>")
-    reactant_mols = [
-        Chem.AddHs(Chem.MolFromSmiles(smi))
-        for smi in reactant_smiles.split(".")
-        if smi
-    ]
-    product_mols = [
-        Chem.AddHs(Chem.MolFromSmiles(smi))
-        for smi in product_smiles.split(".")
-        if smi
-    ]
+    
+    reactant_mol = Chem.AddHs(Chem.MolFromSmiles(reactant_smiles))
+    product_mol = Chem.AddHs(Chem.MolFromSmiles(product_smiles))
 
     rxn = AllChem.ChemicalReaction()
-    for mol in reactant_mols:
-        rxn.AddReactantTemplate(mol)
-    for mol in product_mols:
-        rxn.AddProductTemplate(mol)
+    rxn.AddReactantTemplate(reactant_mol)
+    rxn.AddProductTemplate(product_mol)
 
     return rxn
 
@@ -84,11 +78,10 @@ def mechanistic_label_reaction(rxn, operator) -> Dict:
     Perform a relaxed, mechanistically oriented alignment between a concrete reaction
     and a reaction operator.
 
-    This function conceptually treats the reaction as a single-substrate and
-    single-product transformation and uses the first reactant and first product
-    templates in each ChemicalReaction. It identifies atom-level
-    correspondences between the operator and the reaction and classifies
-    reaction atoms by their parity in the transformation.
+    This function treats the reaction as a single-substrate and single-product
+    transformation and uses the first reactant and first product templates in each
+    ChemicalReaction. It identifies atom-level correspondences between the operator
+    and the reaction and classifies reaction atoms by their parity in the transformation.
 
     In contrast to a strict complete-operator reaction_labeler that requires the
     non-transformed remainder of the substrate and product to be identical, this
@@ -386,7 +379,8 @@ def find_mechanistic_match_in_dataset(
     Parameters
     ----------
     reaction_smiles : str
-        Concrete reaction SMILES to be labeled (reactants>>products).
+        Concrete reaction SMILES to be labeled (reactant>>product).
+        Must be a single substrate to single product reaction.
     abstraction : str
         Mechanistic abstraction level. Expected values are "Bm", "Cm", "Dm",
         or "Em". Case insensitive.
@@ -406,6 +400,11 @@ def find_mechanistic_match_in_dataset(
           - "labeling": full mechanistic labeler result dict.
 
         If no operator matches the reaction, returns None.
+
+    Raises
+    ------
+    ValueError
+        If the reaction SMILES contains multiple molecules (indicated by '.').
     """
     abstraction_clean = abstraction.strip().lower()
 
@@ -430,7 +429,7 @@ def find_mechanistic_match_in_dataset(
     if not csv_path.is_file():
         raise FileNotFoundError(f"EVODEX dataset not found at {csv_path}")
 
-    # Prepare the concrete reaction once
+    # Prepare the concrete reaction once (will raise ValueError if multi-molecule)
     rxn = prepare_reaction(reaction_smiles)
 
     with csv_path.open("r", newline="") as f:
