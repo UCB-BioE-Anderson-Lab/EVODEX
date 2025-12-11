@@ -438,6 +438,10 @@ def find_mechanistic_match_in_dataset(
             smirks = row.get("smirks")
             if not smirks:
                 continue
+            
+            # Skip multi-molecule operators
+            if '.' in smirks:
+                continue
 
             operator = prepare_operator(smirks)
             result = mechanistic_label_reaction(rxn, operator)
