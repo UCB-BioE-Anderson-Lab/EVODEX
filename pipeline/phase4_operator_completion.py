@@ -22,6 +22,7 @@ and published to:
     evodex/data/EVODEX-<family>.csv
 
 Reports:
+    data/errors/phase4_operator_errors.csv
     data/errors/phase4_fragmentation_report.txt
     data/errors/phase4_evodex_report.txt
 
@@ -45,6 +46,7 @@ from evodex.operators import extract_operator_by_abstraction
 from evodex.utils import reaction_hash
 
 from pipeline.version import __version__
+
 csv.field_size_limit(10**7)
 
 
@@ -82,6 +84,7 @@ OUT_PUBLISHED = {
 }
 
 # Reports
+PHASE4_ERROR_LOG = os.path.join(ERRORS_DIR, "phase4_operator_errors.csv")
 FRAGMENTATION_REPORT = os.path.join(ERRORS_DIR, "phase4_fragmentation_report.txt")
 SUMMARY_REPORT = os.path.join(ERRORS_DIR, "phase4_evodex_report.txt")
 
@@ -112,18 +115,20 @@ OPERATOR_FAMILIES = [
 # ---------------------------------------------------------------------------
 
 def compute_operators_for_p(
-    p_id: str, smirks: str
+    p_id: str,
+    smirks: str,
+    err_writer: csv.DictWriter,
 ) -> Dict[str, Tuple[str, str]]:
     """
     Compute all EVODEX.2 operator families for a single P reaction.
+    Logs all failures to the Phase 4 error CSV.
 
     Returns:
         {family_key: (operator_smirks, operator_hash)}
     """
-    result = {}
+    result: Dict[str, Tuple[str, str]] = {}
 
     for key, level, matched in OPERATOR_FAMILIES:
-        # Try to extract operator for this abstraction family
         try:
             op_smirks = extract_operator_by_abstraction(
                 smirks,
@@ -131,35 +136,41 @@ def compute_operators_for_p(
                 matched=matched
             )
         except Exception as e:
-            print(
-                f"[WARNING] Phase 4: operator extraction failed for P {p_id}, "
-                f"family {key}: {e}"
-            )
+            err_writer.writerow({
+                "p_id": p_id,
+                "family": key,
+                "smirks": smirks,
+                "error_type": "extraction_failed",
+                "error_message": str(e),
+            })
             continue
 
-        # Skip malformed empty/partial operators
         if (
             not op_smirks
             or op_smirks.startswith(">>")
             or op_smirks.endswith(">>")
         ):
-            print(
-                f"[WARNING] Phase 4: malformed operator for P {p_id}, "
-                f"family {key}: '{op_smirks}'"
-            )
+            err_writer.writerow({
+                "p_id": p_id,
+                "family": key,
+                "smirks": op_smirks if op_smirks is not None else "",
+                "error_type": "malformed_operator",
+                "error_message": "Empty or one-sided operator",
+            })
             continue
 
-        # Hash operator; catch invalid SMILES / RDKit failures
         try:
             op_hash = reaction_hash(op_smirks)
         except Exception as e:
-            print(
-                f"[WARNING] Phase 4: skipping operator family {key} for P {p_id} "
-                f"due to reaction_hash failure: {e}"
-            )
+            err_writer.writerow({
+                "p_id": p_id,
+                "family": key,
+                "smirks": op_smirks,
+                "error_type": "reaction_hash_failed",
+                "error_message": str(e),
+            })
             continue
 
-        # Store successful operator + hash
         result[key] = (op_smirks, op_hash)
 
     return result
@@ -187,7 +198,6 @@ def fragmentation_analysis(
             {family: {E_id: list(hashes)}}
     """
 
-    # Build P → hash maps per family
     p_to_hash = {
         fam: {
             p: h
@@ -226,6 +236,8 @@ def fragmentation_analysis(
 def write_fragmentation_report(fragmentation) -> None:
     """
     Write a human-readable summary of fragmentation / completion results.
+    Note: This function expects a summary-like structure; if you want a detailed
+    per-E report, update this function to match fragmentation_analysis output.
     """
     report_path = FRAGMENTATION_REPORT
     os.makedirs(ERRORS_DIR, exist_ok=True)
@@ -245,7 +257,6 @@ def write_fragmentation_report(fragmentation) -> None:
             f.write(f"  Completed operators: {completed}\n")
             f.write(f"  Fragmented operators: {fragmented}\n")
 
-            # Ensure all hashes are converted to strings before joining
             if hashes:
                 f.write(
                     "  Hashes: "
@@ -291,39 +302,41 @@ def main() -> None:
 
     ensure_directories()
 
-    # Load inputs
     p_df = pd.read_csv(P_INPUT, dtype={"id": str, "smirks": str, "sources": str})
     e_df = pd.read_csv(E_INPUT, dtype={"id": str, "sources": str})
 
-    # Initialize operator map:
-    # {family: {hash: {"smirks": str, "sources": set([...])}}}
     operators = {
         key: {}
         for key, _, _ in OPERATOR_FAMILIES
     }
 
-    # ----------------------------------------------------------------------
-    # Compute operators for all EVODEX-P entries
-    # ----------------------------------------------------------------------
+    error_rows_written = 0
 
-    for idx, row in enumerate(p_df.itertuples(index=False), start=1):
-        if idx % 500 == 0:
-            print(f"[{time.strftime('%H:%M:%S')}] Processed {idx} P reactions...")
+    with open(PHASE4_ERROR_LOG, "w", newline="") as errfile:
+        err_writer = csv.DictWriter(
+            errfile,
+            fieldnames=["p_id", "family", "smirks", "error_type", "error_message"],
+        )
+        err_writer.writeheader()
 
-        p_id = str(row.id)
-        smirks = row.smirks
+        for idx, row in enumerate(p_df.itertuples(index=False), start=1):
+            if idx % 500 == 0:
+                print(f"[{time.strftime('%H:%M:%S')}] Processed {idx} P reactions...")
 
-        op_results = compute_operators_for_p(p_id, smirks)
+            p_id = str(row.id)
+            smirks = row.smirks
 
-        for fam, (op_smirks, op_hash) in op_results.items():
-            fam_map = operators[fam]
-            if op_hash not in fam_map:
-                fam_map[op_hash] = {"smirks": op_smirks, "sources": set()}
-            fam_map[op_hash]["sources"].add(p_id)
+            before = errfile.tell()
+            op_results = compute_operators_for_p(p_id, smirks, err_writer)
+            after = errfile.tell()
+            if after > before:
+                error_rows_written += 1
 
-    # ----------------------------------------------------------------------
-    # Write processed operator CSVs
-    # ----------------------------------------------------------------------
+            for fam, (op_smirks, op_hash) in op_results.items():
+                fam_map = operators[fam]
+                if op_hash not in fam_map:
+                    fam_map[op_hash] = {"smirks": op_smirks, "sources": set()}
+                fam_map[op_hash]["sources"].add(p_id)
 
     for fam, opmap in operators.items():
         out_path = OUT_PROCESSED[fam]
@@ -352,16 +365,9 @@ def main() -> None:
             writer.writeheader()
             writer.writerows(rows)
 
-    # ----------------------------------------------------------------------
-    # Fragmentation analysis
-    # ----------------------------------------------------------------------
     fragmentation = fragmentation_analysis(e_df, operators)
     write_fragmentation_report(fragmentation)
     write_summary_report(operators, fragmentation)
-
-    # ----------------------------------------------------------------------
-    # Publish operators
-    # ----------------------------------------------------------------------
 
     for fam in operators:
         src = OUT_PROCESSED[fam]
@@ -370,7 +376,11 @@ def main() -> None:
         pd.read_csv(src).to_csv(dst, index=False)
 
     elapsed = time.time() - start_time
-    print("✓ No errors encountered.")
+    if error_rows_written == 0:
+        print("✓ No operator extraction errors recorded.")
+    else:
+        print(f"⚠ Phase 4 recorded {error_rows_written} operator extraction error rows.")
+        print(f"  See: {PHASE4_ERROR_LOG}")
     print(f"Phase 4 EVODEX.2 operator completion completed in {elapsed:.2f} seconds.")
 
 
