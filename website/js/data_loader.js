@@ -39,7 +39,7 @@ const TYPE_CONFIG = {
   F:  { file: "../evodex/data/EVODEX-F.csv" },
 
   // Mass operators
-  M:        { file: "../evodex/data/EVODEX-M_unique_masses.csv" },
+  M:        { file: "../evodex/data/EVODEX-M.csv" },
   M_SUBSET: { file: "../evodex/data/EVODEX-M_mass_spec_subset.csv" },
 
   // D synthesis subset
