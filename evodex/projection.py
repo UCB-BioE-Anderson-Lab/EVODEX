@@ -2,10 +2,19 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.*')
-from evodex.utils import get_molecule_hash
+
+from evodex.utils import get_molecule_hash_from_mol
 from evodex.formula import calculate_formula_diff
 from typing import List, Dict
 import itertools
+
+
+def get_molecule_hash(smiles: str) -> str:
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise ValueError(f"Invalid SMILES for hashing: {smiles}")
+    return get_molecule_hash_from_mol(mol)
+
 
 def project_operator(operator_smirks, substrates):
     """
@@ -16,11 +25,13 @@ def project_operator(operator_smirks, substrates):
     if not isinstance(operator_smirks, str) or '>>' not in operator_smirks:
         print(f"[project_operator] Invalid operator_smirks: {operator_smirks}")
         return []
+
     # Build reaction from SMIRKS
     try:
         substrate_smirks, product_smirks = operator_smirks.split('>>')
         reactant_templates = substrate_smirks.split('.')
         num_operator_substrates = len(reactant_templates)
+
         rxn = AllChem.ChemicalReaction()
         for r in reactant_templates:
             mol = Chem.MolFromSmarts(r)
@@ -32,6 +43,7 @@ def project_operator(operator_smirks, substrates):
         if product_template is None:
             return []
         rxn.AddProductTemplate(product_template)
+
     except Exception as e:
         print(f"Error parsing operator SMIRKS: {e}")
         return []
@@ -40,9 +52,10 @@ def project_operator(operator_smirks, substrates):
     smiles_list = substrates.split('.')
     substrate_mols = []
     for smi in smiles_list:
-        mol = Chem.AddHs(Chem.MolFromSmiles(smi))
+        mol = Chem.MolFromSmiles(smi)
         if mol is None:
             return []
+        mol = Chem.AddHs(mol)
         substrate_mols.append(mol)
 
     num_input_substrates = len(substrate_mols)
@@ -64,7 +77,7 @@ def project_operator(operator_smirks, substrates):
             result = rxn.RunReactants(tuple(perm_group))
             if result:
                 all_products.extend(result)
-        except Exception as e:
+        except Exception:
             pass
 
     unique_products = set()
@@ -74,6 +87,7 @@ def project_operator(operator_smirks, substrates):
         unique_products.add(joined)
 
     return list(unique_products)
+
 
 def match_projection(ero_smirks, substrate, expected_product):
     """
@@ -86,17 +100,24 @@ def match_projection(ero_smirks, substrate, expected_product):
     except Exception:
         return False
 
+
 def add_explicit_hydrogens(smirks):
     """
     Add hydrogens to both sides of a SMIRKS string.
     """
     try:
         substrate, product = smirks.split('>>')
-        sub_mol = Chem.AddHs(Chem.MolFromSmiles(substrate))
-        prod_mol = Chem.AddHs(Chem.MolFromSmiles(product))
+        sub_mol = Chem.MolFromSmiles(substrate)
+        prod_mol = Chem.MolFromSmiles(product)
+        if sub_mol is None or prod_mol is None:
+            raise ValueError("Invalid SMILES in SMIRKS")
+
+        sub_mol = Chem.AddHs(sub_mol)
+        prod_mol = Chem.AddHs(prod_mol)
         return f"{Chem.MolToSmiles(sub_mol)}>>{Chem.MolToSmiles(prod_mol)}"
     except Exception as e:
         raise ValueError(f"Could not add hydrogens to SMIRKS: {smirks}") from e
+
 
 def compute_formula_difference(smirks):
     """
@@ -105,26 +126,12 @@ def compute_formula_difference(smirks):
     smirks_h = add_explicit_hydrogens(smirks)
     return calculate_formula_diff(smirks_h)
 
+
 def find_matching_eros(evop_smirks: str, candidate_eros: List[Dict]) -> List[Dict]:
     """
     Given a reaction SMIRKS (typically from an EVODEX-P reaction) and a list of candidate
     reaction operators (EROs), identify which operators successfully project the correct
     product from the given substrate.
-
-    Parameters:
-    evop_smirks (str): The SMIRKS string representing the input reaction to explain.
-    candidate_eros (List[Dict]): A list of EROs where each ERO is a dictionary that includes
-        at least 'id' and 'smirks'. The EROs are assumed to have been filtered by formula
-        difference (EVODEX-F), though this is not strictly required.
-
-    Returns:
-    List[Dict]: A list of matching EROs. Each entry is a dictionary containing:
-        - 'id': The ID of the matching ERO.
-        - 'smirks': The SMIRKS string of the matching ERO.
-        - 'matched_smiles': The projected product that matches the EVOP.
-        - 'label_map': A dictionary mapping atom indices from the EVOP to the matching ERO.
-                       (Currently placeholder; should be implemented when mapping is available.)
-        - 'ero_hash': A unique determinate hash for the reaction operator
     """
     try:
         substrate, product = evop_smirks.split('>>')
@@ -142,10 +149,11 @@ def find_matching_eros(evop_smirks: str, candidate_eros: List[Dict]) -> List[Dic
                         'id': ero['id'],
                         'smirks': ero['smirks'],
                         'matched_smiles': p,
-                        'label_map': {},  # TODO: populate with actual atom mapping
+                        'label_map': {},
                         'ero_hash': ero['ero_hash']
                     })
                     break
         except Exception:
             continue
+
     return matched

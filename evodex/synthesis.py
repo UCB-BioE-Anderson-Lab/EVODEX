@@ -4,175 +4,211 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit import RDLogger
-RDLogger.DisableLog('rdApp.*')
+RDLogger.DisableLog("rdApp.*")
 import re
 
-# Global cache for EVODEX data
+# Global cache for EVODEX data (filename -> DataFrame or dict)
 evodex_data_cache = {}
 
-def project_reaction_operator(smirks, substrate):
+
+def project_reaction_operator(smirks: str, substrate: str):
     """
-    Apply a reaction operator (SMIRKS) to a substrate.
+    Apply a reaction operator (SMIRKS) to a single substrate SMILES.
 
-    Parameters:
-    smirks (str): The SMIRKS string representing the reaction.
-    substrate (str): The SMILES string of the substrate molecule.
-
-    Returns:
-    list: A list of unique product molecules as canonical SMILES strings.
-
-    Raises:
-    ValueError: If the reaction or substrate is invalid.
+    Returns a list of unique product SMILES strings.
     """
-    # Create a reaction object from the SMIRKS string
     rxn = AllChem.ReactionFromSmarts(smirks)
     if not rxn:
         raise ValueError(f"Failed to create reaction from SMIRKS: {smirks}")
-    
-    # Check if the reaction has valid reactants and products
+
     if rxn.GetNumReactantTemplates() == 0 or rxn.GetNumProductTemplates() == 0:
         raise ValueError(f"Reaction has no valid reactants or products: {smirks}")
 
-    # Create a molecule object from the substrate SMILES string
     substrate_mol = Chem.MolFromSmiles(substrate)
     if not substrate_mol:
         raise ValueError(f"Failed to create molecule from substrate SMILES: {substrate}")
-    
-    # Add hydrogens to the substrate molecule
+
     substrate_mol = Chem.AddHs(substrate_mol)
 
-    # Apply the reaction to the substrate molecule
     products = rxn.RunReactants((substrate_mol,))
     if not products:
         return []
-    
-    # Convert the product molecules to canonical SMILES strings
+
     unique_products = set()
     for product_tuple in products:
         for product in product_tuple:
             if product:
-                canonical_smiles = Chem.MolToSmiles(product)
-                unique_products.add(canonical_smiles)
-    
+                unique_products.add(Chem.MolToSmiles(product))
+
     return list(unique_products)
 
-def project_evodex_operator(evodex_id, substrate):
+
+def project_evodex_operator(evodex_id: str, substrate: str):
     """
-    Apply an EVODEX operator to a substrate.
-
-    Parameters:
-    evodex_id (str): The EVODEX ID of the operator.
-    substrate (str): The SMILES string of the substrate molecule.
-
-    Returns:
-    list: A list of unique product molecules as canonical SMILES strings.
-
-    Raises:
-    ValueError: If the SMIRKS for the EVODEX ID is not found or if the reaction fails.
+    Apply an EVODEX operator (by EVODEX id) to a substrate SMILES.
     """
     smirks = _lookup_smirks_by_evodex_id(evodex_id)
     if smirks is None:
         raise ValueError(f"SMIRKS not found for EVODEX ID: {evodex_id}")
     return project_reaction_operator(smirks, substrate)
 
-def project_synthesis_operators(substrate):
-    """
-    Project all synthesis subset EVODEX-E operators on a substrate.
 
-    Parameters:
-    substrate (str): The SMILES string of the substrate molecule.
-
-    Returns:
-    dict: A dictionary with EVODEX IDs as keys and lists of unique product molecules 
-    as canonical SMILES strings as values.
+def project_family_operators(substrate: str, family: str):
     """
-    evodex_e_operators = _load_synthesis_evodex_e_operators()
-    applicable_operators = {}
-    for evodex_id, smirks in evodex_e_operators.items():
+    Project all operators for a given EVODEX family on a substrate.
+
+    family examples: "B", "Bm", "C", "Cm", "D", "Dm", "E", "Em"
+    """
+    ops = _load_evodex_family_operators(family)
+    applicable = {}
+    for evodex_id, smirks in ops.items():
         try:
             products = project_reaction_operator(smirks, substrate)
             if products:
-                applicable_operators[evodex_id] = products
+                applicable[evodex_id] = products
         except Exception:
             pass
-    return applicable_operators
+    return applicable
 
-def _lookup_smirks_by_evodex_id(evodex_id):
+
+def project_synthesis_operators(substrate: str):
     """
-    Look up SMIRKS by EVODEX ID.
+    Project synthesis-subset operators on a substrate.
 
-    Parameters:
-    evodex_id (str): The EVODEX ID of the operator.
+    This keeps the old behavior (subset-only), but uses the new filenames:
+    - preferred: EVODEX-D_synthesis_subset.csv
+    - fallback:  EVODEX-E_synthesis_subset.csv
 
-    Returns:
-    str: The SMIRKS string for the EVODEX ID, or None if not found.
+    Returns dict: {evodex_id: [product_smiles, ...], ...}
     """
-    if re.match(r"EVODEX\.\d+-E", evodex_id):
-        evodex_df = _load_evodex_data('EVODEX-E_reaction_operators.csv')
-    elif re.match(r"EVODEX\.\d+-C", evodex_id):
-        evodex_df = _load_evodex_data('EVODEX-C_reaction_operators.csv')
-    elif re.match(r"EVODEX\.\d+-N", evodex_id):
-        evodex_df = _load_evodex_data('EVODEX-N_reaction_operators.csv')
-    else:
+    ops = _load_synthesis_subset_operators()
+    applicable = {}
+    for evodex_id, smirks in ops.items():
+        try:
+            products = project_reaction_operator(smirks, substrate)
+            if products:
+                applicable[evodex_id] = products
+        except Exception:
+            pass
+    return applicable
+
+
+def _lookup_smirks_by_evodex_id(evodex_id: str):
+    """
+    Look up SMIRKS by EVODEX ID using new family CSVs:
+      evodex/data/EVODEX-<family>.csv
+    where <family> is one of: B, C, D, E, Bm, Cm, Dm, Em
+
+    Accepts ids like:
+      EVODEX.2-E159
+      EVODEX.2-Em159
+      EVODEX-E159
+      EVODEX-Em159
+      EVODEX.1-E159_temp  (suffix ignored; exact id match required)
+    """
+    family = _infer_family_from_evodex_id(evodex_id)
+    if family is None:
         return None
-    
-    smirks = evodex_df.loc[evodex_df['id'] == evodex_id, 'smirks'].values
-    return smirks[0] if len(smirks) > 0 else None
 
-def _load_synthesis_evodex_e_operators():
+    ops = _load_evodex_family_operators(family)
+
+    if evodex_id in ops:
+        return ops[evodex_id]
+
+    # If ids in CSV do not include your suffixes like "_temp", try stripping common suffixes
+    base = re.sub(r"(_temp|_draft|_test)$", "", evodex_id)
+    return ops.get(base)
+
+
+def _infer_family_from_evodex_id(evodex_id: str):
     """
-    Load synthesis subset EVODEX-E operators.
+    Extract family token after the last "-" in an EVODEX id, allowing an optional "m".
 
-    Returns:
-    dict: A dictionary with EVODEX IDs as keys and SMIRKS strings as values.
+    Examples:
+      EVODEX.2-E159      -> "E"
+      EVODEX.2-Em159     -> "Em"
+      EVODEX.2-D10       -> "D"
+      EVODEX.2-Dm10      -> "Dm"
     """
-    return _load_evodex_data('EVODEX-E_synthesis_subset.csv', key_column='id', value_column='smirks')
+    m = re.search(r"-([BCDE]m?)(\d+)", evodex_id)
+    if not m:
+        return None
+    return m.group(1)
 
-def _load_evodex_data(filename, key_column=None, value_column=None):
+
+def _load_evodex_family_operators(family: str):
     """
-    Lazy-load EVODEX data from a CSV file and cache it.
+    Load EVODEX-<family>.csv as {id: smirks}.
+    """
+    filename = f"EVODEX-{family}.csv"
+    return _load_evodex_data(filename, key_column="id", value_column="smirks")
 
-    Parameters:
-    filename (str): The name of the CSV file.
-    key_column (str, optional): The column to use as dictionary keys.
-    value_column (str, optional): The column to use as dictionary values.
 
-    Returns:
-    pandas.DataFrame or dict: The loaded data as a DataFrame or dictionary.
-    
-    Raises:
-    FileNotFoundError: If the file is not found.
+def _load_synthesis_subset_operators():
+    """
+    Load the synthesis subset file if present, preferring D then E.
+    """
+    for filename in ["EVODEX-D_synthesis_subset.csv", "EVODEX-E_synthesis_subset.csv"]:
+        try:
+            return _load_evodex_data(filename, key_column="id", value_column="smirks")
+        except FileNotFoundError:
+            continue
+    raise FileNotFoundError(
+        "No synthesis subset CSV found. Tried EVODEX-D_synthesis_subset.csv and EVODEX-E_synthesis_subset.csv."
+    )
+
+
+def _load_evodex_data(filename: str, key_column=None, value_column=None):
+    """
+    Lazy-load EVODEX data from evodex/data/<filename> and cache it.
+
+    If key_column and value_column are provided, returns dict {key: value}.
+    Otherwise returns a DataFrame.
     """
     global evodex_data_cache
     if filename not in evodex_data_cache:
         script_dir = os.path.dirname(__file__)
-        rel_path = os.path.join('..', 'evodex/data', filename)
-        filepath = os.path.abspath(os.path.join(script_dir, rel_path))
+        filepath = os.path.abspath(os.path.join(script_dir, "..", "evodex", "data", filename))
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"File not found: {filepath}")
-        
-        evodex_df = pd.read_csv(filepath)
+
+        df = pd.read_csv(filepath)
         if key_column and value_column:
-            evodex_data_cache[filename] = dict(zip(evodex_df[key_column], evodex_df[value_column]))
+            evodex_data_cache[filename] = dict(zip(df[key_column], df[value_column]))
         else:
-            evodex_data_cache[filename] = evodex_df
+            evodex_data_cache[filename] = df
+
     return evodex_data_cache[filename]
 
-# Example usage:
+
 if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-    # Run direct projection
+    # Direct projection
     smirks = "[H][C:8]([C:7])([O:9][H])[H:19]>>[C:7][C:8](=[O:9])[H:19]"
     substrate = "CCCO"
     result = project_reaction_operator(smirks, substrate)
-    print("Direct projection: ", result)
+    print("Direct projection:", result)
 
-    # Project from EVODEX ID
-    evodex_id = "EVODEX.1-E159_temp"
-    result = project_evodex_operator(evodex_id, substrate)
-    print("Referenced EVODEX projection: ", result)
+    # Project from EVODEX ID (make sure this id exists in your EVODEX-*.csv)
+    evodex_id = "EVODEX.2-E159"
+    try:
+        result = project_evodex_operator(evodex_id, substrate)
+        print("Referenced EVODEX projection:", result)
+    except Exception as e:
+        print("Referenced EVODEX projection error:", e)
 
-    # Project All Synthesis Subset EVODEX
-    result = project_synthesis_operators(substrate)
-    print("All Synthesis Subset projection: ", result)
+    # Project all operators for a family
+    try:
+        fam = "E"
+        result = project_family_operators(substrate, fam)
+        print(f"All EVODEX-{fam} projections (non-empty):", len(result))
+    except Exception as e:
+        print("Family projection error:", e)
+
+    # Project synthesis subset (if subset CSV exists)
+    try:
+        result = project_synthesis_operators(substrate)
+        print("Synthesis subset projections (non-empty):", len(result))
+    except Exception as e:
+        print("Synthesis subset projection error:", e)
