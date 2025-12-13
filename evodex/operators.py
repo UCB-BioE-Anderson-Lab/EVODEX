@@ -610,6 +610,8 @@ def extract_operator_by_abstraction(smirks: str, abstraction: str, matched: bool
         )
         return _abstract_operator_atoms_to_wildcards(b_operator)
 
+    include_unmapped = (not matched)
+
     if level == "B":
         return operator_extractor(
             smirks,
@@ -617,8 +619,9 @@ def extract_operator_by_abstraction(smirks: str, abstraction: str, matched: bool
             include_sigma=False,
             include_pi=False,
             include_extended=False,
-            include_unmapped=False,
+            include_unmapped=include_unmapped,
         )
+
     if level == "C":
         return operator_extractor(
             smirks,
@@ -626,8 +629,9 @@ def extract_operator_by_abstraction(smirks: str, abstraction: str, matched: bool
             include_sigma=True,
             include_pi=False,
             include_extended=False,
-            include_unmapped=False,
+            include_unmapped=include_unmapped,
         )
+
     if level == "D":
         return operator_extractor(
             smirks,
@@ -635,8 +639,9 @@ def extract_operator_by_abstraction(smirks: str, abstraction: str, matched: bool
             include_sigma=True,
             include_pi=True,
             include_extended=False,
-            include_unmapped=False,
+            include_unmapped=include_unmapped,
         )
+
     if level == "E":
         return operator_extractor(
             smirks,
@@ -644,8 +649,9 @@ def extract_operator_by_abstraction(smirks: str, abstraction: str, matched: bool
             include_sigma=True,
             include_pi=True,
             include_extended=True,
-            include_unmapped=False,
+            include_unmapped=include_unmapped,
         )
+
     raise ValueError(f"Unknown abstraction: {abstraction}")
 
 
