@@ -14,80 +14,182 @@ function renderHome(app) {
   }
 
   const introHtml = `
-    <p>
-      Welcome to <strong>EVODEX.2</strong>, a dynamic viewer for EVODEX operators.
-      Use the links below to explore operators by type.
-    </p>
-    <p>
-      Click on a type to see its index, then click an entry ID to view the full
-      operator page with dynamically rendered reactions.
-    </p>
-    <ul class="evodex-type-list">
-      ${buildTypeListItems()}
-    </ul>
+    <section>
+      <h2>About EVODEX.2</h2>
+      <p>
+        EVODEX is a framework for understanding how enzymes transform molecules.
+        It helps researchers figure out which products can be formed from a given starting molecule,
+        determining the mechanistic plausibility of potential transformations,
+        and interpreting mass spectrometry data.
+        This is useful in areas like metabolic engineering, drug discovery,
+        interpreting lab data, and enabling AI to reason about biochemistry.
+      </p>
+      <p>
+        EVODEX.2 is a release of the EVODEX (Enzymatic Validation Operator Differentiation and Extraction) framework that abstracts enzymatic reactions derived from the BRENDA database
+        to generate a family of named operators.
+        These include representations of full and partial reactions, mass and formula changes,
+        and mechanistic patterns derived from σ and π bonding interactions.
+        Additionally, it provides algorithms for using the operators.
+        For information on using EVODEX, visit
+        <a href="https://github.com/UCB-BioE-Anderson-Lab/EVODEX" target="_blank" rel="noopener noreferrer">our GitHub repository</a>.
+      </p>
+      <p>
+        The “.2” indicates that this is version 2 of EVODEX. All operator identifiers are namespaced with this version number (e.g., EVODEX.2-R12), so they can be uniquely referenced and distinguished from past and future versions.
+      </p>
+      <p>
+        For more technical information on EVODEX, see our preprint at
+        <a href="https://www.biorxiv.org/content/10.1101/2025.06.19.660615v1.full" target="_blank" rel="noopener noreferrer">bioRxiv: 2025.06.19.660615v1</a>.
+      </p>
+    </section>
+
+    <section>
+      <h2>Google Colab Notebooks</h2>
+      <p>
+        These interactive notebooks demonstrate how EVODEX.2 operators can be applied to predict biosynthetic pathways,
+        evaluate proposed reactions, and interpret mass spectrometry data. Each demo walks through real examples using
+        operators mined from the EVODEX.2 dataset.
+      </p>
+      <ul>
+        <li><a href="https://colab.research.google.com/drive/16liT8RhMCcRzXa_BVdYX7xgbgVAWK4tA" target="_blank" rel="noopener noreferrer">EVODEX Synthesis Demo</a></li>
+        <li><a href="https://colab.research.google.com/drive/1IvoaXjtnu7ZSvot_1Ovq3g-h5IVCdSn4" target="_blank" rel="noopener noreferrer">EVODEX Evaluation Demo</a></li>
+        <li><a href="https://colab.research.google.com/drive/1CV5HM9lBy-U-J6nLqBlO6Y1WtCFWP8rX" target="_blank" rel="noopener noreferrer">EVODEX Mass Spec Demo</a></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>EVODEX.2 Operator Glossary</h2>
+
+      <table class="evodex-glossary">
+        <thead>
+          <tr>
+            <th>Operator</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#/type/R">R</a></td>
+            <td>Full atom-mapped reaction</td>
+          </tr>
+          <tr>
+            <td><a href="#/type/P">P</a></td>
+            <td>Partial reaction based on shared atom maps</td>
+          </tr>
+          <tr>
+            <td><a href="#/type/F">F</a></td>
+            <td>Formula difference between reactants/products</td>
+          </tr>
+          <tr>
+            <td><a href="#/type/M">M</a></td>
+            <td>Mass difference for MS analysis</td>
+          </tr>
+
+          <tr>
+            <td>
+              <div>A</div>
+              <div>Am</div>
+            </td>
+            <td>
+              <div>Abstract. Reaction centers devoid of atom identity.</div>
+              <div>Matched.</div>
+              <div><em>Not computed in EVODEX.2, but supported by the operator extraction code.</em></div>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <div><a href="#/type/B">B</a></div>
+              <div><a href="#/type/Bm">Bm</a></div>
+            </td>
+            <td>
+              <div>Bond Changing. Includes reaction centers (connectivity changes or stereochemical changes).</div>
+              <div>Matched.</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <div><a href="#/type/C">C</a></div>
+              <div><a href="#/type/Cm">Cm</a></div>
+            </td>
+            <td>
+              <div>Covalent Shell. Includes first σ shell around bond changing atoms.</div>
+              <div>Matched.</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <div><a href="#/type/D">D</a></div>
+              <div><a href="#/type/Dm">Dm</a></div>
+            </td>
+            <td>
+              <div>Delocalized Domain. Includes π shell around the σ shell.</div>
+              <div>Matched.</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              <div><a href="#/type/E">E</a></div>
+              <div><a href="#/type/Em">Em</a></div>
+            </td>
+            <td>
+              <div>Electronic Domain. Includes second σ shell around the π shell.</div>
+              <div>Matched.</div>
+            </td>
+          </tr>
+
+          <tr>
+            <td><a href="#/type/D_SYNTHESIS">D_SYNTHESIS</a></td>
+            <td>D synthesis subset</td>
+          </tr>
+          <tr>
+            <td><a href="#/type/M_SUBSET">M_SUBSET</a></td>
+            <td>M mass spec subset</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Focused Subsets for Synthesis and Mass Spectrometry</h2>
+      <p>
+        These focused subsets of the EVODEX.2 dataset support specific EVODEX use cases.
+        Both subsets are constructed by restricting to reactions that can be represented as a single substrate to a single product.
+        The D synthesis subset presents EVODEX-D operators for this setting. In principle, the same restriction could be applied to
+        any abstraction family, but we present D because it balances generality with precise capture of reactivity patterns, while
+        E operators are often over-specified for this application. The mass spectrometry subset is derived from EVODEX-M and
+        similarly restricts to single-substrate to single-product transformations, yielding mass differences that plausibly relate
+        two LCMS peaks through a substrate/product relationship.
+      </p>
+      <ul>
+        <li><a href="#/type/D_SYNTHESIS">Synthesis Subset of EVODEX-D</a></li>
+        <li><a href="#/type/M_SUBSET">Mass Spectrometry Subset of EVODEX-M</a></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Credits and Contact</h2>
+      <p>
+        Developed by the Anderson Lab, Department of Bioengineering, UC Berkeley.<br>
+        For more information, contact: <a href="mailto:jcanderson@berkeley.edu">jcanderson@berkeley.edu</a>
+      </p>
+      <p>
+        Please cite our work when using EVODEX. Citation info and DOI will be added here once the associated paper is published.
+      </p>
+      <p>EVODEX was derived from the following resources:</p>
+      <ul>
+        <li><a href="https://www.brenda-enzymes.org/" target="_blank" rel="noopener noreferrer">BRENDA: The Comprehensive Enzyme Information System</a></li>
+        <li>
+          EnzymeMap: Heid E, Probst D, Green WH, Madsen GKH.
+          <i>EnzymeMap: curation, validation and data-driven prediction of enzymatic reactions.</i>
+          <a href="https://doi.org/10.1039/d3sc02048g" target="_blank" rel="noopener noreferrer">Chem Sci. 2023;14(48):14229–14242</a>.
+          PMID: 38098707; PMCID: PMC10718068.
+        </li>
+      </ul>
+    </section>
   `;
 
   app.innerHTML = card("Home", introHtml);
-}
-
-// Build the list of EVODEX types to show on the home page.
-function buildTypeListItems() {
-  // Curated, ordered list of types we want to expose in the UI.
-  // (We intentionally do NOT show helper types like E_OPS, SELECTED here.)
-  const orderedTypes = [
-    "R",    // full reactions (raw corpus)
-    "P",    // partial reactions
-    "E",    // E operators
-    "A",
-    "Am",
-    "B",
-    "Bm",
-    "C",
-    "Cm",
-    "D",
-    "Dm",
-    "E",
-    "Em",
-    "F",    // formula operators
-    "M",    // mass operators
-    "M_SUBSET",
-    "D_SYNTHESIS"
-  ];
-
-  // TYPE_CONFIG comes from data_loader.js
-  if (typeof EVODEXData === "undefined" || !EVODEXData.TYPE_CONFIG) {
-    // fall back to static list if for some reason TYPE_CONFIG isn't ready
-    return orderedTypes.map(t => typeListItem(t)).join("");
-  }
-
-  return orderedTypes
-    .filter(t => EVODEXData.TYPE_CONFIG[t])   // only show types that really exist
-    .map(t => typeListItem(t))
-    .join("");
-}
-
-function typeListItem(type) {
-  const labelMap = {
-    R: "EVODEX-R (full reactions)",
-    P: "EVODEX-P (partial reactions)",
-    B: "EVODEX-B",
-    Bm: "EVODEX-Bm",
-    C: "EVODEX-C",
-    Cm: "EVODEX-Cm",
-    D: "EVODEX-D",
-    Dm: "EVODEX-Dm",
-    E: "EVODEX-E",
-    Em: "EVODEX-Em",
-    F: "EVODEX-F (formula operators)",
-    M: "EVODEX-M (mass operators)",
-    M_SUBSET: "EVODEX-M (MS subset)",
-    D_SYNTHESIS: "EVODEX-D (synthesis subset)"
-
-  };
-  const text = labelMap[type] || `EVODEX-${type}`;
-  return `
-    <li>
-      <a href="#/type/${type}">${text}</a>
-    </li>
-  `;
 }
