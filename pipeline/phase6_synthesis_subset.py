@@ -47,7 +47,7 @@ def main():
     evodex_d_full_map = {}
 
     # Load EVODEX-P reactions
-    with open('evodex/data/EVODEX-P_partial_reactions.csv', 'r') as p_file:
+    with open('evodex/data/EVODEX-P.csv', 'r') as p_file:
         p_reader = csv.DictReader(p_file)
         for row in p_reader:
             evodex_p_map[row['id']] = row['smirks']
@@ -101,11 +101,6 @@ def main():
     print(f"  Total EVODEX-D synthesis operators written: {total_evode_d_written}")
 
     print("Phase 6 complete: Synthesis subset written.")
-
-    # === Publish to evodex/data/ ===
-    dst_d_synthesis = os.path.join('evodex', 'data', 'EVODEX-D_synthesis_subset.csv')
-    shutil.copyfile(EVODEX_D_SYNTHESIS, dst_d_synthesis)
-    print(f"Published synthesis subset to {dst_d_synthesis}")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
