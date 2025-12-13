@@ -146,14 +146,13 @@ def _compute_reactive_centers(reaction):
 def _identify_changed_map_numbers(reaction):
     """Return a set of atom-map numbers whose local environment changes.
 
-    For each mapped atom on the reactant and product sides we build a signature that includes:
+    Signature includes:
       - Neighbor identity: (neighbor atomic number, neighbor map number)
-      - Tetrahedral stereo feature (if specified on both sides): a map-anchored 4-list encoding
-        that is invariant to RDKit neighbor ordering and CIP rank changes
-      - Adjacent bond features for each incident bond:
-          (neighbor map number, bond type, bond stereo, is_aromatic)
+      - Tetrahedral stereo feature: map-anchored 4-list encoding parity
+      - Alkene stereo feature: map-anchored "diagonals" identity for stereodefined double bonds
+      - Adjacent bond features (non-stereo): (neighbor map number, bond type, is_aromatic)
 
-    If an atom's signature differs between sides, its map number is included in the result set.
+    If an atom's signature differs between sides, its map number is included.
     """
 
     def _permutation_parity(from_list, to_list):
@@ -162,8 +161,7 @@ def _identify_changed_map_numbers(reaction):
         Assumes the lists contain unique elements.
         """
         pos = {v: i for i, v in enumerate(from_list)}
-        perm = [pos[v] for v in to_list]  # indices of from_list in the order of to_list
-
+        perm = [pos[v] for v in to_list]
         inv = 0
         n = len(perm)
         for i in range(n):
@@ -174,9 +172,8 @@ def _identify_changed_map_numbers(reaction):
 
     def _tetra_stereo_feature(atom):
         """
-        Return a deterministic 4-list feature encoding the tetrahedral parity of `atom`
-        in a map-anchored neighbor order, or None if tetrahedral chirality is unspecified
-        or cannot be represented as a 4-neighbor center.
+        Return a deterministic 4-list encoding tetrahedral parity in a map-anchored neighbor order,
+        or None if unspecified or not representable as a 4-neighbor tetra center.
         """
         tag = atom.GetChiralTag()
         if tag == Chem.rdchem.ChiralType.CHI_UNSPECIFIED:
@@ -192,24 +189,137 @@ def _identify_changed_map_numbers(reaction):
             return None
 
         canon = sorted(nbr_maps)
-
-        # RDKit parity bit relative to RDKit's current neighbor ordering
         rdkit_bit = 0 if tag == Chem.rdchem.ChiralType.CHI_TETRAHEDRAL_CW else 1
-
-        # Correct by the parity of the permutation between canonical and RDKit neighbor order
         perm_odd = _permutation_parity(canon, nbr_maps)
         norm_bit = rdkit_bit ^ perm_odd
 
-        # Encode the bit as a 4-list: canonical order for bit=0, swap last two for bit=1
         if norm_bit == 0:
             return canon
         return [canon[0], canon[1], canon[3], canon[2]]
+
+    def _alkene_diagonals_feature_for_bond(mol, bond):
+        """
+        If `bond` is a stereodefined double bond, return a canonical "diagonals identity"
+        encoded using atom-map numbers:
+
+            (partner_map, ((a,b),(c,d)))
+
+        where ((a,b),(c,d)) are the two diagonal pairs as sorted 2-tuples, ordered
+        canonically. Returns None if stereo is unspecified or the bond does not fit
+        the 2-substituent-per-end model.
+        """
+        if bond.GetBondType() != Chem.BondType.DOUBLE:
+            return None
+        if bond.GetIsAromatic():
+            return None
+
+        stereo = bond.GetStereo()
+        if stereo not in (Chem.rdchem.BondStereo.STEREOCIS, Chem.rdchem.BondStereo.STEREOTRANS):
+            return None
+
+        stereo_atoms = list(bond.GetStereoAtoms())
+        if len(stereo_atoms) != 2:
+            return None
+
+        b = bond.GetBeginAtom()
+        e = bond.GetEndAtom()
+        bidx = b.GetIdx()
+        eidx = e.GetIdx()
+
+        s0 = mol.GetAtomWithIdx(stereo_atoms[0])
+        s1 = mol.GetAtomWithIdx(stereo_atoms[1])
+
+        # Determine which stereo atom is attached to which end.
+        def _attached_to_end(s_atom, end_idx, other_end_idx):
+            if s_atom.GetIdx() == other_end_idx:
+                return False
+            return mol.GetBondBetweenAtoms(s_atom.GetIdx(), end_idx) is not None
+
+        b_ref = None
+        e_ref = None
+
+        if _attached_to_end(s0, bidx, eidx):
+            b_ref = s0
+        elif _attached_to_end(s0, eidx, bidx):
+            e_ref = s0
+
+        if _attached_to_end(s1, bidx, eidx):
+            b_ref = s1
+        elif _attached_to_end(s1, eidx, bidx):
+            e_ref = s1
+
+        if b_ref is None or e_ref is None:
+            return None
+
+        # Collect the two substituents on each end (excluding the partner on the double bond)
+        b_subs = [n for n in b.GetNeighbors() if n.GetIdx() != eidx]
+        e_subs = [n for n in e.GetNeighbors() if n.GetIdx() != bidx]
+        if len(b_subs) != 2 or len(e_subs) != 2:
+            return None
+
+        # Identify the "other" substituent at each end
+        b_other = b_subs[0] if b_subs[1].GetIdx() == b_ref.GetIdx() else b_subs[1]
+        e_other = e_subs[0] if e_subs[1].GetIdx() == e_ref.GetIdx() else e_subs[1]
+
+        # Convert to map numbers (map 0 is allowed and stays as 0)
+        mb_ref = b_ref.GetAtomMapNum()
+        mb_other = b_other.GetAtomMapNum()
+        me_ref = e_ref.GetAtomMapNum()
+        me_other = e_other.GetAtomMapNum()
+
+        # Diagonals depend on cis vs trans
+        if stereo == Chem.rdchem.BondStereo.STEREOTRANS:
+            d1 = tuple(sorted((mb_ref, me_ref)))
+            d2 = tuple(sorted((mb_other, me_other)))
+        else:
+            d1 = tuple(sorted((mb_ref, me_other)))
+            d2 = tuple(sorted((mb_other, me_ref)))
+
+        # Canonicalize the set-of-two-sets as an ordered pair
+        pair = tuple(sorted((d1, d2)))
+
+        # Encode relative to the bond partner for disambiguation in the atom-level signature
+        # If this feature is attached to the begin atom, partner is end's map, and vice versa.
+        # Caller will wrap with the appropriate partner map.
+        return pair
+
+    def _alkene_features_for_atom(atom):
+        """
+        Return a frozenset of alkene stereo features for stereodefined double bonds incident to `atom`.
+        Each entry is:
+            (partner_map, ((a,b),(c,d)))
+        where ((a,b),(c,d)) is the canonical diagonals identity.
+        Returns None if no stereodefined double bonds incident, or if stereo is absent.
+        """
+        feats = set()
+        mol = atom.GetOwningMol()
+        aidx = atom.GetIdx()
+
+        for bond in atom.GetBonds():
+            if bond.GetBondType() != Chem.BondType.DOUBLE:
+                continue
+            if bond.GetIsAromatic():
+                continue
+
+            other = bond.GetOtherAtom(atom)
+            partner_map = other.GetAtomMapNum()
+
+            diag_pair = _alkene_diagonals_feature_for_bond(mol, bond)
+            if diag_pair is None:
+                continue
+
+            feats.add((partner_map, diag_pair))
+
+        if not feats:
+            return None
+        return frozenset(feats)
 
     def _atom_signature(atom):
         neighbors = set()
         bond_features = set()
 
         tetra = _tetra_stereo_feature(atom)
+        alkene = _alkene_features_for_atom(atom)
 
         for bond in atom.GetBonds():
             nbr = bond.GetOtherAtom(atom)
@@ -218,15 +328,15 @@ def _identify_changed_map_numbers(reaction):
             neighbors.add((nbr.GetAtomicNum(), nbr_map))
 
             btype = int(bond.GetBondType())
-            stereo_enum = bond.GetStereo()
-            stereo = getattr(stereo_enum, "name", int(stereo_enum))
             aromatic = bond.GetIsAromatic()
 
-            bond_features.add((nbr_map, btype, stereo, aromatic))
+            # Important: do NOT include RDKit bond stereo enum here, it is not map-anchored.
+            bond_features.add((nbr_map, btype, aromatic))
 
         return {
             "neighbors": neighbors,
             "tetra": tuple(tetra) if tetra is not None else None,
+            "alkene": tuple(sorted(alkene)) if alkene is not None else None,
             "bond_features": bond_features,
         }
 
@@ -258,9 +368,7 @@ def _identify_changed_map_numbers(reaction):
 # ================================================================
 
 def _compute_covalent_shells(reaction, reactive_centers):
-    """Return (reactant_sets, product_sets) of covalent-shell atoms (σ) by template.
-    Thin wrapper that aggregates per-molecule results from `_collect_covalent_shell`.
-    """
+    """Return (reactant_sets, product_sets) of covalent-shell atoms (σ) by template."""
     covalent_shell_indices = ([], [])
     for i in range(reaction.GetNumReactantTemplates()):
         reactant = reaction.GetReactantTemplate(i)
@@ -291,7 +399,7 @@ def _collect_covalent_shell(molecule, reactive_center_indices):
 # ================================================================
 
 def _grow_delocalized_shell(reaction, covalent_shell_indices):
-    """Build the delocalized shell (π): iterative growth from the σ shell across conjugation/unsaturation; mirrored via atom-map numbers; excludes inductive and sp3-only participation by design of _is_conjugation_capable."""
+    """Build the delocalized shell (π): iterative growth from the σ shell across conjugation/unsaturation."""
 
     def _state_key(atom_sets):
         return (
@@ -356,7 +464,7 @@ def _grow_delocalized_shell(reaction, covalent_shell_indices):
 
 
 def _is_conjugation_capable(atom):
-    """Return True if any bond is not single (proxy for conjugation/aromaticity). Intentionally ignores purely inductive pathways and sp3-only participation."""
+    """Return True if any bond is not single (proxy for conjugation/aromaticity)."""
     for bond in atom.GetBonds():
         if bond.GetBondType() != Chem.BondType.SINGLE:
             return True
@@ -368,9 +476,7 @@ def _is_conjugation_capable(atom):
 # ================================================================
 
 def _add_extended_shell(reaction, covalent_shell_indices, delocalized_shell_indices):
-    """Return (reactant_sets, product_sets) of atoms that are σ-neighbors of any delocalized-shell atom,
-    excluding atoms already in the covalent or delocalized shells.
-    """
+    """Return σ-neighbors of π shell, excluding existing covalent/delocalized members."""
     extended = ([], [])
 
     for i in range(reaction.GetNumReactantTemplates()):
@@ -441,7 +547,6 @@ def _strip_stereochemistry(molecule: Chem.Mol) -> Chem.Mol:
 
 # ================================================================
 # Step 8: compile operator
-# Assemble keep sets, prune atoms and bonds not kept, and emit SMIRKS
 # ================================================================
 
 def _compile_operator(
@@ -453,10 +558,6 @@ def _compile_operator(
     extended_shell_indices,
     unmapped_indices,
 ):
-    """
-    Assemble the operator by selecting which atoms to keep, pruning the rest, and
-    emitting a compact SMIRKS.
-    """
     keep_atom_indices = ([], [])
     for i in range(len(reactive_centers[0])):
         keep_atom_indices[0].append(set(reactive_centers[0][i]))
@@ -643,12 +744,7 @@ def _abstract_operator_atoms_to_wildcards(operator_smirks: str) -> str:
 
 def _unset_hydrogen_map_on_noncarbon(reaction):
     """
-    For all templates in the reaction, identify mapped hydrogens that are
-    attached to a non-carbon atom and remove their map numbers on both sides
-    of the reaction.
-
-    Hydrogens can be encoded using atomic number 1 (H) or 85 (At) in the
-    SMIRKS. Both are treated as hydrogen-like here.
+    Remove map numbers from hydrogen-like atoms (Z=1 or 85) attached to non-carbon atoms.
     """
     maps_to_clear = set()
 
@@ -662,14 +758,10 @@ def _unset_hydrogen_map_on_noncarbon(reaction):
             if z not in (1, 85):
                 continue
 
-            attached_to_noncarbon = False
             for nbr in atom.GetNeighbors():
                 if nbr.GetAtomicNum() != 6:
-                    attached_to_noncarbon = True
+                    maps_to_clear.add(amap)
                     break
-
-            if attached_to_noncarbon:
-                maps_to_clear.add(amap)
 
     for i in range(reaction.GetNumReactantTemplates()):
         _collect_maps_to_clear(reaction.GetReactantTemplate(i))
@@ -694,9 +786,6 @@ def _unset_hydrogen_map_on_noncarbon(reaction):
     return reaction
 
 
-
-
-
 if __name__ == "__main__":
     examples = {
         "alcohol_methylation": "[H][O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]>>[C]([H])([H])([H])[O:2][C:3]([H:4])([H:5])[C:6]([H:7])([H:8])[H:9]",
@@ -707,22 +796,30 @@ if __name__ == "__main__":
         # --------------------------
         # Tetrahedral stereo tests
         # --------------------------
-
-        # True inversion: neighbor set identical, chirality flipped
         "tetra_inversion": "[C@:1]([F:2])([Cl:3])([Br:4])[I:5]>>[C@@:1]([F:2])([Cl:3])([Br:4])[I:5]",
-
-        # Same @ configuration, different textual neighbor order:
         "tetra_at_at_reordered": "[C@:1]([F:2])([Cl:3])([Br:4])[I:5]>>[C@:1]([Cl:3])([F:2])([Br:4])[I:5]",
-
-        # Same absolute configuration, different textual neighbor order:
-        # swap two neighbors and flip @/@@ to keep the same configuration.
-        # Old chirality-tag-based signature often flags this incorrectly;
-        # map-anchored parity should treat it as unchanged.
         "tetra_same_config_reordered": "[C@:1]([F:2])([Cl:3])([Br:4])[I:5]>>[C@@:1]([Cl:3])([F:2])([Br:4])[I:5]",
+
+        # --------------------------
+        # Alkene E/Z stereo tests
+        # --------------------------
+
+        # True E/Z change (cis <-> trans) with explicit H substituents.
+        # This should be detected as a change at the alkene carbons.
+        "ez_isomerization": "[F:3]/[C:1]([H:4])=[C:2]([H:6])/[Cl:5]>>[F:3]/[C:1]([H:4])=[C:2]([H:6])\\[Cl:5]",
+
+        # Same absolute configuration, both slashes flipped (should be unchanged).
+        "ez_same_config_flip_both": "[F:3]/[C:1]([H:4])=[C:2]([H:6])\\[Cl:5]>>[F:3]\\[C:1]([H:4])=[C:2]([H:6])/[Cl:5]",
+
+        # Same absolute configuration, reorder branch presentation around the alkene end (should be unchanged).
+        "ez_same_config_reordered_text": "[F:3]/[C:1]([H:4])=[C:2]([H:6])\\[Cl:5]>>[C:1]([H:4])(/[F:3])=[C:2]([H:6])\\[Cl:5]",
     }
 
     for name, smirks in examples.items():
         print(f"\nExample: {name}")
         print(f"  Full SMIRKS: {smirks}")
+        rxn = rdChemReactions.ReactionFromSmarts(smirks)
+        rxn.Initialize()
+        print(f"  Changed map numbers: {sorted(_identify_changed_map_numbers(rxn))}")
         op_A = extract_operator_by_abstraction(smirks, "A")
         print(f"  A abstraction: {op_A}")
