@@ -394,6 +394,9 @@ def _create_evodex_json(family_token: str):
 if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-    amide_smiles = "CC(=O)NC>>CC(=O)O.NC"
-    exact_matches = find_exact_matching_operators(amide_smiles, "E")
-    print(f"Exact matching operators for {amide_smiles}: {exact_matches}")
+    # smiles = "CC(=O)NC>>CC(=O)O.NC" # amide hydrolysis
+    # smiles = "CCCO>>CCCOC"  # methylation
+    smiles = "CCCO>>CCC=O" # oxidation
+
+    exact_matches = find_exact_matching_operators(smiles, "E")
+    print(f"Exact matching operators for {smiles}: {exact_matches}")
