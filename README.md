@@ -5,7 +5,7 @@ EVODEX is a Python package that provides tools for the prediction of mechanistic
 # Current Release 
 [![DOI](https://zenodo.org/badge/806350411.svg)](https://doi.org/10.5281/zenodo.15824568)
 
-This is the EVODEX.1 collection. All IDs start with 'EVODEX.1' and are immutable, ensuring they can be externally referenced without collisions or missing references. Future distributions will be numbered EVODEX.2, EVODEX.3, etc., and may not have reverse compatibility with previous EVODEX.0 IDs. For example, EVODEX.1-E2 may not represent the same SMIRKS as EVODEX.0-E2.
+This is the EVODEX.2 collection. All IDs start with 'EVODEX.2' and are immutable, ensuring they can be externally referenced without collisions or missing references. Future distributions will be numbered EVODEX.2, EVODEX.3, etc., and may not have reverse compatibility with previous EVODEX.0 IDs. For example, EVODEX.2-E2 may not represent the same SMIRKS as EVODEX.0-E2.
 
 ## Table of Contents
 1. [Installation](#installation)
@@ -116,11 +116,11 @@ For more detailed usage, refer to the [EVODEX Mass Spec Demo](https://colab.rese
 
 ## Website and Dataset Access
 
-A static website for exploring the EVODEX.1 dataset is available here:
+A  website for exploring the EVODEX.2 dataset is available here:
 
-🔗 https://ucb-bioe-anderson-lab.github.io/evodex-1-site/
+🔗 https://ucb-bioe-anderson-lab.github.io/EVODEX/
 
-This site provides a browsable, hyperlinked index of all EVODEX.1 operators and includes links to Colab demos and operator definitions.
+This site provides a browsable, hyperlinked index of all EVODEX.2 operators and includes links to Colab demos and operator definitions.
 
 If you prefer to work offline or programmatically, you can download the full set of operator tables (in CSV format) directly from this directory:
 
