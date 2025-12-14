@@ -17,7 +17,8 @@ molecules = [
     ("propanol", "CCC[OH]"),
     ("propanal", "CCC=[O]"),
     ("propionic_acid", "CCC(=O)[OH]"),
-    ("acrylate", "C=CC(=O)[OH]")
+    ("acrylate", "C=CC(=O)[OH]"),
+    ("alpha-hydroxy", "NC(Cc1ccc(F)cc1)C(=O)O")
 ]
 
 def generate_molecule_svg(name, smiles):
