@@ -3,9 +3,9 @@
 EVODEX is a Python package that provides tools for the prediction of mechanistically plausible reaction products, validation of reactions, and mass spectrometry interpretation. It can be installed via PyPI for immediate use in Python projects. Alternatively, users can clone the repository to run the full mining pipeline and generate a customized dataset or website.
 
 # Current Release 
-[![DOI](https://zenodo.org/badge/806350411.svg)](https://doi.org/10.5281/zenodo.15824568)
+[![DOI](https://zenodo.org/badge/806350411.svg)](https://doi.org/10.5281/zenodo.15824568) fix me
 
-This is the EVODEX.2 collection. All IDs start with 'EVODEX.2' and are immutable, ensuring they can be externally referenced without collisions or missing references. Future distributions will be numbered EVODEX.2, EVODEX.3, etc., and may not have reverse compatibility with previous EVODEX.0 IDs. For example, EVODEX.2-E2 may not represent the same SMIRKS as EVODEX.0-E2.
+This is the EVODEX.2 collection. All IDs start with 'EVODEX.2' and are immutable, ensuring they can be externally referenced without collisions or missing references. Future distributions will be numbered EVODEX.3, EVODEX.4, etc., and may not have reverse compatibility with previous EVODEX.0 IDs. For example, EVODEX.2-E2 may not represent the same SMIRKS as EVODEX.1-E2. The letter codes have also been changed in version 2 relative to EVODEX.1 with E/C/N being replaced with A/B/C/D/E.
 
 ## Table of Contents
 1. [Installation](#installation)
@@ -51,7 +51,7 @@ result = project_reaction_operator(smirks, substrate)
 print("Direct projection: ", result)
 
 # Specify the dehydrogenase reaction by its EVODEX ID:
-evodex_id = "EVODEX.0-E2"
+evodex_id = "EVODEX.2-E18"
 
 # Apply the dehydrogenase operator to propanol
 result = project_evodex_operator(evodex_id, substrate)
@@ -190,7 +190,7 @@ python -m pipeline.phase7_website
 
 ## Citing EVODEX
 If you use EVODEX, please cite our preprint:
-https://www.biorxiv.org/content/10.1101/2025.06.19.660615v1.full
+https://www.biorxiv.org/content/10.1101/2025.06.19.660615v1.full fix me
 
 ## License
 EVODEX is released under the MIT License.
