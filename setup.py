@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="evodex",
-    version="2.0.0",
+    version="2.0.1",
     packages=find_packages(include=["evodex", "evodex.*"]),
     install_requires=[
-        "rdkit-pypi",
+        "rdkit",
         "pandas",
         "numpy",
     ],
