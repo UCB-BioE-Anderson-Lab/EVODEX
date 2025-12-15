@@ -1,0 +1,6 @@
+organism,ec_num,protein_refs,protein_db,n_reactions,Bm_unique,Cm_unique,Em_unique,Bm_total,Cm_total,Em_total
+Marinobacter nauticus,2.3.1.75,['A3RE51'],uniprot,190,1,1,4,190,190,190
+Thermotoga neapolitana,3.2.1.1,['B5ARZ9'],uniprot,164,2,2,2,164,164,164
+Listeria monocytogenes,2.7.9.6,['Q9RLT9'],uniprot,154,4,5,5,154,154,154
+Manihot esculenta,4.1.2.47,['P52705'],uniprot,138,1,4,48,138,138,138
+Homo sapiens,1.1.1.357,['P52895'],uniprot,128,1,1,1,128,128,128
