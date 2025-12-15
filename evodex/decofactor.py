@@ -1,179 +1,194 @@
+#!/usr/bin/env python3
+
 import csv
 import os
+from typing import Set, Optional
+
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import inchi
 from rdkit import RDLogger
-RDLogger.DisableLog('rdApp.*')
-from typing import Set
-from evodex.utils import get_molecule_hash
 
-# Global variable to store native metabolites set
-_native_metabolites = None
+from evodex.utils import get_molecule_hash_from_mol
+
+RDLogger.DisableLog("rdApp.*")
+
+# Global cache for native metabolites (hashed)
+_native_metabolites: Optional[Set[str]] = None
+
 
 def _load_native_metabolites() -> Set[str]:
+    """
+    Load ubiquitous metabolites from a TSV and return a set of canonical hashes.
+    Hashing is done directly from RDKit Mol via get_molecule_hash_from_mol.
+    """
     global _native_metabolites
     if _native_metabolites is not None:
-        # print("Native metabolites already loaded.")
         return _native_metabolites
 
-    # print("----> loading native metabolites from file")
     script_dir = os.path.dirname(__file__)
-    ubiquitous_metabolites_file = os.path.join(script_dir, 'data', 'ubiquitous_metabolites.txt')
-    backup_file = os.path.join(script_dir, 'data', 'ubiquitous_metabolites_backup.txt')
-    _native_metabolites = set()
-    
+    ubiquitous_metabolites_file = os.path.join(
+        script_dir, "data", "ubiquitous_metabolites.txt"
+    )
+    backup_file = os.path.join(
+        script_dir, "data", "ubiquitous_metabolites_backup.txt"
+    )
+
+    native_hashes: Set[str] = set()
+
     try:
-        with open(ubiquitous_metabolites_file, 'r') as file:
-            # print("reading ubiquitous metabolites")
-            reader = csv.DictReader(file, delimiter='\t')
-            
-            with open(backup_file, 'w', newline='') as backup:
-                backup_writer = csv.writer(backup, delimiter='\t')
-                backup_writer.writerow(['name', 'original_inchi', 'custom_hash'])
-                
+        with open(ubiquitous_metabolites_file, "r", newline="") as file:
+            reader = csv.DictReader(file, delimiter="\t")
+
+            with open(backup_file, "w", newline="") as backup:
+                backup_writer = csv.writer(backup, delimiter="\t")
+                backup_writer.writerow(["name", "original_inchi", "custom_hash"])
+
                 for row in reader:
-                    name = row['name'].strip().strip('"')
-                    # print("processing: ", name)
-                    inchi_str = row['inchi'].strip().strip('"')
+                    name = (row.get("name") or "").strip().strip('"')
+                    inchi_str = (row.get("inchi") or "").strip().strip('"')
+
+                    if not inchi_str:
+                        continue
+
                     mol = inchi.MolFromInchi(inchi_str)
-                    
-                    if mol:
-                        try:
-                            smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                            custom_hash = get_molecule_hash(smiles)
-                            # print("hash:", custom_hash)
-                            _native_metabolites.add(custom_hash)
-                            backup_writer.writerow([name, inchi_str, custom_hash])
-                        except Exception as e:
-                            print(f"Failed to process molecule: {name}, Error: {e}")
-    
+                    if mol is None:
+                        continue
+
+                    try:
+                        # Hash directly from Mol (no SMILES round-trip)
+                        custom_hash = get_molecule_hash_from_mol(mol)
+                        native_hashes.add(custom_hash)
+                        backup_writer.writerow([name, inchi_str, custom_hash])
+                    except Exception as e:
+                        print(f"Failed to process molecule: {name}, Error: {e}")
+
     except Exception as e:
         raise RuntimeError(f"Failed to load ubiquitous metabolites: {e}")
-    
+
+    _native_metabolites = native_hashes
     return _native_metabolites
 
-def _clean_up_atom_maps(rxn: AllChem.ChemicalReaction):
+
+def _clean_up_atom_maps(rxn: AllChem.ChemicalReaction) -> None:
+    """
+    Remove atom maps in products that do not originate from any reactant atom map.
+    Also removes dangling reactant atom maps that never appear in products.
+    """
     try:
         substrate_atom_maps = set()
 
-        # Collect atom maps from reactants
         for mol in rxn.GetReactants():
             for atom in mol.GetAtoms():
-                atom_map_num = atom.GetAtomMapNum()
-                if atom_map_num > 0:
-                    substrate_atom_maps.add(atom_map_num)
+                m = atom.GetAtomMapNum()
+                if m > 0:
+                    substrate_atom_maps.add(m)
 
-        # Adjust atom maps in products
         for mol in rxn.GetProducts():
             for atom in mol.GetAtoms():
-                atom_map_num = atom.GetAtomMapNum()
-                if atom_map_num > 0:
-                    if atom_map_num not in substrate_atom_maps:
+                m = atom.GetAtomMapNum()
+                if m > 0:
+                    if m not in substrate_atom_maps:
                         atom.SetAtomMapNum(0)
                     else:
-                        substrate_atom_maps.remove(atom_map_num)
+                        substrate_atom_maps.remove(m)
 
-        # Adjust atom maps in reactants
         for mol in rxn.GetReactants():
             for atom in mol.GetAtoms():
-                atom_map_num = atom.GetAtomMapNum()
-                if atom_map_num in substrate_atom_maps:
+                m = atom.GetAtomMapNum()
+                if m in substrate_atom_maps:
                     atom.SetAtomMapNum(0)
+
     except Exception as e:
         raise RuntimeError(f"Failed to clean up atom maps: {e}")
 
-def remove_cofactors(smiles: str) -> str:
-    # print("remove cofactors invoked")
+
+def remove_cofactors(rxn_smiles: str) -> str:
+    """
+    Given a reaction SMILES/SMIRKS-like string (parsed with useSmiles=True),
+    remove any reactant/product molecules whose hash is in the ubiquitous metabolite set.
+    Returns a SMIRKS-like string composed from RDKit MolToSmarts on the filtered templates.
+    """
     try:
         native_metabolites = _load_native_metabolites()
-        # print("post loading metabolites")
 
-        # Load the input SMILES as a reaction object
-        rxn = AllChem.ReactionFromSmarts(smiles, useSmiles=True)
-        if not rxn:
-            raise ValueError(f"Invalid SMILES string: {smiles}")
+        rxn = AllChem.ReactionFromSmarts(rxn_smiles, useSmiles=True)
+        if rxn is None:
+            raise ValueError(f"Invalid reaction string: {rxn_smiles}")
 
-        # Identify non-cofactor reactants and products
         non_cofactor_reactants = []
         non_cofactor_products = []
 
-        # print("----> hashing reactants and products")
         for mol in rxn.GetReactants():
             try:
-                smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                custom_hash = get_molecule_hash(smiles)
-                # print("\ntesting reactant hash: ", custom_hash)
-                if custom_hash and custom_hash not in native_metabolites:
-                    retained_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                    # print("Retained smiles:", retained_smiles)
-                    non_cofactor_reactants.append(retained_smiles)       
+                custom_hash = get_molecule_hash_from_mol(mol)
+                if custom_hash not in native_metabolites:
+                    non_cofactor_reactants.append(
+                        Chem.MolToSmiles(mol, isomericSmiles=True)
+                    )
             except Exception as e:
                 raise RuntimeError(f"Failed to process reactant: {e}")
 
         for mol in rxn.GetProducts():
             try:
-                smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                custom_hash = get_molecule_hash(smiles)
-                # print("\ntesting product hash: ", custom_hash)
-                if custom_hash and custom_hash not in native_metabolites:
-                    retained_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                    # print("Retained smiles:", retained_smiles)
-                    non_cofactor_products.append(retained_smiles)
+                custom_hash = get_molecule_hash_from_mol(mol)
+                if custom_hash not in native_metabolites:
+                    non_cofactor_products.append(
+                        Chem.MolToSmiles(mol, isomericSmiles=True)
+                    )
             except Exception as e:
                 raise RuntimeError(f"Failed to process product: {e}")
 
         if not non_cofactor_reactants or not non_cofactor_products:
-            return ">>"  # Return an empty smiles when no valid non-cofactor reactants or products are found
+            return ">>"
 
-        # Create a new reaction with non-cofactor molecules
-        reactant_smiles = '.'.join(non_cofactor_reactants)
-        product_smiles = '.'.join(non_cofactor_products)
-        new_reaction_smiles = f"{reactant_smiles}>>{product_smiles}"
+        filtered_reaction_smiles = (
+            ".".join(non_cofactor_reactants) + ">>" + ".".join(non_cofactor_products)
+        )
 
-        # Process the new reaction to clean up atom maps
-        new_rxn = AllChem.ReactionFromSmarts(new_reaction_smiles, useSmiles=True)
-        if not new_rxn:
-            raise ValueError(f"Invalid new reaction SMILES: {new_reaction_smiles}")
+        new_rxn = AllChem.ReactionFromSmarts(filtered_reaction_smiles, useSmiles=True)
+        if new_rxn is None:
+            raise ValueError(f"Invalid filtered reaction string: {filtered_reaction_smiles}")
 
         _clean_up_atom_maps(new_rxn)
 
         try:
-            reaction_smarts = AllChem.ReactionToSmarts(new_rxn)
-            reactant_smiles = [Chem.MolToSmarts(mol, isomericSmiles=True) for mol in new_rxn.GetReactants()]
-            product_smiles = [Chem.MolToSmarts(mol, isomericSmiles=True) for mol in new_rxn.GetProducts()]
-            modified_smiles = '>>'.join(['.'.join(reactant_smiles), '.'.join(product_smiles)])
+            # Compose a SMIRKS-like output using SMARTS templates so atom maps survive.
+            reactant_smarts = [
+                Chem.MolToSmarts(m, isomericSmiles=True) for m in new_rxn.GetReactants()
+            ]
+            product_smarts = [
+                Chem.MolToSmarts(m, isomericSmiles=True) for m in new_rxn.GetProducts()
+            ]
+            return ".".join(reactant_smarts) + ">>" + ".".join(product_smarts)
         except Exception as e:
-            raise ValueError(f"Error converting modified reaction to SMIRKS: {reaction_smarts}") from e
+            raise RuntimeError(f"Failed to convert filtered reaction to SMARTS: {e}")
 
-        return modified_smiles
     except Exception as e:
-        raise RuntimeError(f"Failed to remove cofactors from SMILES: {smiles}, Error: {e}")
+        raise RuntimeError(f"Failed to remove cofactors from reaction: {rxn_smiles}, Error: {e}")
 
-def contains_cofactor(smiles: str) -> bool:
+
+def contains_cofactor(rxn_smiles: str) -> bool:
+    """
+    Return True if any reactant or product hashes to a ubiquitous metabolite.
+    """
     try:
         native_metabolites = _load_native_metabolites()
 
-        rxn = AllChem.ReactionFromSmarts(smiles, useSmiles=True)
-        if not rxn:
-            raise ValueError(f"Invalid SMILES string: {smiles}")
+        rxn = AllChem.ReactionFromSmarts(rxn_smiles, useSmiles=True)
+        if rxn is None:
+            raise ValueError(f"Invalid reaction string: {rxn_smiles}")
 
-        # Check reactants
         for mol in rxn.GetReactants():
             try:
-                mol_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                custom_hash = get_molecule_hash(mol_smiles)
-                if custom_hash in native_metabolites:
+                if get_molecule_hash_from_mol(mol) in native_metabolites:
                     return True
             except Exception as e:
                 raise RuntimeError(f"Failed to process reactant: {e}")
 
-        # Check products
         for mol in rxn.GetProducts():
             try:
-                mol_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                custom_hash = get_molecule_hash(mol_smiles)
-                if custom_hash in native_metabolites:
+                if get_molecule_hash_from_mol(mol) in native_metabolites:
                     return True
             except Exception as e:
                 raise RuntimeError(f"Failed to process product: {e}")
@@ -181,4 +196,4 @@ def contains_cofactor(smiles: str) -> bool:
         return False
 
     except Exception as e:
-        raise RuntimeError(f"Failed to check for cofactors in SMILES: {smiles}, Error: {e}")
+        raise RuntimeError(f"Failed to check cofactors in reaction: {rxn_smiles}, Error: {e}")
