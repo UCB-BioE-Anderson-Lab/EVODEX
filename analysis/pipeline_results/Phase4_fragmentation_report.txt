@@ -1,1 +1,43 @@
-EVODEX-E	Operator	NumHashes	Hashes
+Phase 4 Fragmentation / Completion Report
+=========================================
+
+Family: B
+  Total P reactions: 0
+  Completed operators: 0
+  Fragmented operators: 0
+
+Family: Bm
+  Total P reactions: 0
+  Completed operators: 0
+  Fragmented operators: 0
+
+Family: C
+  Total P reactions: 0
+  Completed operators: 0
+  Fragmented operators: 0
+
+Family: Cm
+  Total P reactions: 0
+  Completed operators: 0
+  Fragmented operators: 0
+
+Family: D
+  Total P reactions: 0
+  Completed operators: 0
+  Fragmented operators: 0
+
+Family: Dm
+  Total P reactions: 0
+  Completed operators: 0
+  Fragmented operators: 0
+
+Family: E
+  Total P reactions: 0
+  Completed operators: 0
+  Fragmented operators: 0
+
+Family: Em
+  Total P reactions: 0
+  Completed operators: 0
+  Fragmented operators: 0
+

@@ -1,0 +1,5 @@
+Phase 3c Statistics Summary (no-op mode)
+=========================================
+
+This version of Phase 3c performs no validation, pruning, or grouping.
+All outputs were passed through directly from Phase 3b inputs.

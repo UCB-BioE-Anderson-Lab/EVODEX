@@ -1,0 +1,11 @@
+EVODEX-E Operator Retention Report (Phase 3b, v2)
+===============================================================
+Input EVODEX-E operators: 47864
+Retained EVODEX-E operators: 1391
+Retained EVODEX-P reactions: 6955
+
+Sources per retained EVODEX-E operator (before capping to 5):
+  min: 10
+  max: 3917
+  mean: 45.94
+  median: 18

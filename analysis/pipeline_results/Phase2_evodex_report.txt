@@ -1,20 +1,10 @@
-EVODEX Phase 2 Formula Pruning Report (version 1)
-=============================================================
+EVODEX Phase 2 Report (version 2)
+==============================================
+EVODEX-P preliminary reactions read: 170325
+EVODEX-P preliminary reactions written: 170325
+EVODEX-F preliminary formula groups: 28221
+EVODEX-F filtered (support >= 5): 3161
+EVODEX-P filtered reactions: 133754
 
-EVODEX-P Preliminary:
-Total EVODEX-P generated: 96
-Min sources per EVODEX-P: 1
-Max sources per EVODEX-P: 19
-Mean sources per EVODEX-P: 1.19
-Median sources per EVODEX-P: 1.0
-
-EVODEX-F Preliminary:
-Total EVODEX-F generated: 36
-Min sources per EVODEX-F: 1
-Max sources per EVODEX-F: 19
-Mean sources per EVODEX-F: 2.67
-Median sources per EVODEX-F: 1.0
-
-Pruning (threshold ≥5 sources):
-EVODEX-F retained: 3 of 36 (8.33% retained, 91.67% pruned)
-EVODEX-P retained: 57 of 96 (59.38% retained, 40.62% pruned)
+Split reactions errors file: /Users/jca20n/Documents/GitHub/EVODEX/data/errors/split_reactions_errors.csv
+Formula errors file: /Users/jca20n/Documents/GitHub/EVODEX/data/errors/formula_errors.csv

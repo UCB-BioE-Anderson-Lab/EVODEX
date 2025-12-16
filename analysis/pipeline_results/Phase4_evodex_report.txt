@@ -1,36 +1,60 @@
-EVODEX Phase 4 Operator Completion Report (version 1)
-=============================================================
-EVODEX_C:
-Total unique EVODEX_C entries: 3
-Min sources per EVODEX_C: 5
-Max sources per EVODEX_C: 5
-Mean sources per EVODEX_C: 5.00
-Median sources per EVODEX_C: 5
+EVODEX.2 Phase 4 Operator Completion Report (version 2)
+===============================================================
 
-EVODEX_N:
-Total unique EVODEX_N entries: 3
-Min sources per EVODEX_N: 5
-Max sources per EVODEX_N: 5
-Mean sources per EVODEX_N: 5.00
-Median sources per EVODEX_N: 5
+B:
+  Total operators: 1011
+  Min sources:     1
+  Max sources:     202
+  Mean sources:    6.88
+  Median sources:  5
 
-EVODEX_Em:
-Total unique EVODEX_Em entries: 3
-Min sources per EVODEX_Em: 5
-Max sources per EVODEX_Em: 5
-Mean sources per EVODEX_Em: 5.00
-Median sources per EVODEX_Em: 5
+Bm:
+  Total operators: 341
+  Min sources:     1
+  Max sources:     366
+  Mean sources:    20.33
+  Median sources:  5
 
-EVODEX_Cm:
-Total unique EVODEX_Cm entries: 3
-Min sources per EVODEX_Cm: 5
-Max sources per EVODEX_Cm: 5
-Mean sources per EVODEX_Cm: 5.00
-Median sources per EVODEX_Cm: 5
+C:
+  Total operators: 1301
+  Min sources:     1
+  Max sources:     70
+  Mean sources:    5.35
+  Median sources:  5
 
-EVODEX_Nm:
-Total unique EVODEX_Nm entries: 3
-Min sources per EVODEX_Nm: 5
-Max sources per EVODEX_Nm: 5
-Mean sources per EVODEX_Nm: 5.00
-Median sources per EVODEX_Nm: 5
+Cm:
+  Total operators: 718
+  Min sources:     1
+  Max sources:     310
+  Mean sources:    9.65
+  Median sources:  5
+
+D:
+  Total operators: 1476
+  Min sources:     1
+  Max sources:     13
+  Mean sources:    4.71
+  Median sources:  5
+
+Dm:
+  Total operators: 945
+  Min sources:     1
+  Max sources:     270
+  Mean sources:    7.34
+  Median sources:  5
+
+E:
+  Total operators: 1391
+  Min sources:     5
+  Max sources:     5
+  Mean sources:    5.00
+  Median sources:  5
+
+Em:
+  Total operators: 889
+  Min sources:     1
+  Max sources:     270
+  Mean sources:    7.80
+  Median sources:  5
+
+Total fragmented EVODEX-E entries: 749
