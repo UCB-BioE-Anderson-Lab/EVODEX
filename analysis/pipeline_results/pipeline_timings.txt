@@ -1,5 +1,0 @@
-Pipeline Step Timings:
-Step                                                 Time (s)
-------------------------------------------------------------
-pipeline.phase5_mass_subset                              0.79
-pipeline.phase6_synthesis_subset                         0.10
