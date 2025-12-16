@@ -1,0 +1,11 @@
+Unfiltered EVODEX-E Operator Extraction Report
+Input CSV: evodex/data/EVODEX-R.csv
+Output CSV: data/processed/unfiltered_eros.csv
+Errors CSV: data/processed/unfiltered_ero_errors.csv
+Number of operators: 8251
+Sources per operator:
+  min: 1
+  max: 3891
+  mean: 3.90
+  median: 1
+Extraction errors: 0
