@@ -21,7 +21,7 @@ def main():
     start_time = time.time()
     print("Unfiltered EVODEX-E mining started...")
 
-    input_csv = "EVODEX/evodex/data/EVODEX-R.csv"
+    input_csv = "evodex/data/EVODEX-R.csv"
     out_csv = "data/processed/unfiltered_eros.csv"
     errors_csv = "data/processed/unfiltered_ero_errors.csv"
     report_txt = "data/processed/unfiltered_ero_report.txt"
