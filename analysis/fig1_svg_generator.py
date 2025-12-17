@@ -38,9 +38,9 @@ COMPOUNDS: List[Tuple[str, str]] = [
     ("propanal", "CCC=O"),
     ("methylether", "CCCOC"),
     ("propane", "CCC"),
-    ("alpha_keto", "O=C(Cc1ccc(F)cc1)C(=O)O"),
-    ("alpha_hydroxy", "OC(Cc1ccc(F)cc1)C(=O)O"),
-    ("methylalphahydroxy", "COC(Cc1ccc(F)cc1)C(=O)O"),
+    ("alpha_keto", "O=C(Cc1ccc(OC)cc1)C(=O)O"),
+    ("alpha_hydroxy", "OC(Cc1ccc(OC)cc1)C(=O)O"),
+    ("methylalphahydroxy", "COC(Cc1ccc(OC)cc1)C(=O)O"),
 ]
 
 
