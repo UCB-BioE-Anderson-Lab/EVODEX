@@ -102,7 +102,7 @@ function renderHome(app) {
               <div><a href="#/type/Bm">Bm</a></div>
             </td>
             <td>
-              <div>Bond Changing. Includes reaction centers (connectivity changes or stereochemical changes).</div>
+              <div>Bond-Changing. Includes reaction centers (connectivity changes or stereochemical changes).</div>
               <div>Matched.</div>
             </td>
           </tr>
