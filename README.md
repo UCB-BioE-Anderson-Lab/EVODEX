@@ -6,7 +6,7 @@ The collection is browsable at
 [EVODEX.2 Github Page](https://ucb-bioe-anderson-lab.github.io/EVODEX/)
 
 # Current Release 
-[![DOI](https://zenodo.org/badge/806350411.svg)](https://doi.org/10.5281/zenodo.15824568) fix me
+[![DOI](https://zenodo.org/badge/806350411.svg)](https://doi.org/10.5281/zenodo.15824568)
 
 This is the EVODEX.2 collection. All IDs start with 'EVODEX.2' and are immutable, ensuring they can be externally referenced without collisions or missing references. Future distributions will be numbered EVODEX.3, EVODEX.4, etc., and may not have reverse compatibility with previous EVODEX.0 IDs. For example, EVODEX.2-E2 may not represent the same SMIRKS as EVODEX.1-E2. The letter codes have also been changed in version 2 relative to EVODEX.1 with E/C/N being replaced with A/B/C/D/E.
 
