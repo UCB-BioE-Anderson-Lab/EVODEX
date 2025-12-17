@@ -193,7 +193,7 @@ python -m pipeline.phase7_website
 
 ## Citing EVODEX
 If you use EVODEX, please cite our preprint:
-https://www.biorxiv.org/content/10.1101/2025.06.19.660615v1.full fix me
+https://www.biorxiv.org/content/10.1101/2025.06.19.660615v1.full
 
 ## License
 EVODEX is released under the MIT License.
