@@ -1,6 +1,9 @@
 # EVODEX
 
-EVODEX is a Python package that provides tools for the prediction of mechanistically plausible reaction products, validation of reactions, and mass spectrometry interpretation. It can be installed via PyPI for immediate use in Python projects. Alternatively, users can clone the repository to run the full mining pipeline and generate a customized dataset or website.
+EVODEX is a Python package that provides tools for the prediction of mechanistically plausible reaction products, validation of reactions, and mass spectrometry interpretation. It can be installed via PyPI for immediate use in Python projects. Alternatively, users can clone the repository to run the full mining pipeline and generate a customized dataset.
+
+The collection is browsable at 
+[EVODEX.2 Github Page](https://ucb-bioe-anderson-lab.github.io/EVODEX/)
 
 # Current Release 
 [![DOI](https://zenodo.org/badge/806350411.svg)](https://doi.org/10.5281/zenodo.15824568) fix me
