@@ -19,35 +19,25 @@
  * The filenames below are expected in EVODEX/evodex/data relative to website/index.html.
  */
 const TYPE_CONFIG = {
-  // core reaction and partial-reaction operators
-  R:  { file: "EVODEX/evodex/data/EVODEX-R.csv" },
-  P:  { file: "EVODEX/evodex/data/EVODEX-P.csv" },
-  E:  { file: "EVODEX/evodex/data/EVODEX-E.csv" },
+  R:  { file: "evodex/data/EVODEX-R.csv" },
+  P:  { file: "evodex/data/EVODEX-P.csv" },
+  E:  { file: "evodex/data/EVODEX-E.csv" },
 
-  // B/C/D families and their "m" variants
-  B:  { file: "EVODEX/evodex/data/EVODEX-B.csv" },
-  Bm: { file: "EVODEX/evodex/data/EVODEX-Bm.csv" },
-  C:  { file: "EVODEX/evodex/data/EVODEX-C.csv" },
-  Cm: { file: "EVODEX/evodex/data/EVODEX-Cm.csv" },
-  D:  { file: "EVODEX/evodex/data/EVODEX-D.csv" },
-  Dm: { file: "EVODEX/evodex/data/EVODEX-Dm.csv" },
+  B:  { file: "evodex/data/EVODEX-B.csv" },
+  Bm: { file: "evodex/data/EVODEX-Bm.csv" },
+  C:  { file: "evodex/data/EVODEX-C.csv" },
+  Cm: { file: "evodex/data/EVODEX-Cm.csv" },
+  D:  { file: "evodex/data/EVODEX-D.csv" },
+  Dm: { file: "evodex/data/EVODEX-Dm.csv" },
 
-  // E operators and meta-operators
-  Em: { file: "EVODEX/evodex/data/EVODEX-Em.csv" },
+  Em: { file: "evodex/data/EVODEX-Em.csv" },
+  F:  { file: "evodex/data/EVODEX-F.csv" },
 
-  // Formula operators
-  F:  { file: "EVODEX/evodex/data/EVODEX-F.csv" },
+  M:        { file: "evodex/data/EVODEX-M.csv" },
+  M_SUBSET: { file: "evodex/data/EVODEX-M_mass_spec_subset.csv" },
 
-  // Mass operators
-  M:        { file: "EVODEX/evodex/data/EVODEX-M.csv" },
-  M_SUBSET: { file: "EVODEX/evodex/data/EVODEX-M_mass_spec_subset.csv" },
-
-  // D synthesis subset
-  D_SYNTHESIS: { file: "EVODEX/evodex/data/EVODEX-D_synthesis_subset.csv" },
-
-  // Additional helper data
-  SELECTED: { file: "EVODEX/evodex/data/selected_reactions.csv" }
-  // ubiquitous_metabolites.txt is not CSV, so leave it out here
+  D_SYNTHESIS: { file: "evodex/data/EVODEX-D_synthesis_subset.csv" },
+  SELECTED:    { file: "evodex/data/selected_reactions.csv" }
 };
 
 /**
