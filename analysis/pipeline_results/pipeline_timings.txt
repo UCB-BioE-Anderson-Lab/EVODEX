@@ -1,0 +1,12 @@
+Pipeline Step Timings:
+Step                                                 Time (s)
+------------------------------------------------------------
+pipeline.phase1_data_preparation                      4690.53
+pipeline.phase2_formula_pruning                       2652.02
+pipeline.phase3a_ero_mining                           1541.64
+pipeline.phase3b_ero_pruning                             6.22
+pipeline.phase3c_ero_trimming                            0.11
+pipeline.phase3d_ero_publishing                        119.67
+pipeline.phase4_operator_completion                    840.83
+pipeline.phase5_mass_subset                              0.43
+pipeline.phase6_synthesis_subset                         0.09
