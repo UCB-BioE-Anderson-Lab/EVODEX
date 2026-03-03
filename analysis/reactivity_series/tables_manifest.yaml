@@ -53,7 +53,7 @@
   units: "relative rate (dimensionless)"
   context: "This table extends the same study used in steric_sn2, but focuses on the effect of π conjugation on SN2 reactivity. Primary, non-conjugated bromides (ethyl, n-propyl) define the baseline, whereas allyl and benzyl bromides react tens-to-hundreds-fold faster because resonance delocalizes negative charge developed in the SN2 transition state into the adjacent π system."
   source_ref: "march_4ed"
-  source_page: 275
+  source_page: 339
   provenance_type: "verbatim_reproduction"
 
 - table_id: alpha_substituent_effects_sn2
