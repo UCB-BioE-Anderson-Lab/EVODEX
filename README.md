@@ -192,8 +192,11 @@ python -m pipeline.phase7_website
 ```
 
 ## Citing EVODEX
-If you use EVODEX, please cite our preprint:
-https://www.biorxiv.org/content/10.1101/2025.06.19.660615v1.full
+If you use EVODEX, please cite our publication:
+
+Conceicao, L. L.; Lin, H.; Tai, Y.-C.; Xue, G.; Zhang, H.; Zhang, C.; Anderson, J. C. EVODEX: A Cheminformatics Framework for Mechanistic Abstraction and Prediction of Enzymatic Reactions. J. Chem. Inf. Model. 2026, published online April 2. https://doi.org/10.1021/acs.jcim.5c03163
+
+PMID: 41925163
 
 ## License
 EVODEX is released under the MIT License.
