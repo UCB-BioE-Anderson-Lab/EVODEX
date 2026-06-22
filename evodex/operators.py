@@ -94,6 +94,19 @@ def operator_extractor(
 def _compute_reactive_centers(reaction):
     """Return (reactant_sets, product_sets) of reactive centers (bonding changes) by template."""
     changed_map_numbers = _identify_changed_map_numbers(reaction)
+
+    # A mapped atom bonded to an unmapped atom must also be a reactive center:
+    # the unmapped neighbor exists on only one side, so that bond formed or broke.
+    for get_template, count in (
+        (reaction.GetReactantTemplate, reaction.GetNumReactantTemplates()),
+        (reaction.GetProductTemplate,  reaction.GetNumProductTemplates()),
+    ):
+        for i in range(count):
+            for atom in get_template(i).GetAtoms():
+                amap = atom.GetAtomMapNum()
+                if amap and any(n.GetAtomMapNum() == 0 for n in atom.GetNeighbors()):
+                    changed_map_numbers.add(amap)
+
     reactive_centers = ([], [])
 
     for i in range(reaction.GetNumReactantTemplates()):
