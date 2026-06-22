@@ -2,13 +2,15 @@
 
 EVODEX is a Python package that provides tools for the prediction of mechanistically plausible reaction products, validation of reactions, and mass spectrometry interpretation. It can be installed via PyPI for immediate use in Python projects. Alternatively, users can clone the repository to run the full mining pipeline and generate a customized dataset.
 
-The collection is browsable at 
-[EVODEX.2 Github Page](https://ucb-bioe-anderson-lab.github.io/EVODEX/)
+The collection is browsable at
+[EVODEX.2 Website](https://ucb-bioe-anderson-lab.github.io/EVODEX/)
 
-# Current Release 
+# Current Release
 [![DOI](https://zenodo.org/badge/806350411.svg)](https://doi.org/10.5281/zenodo.15824568)
 
-This is the EVODEX.2 collection. All IDs start with 'EVODEX.2' and are immutable, ensuring they can be externally referenced without collisions or missing references. Future distributions will be numbered EVODEX.3, EVODEX.4, etc., and may not have reverse compatibility with previous EVODEX.0 IDs. For example, EVODEX.2-E2 may not represent the same SMIRKS as EVODEX.1-E2. The letter codes have also been changed in version 2 relative to EVODEX.1 with E/C/N being replaced with A/B/C/D/E.
+This is the EVODEX.2 collection. The current software release is **v2.1.0**, which includes a corrected reactive center detection algorithm. Operator IDs in this release are prefixed with `EVODEX.2.1` (e.g., `EVODEX.2.1-E20`). Future collection versions will be numbered EVODEX.3, EVODEX.4, etc., and may not have reverse compatibility with previous IDs.
+
+**Note on the Zenodo archive:** The Zenodo snapshot was published with software version 2.0.1 (operator IDs prefixed `EVODEX.2`). The Synthesis Demo in that archive hard-codes the operator ID `EVODEX.2-E18`, which only exists in v2.0.1. To run the Zenodo Synthesis Demo as archived, install that version explicitly: `pip install evodex==2.0.1`. The Evaluation and Mass Spec demos are not affected by this ID change and will run correctly with the current version.
 
 ## Table of Contents
 1. [Installation](#installation)
@@ -54,7 +56,7 @@ result = project_reaction_operator(smirks, substrate)
 print("Direct projection: ", result)
 
 # Specify the dehydrogenase reaction by its EVODEX ID:
-evodex_id = "EVODEX.2-E18"
+evodex_id = "EVODEX.2.1-E20"
 
 # Apply the dehydrogenase operator to propanol
 result = project_evodex_operator(evodex_id, substrate)

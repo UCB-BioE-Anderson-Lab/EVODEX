@@ -37,8 +37,12 @@ function renderHome(app) {
         The “.2” indicates that this is version 2 of EVODEX. All operator identifiers are namespaced with this version number (e.g., EVODEX.2-R12), so they can be uniquely referenced and distinguished from past and future versions.
       </p>
       <p>
-        For more technical information on EVODEX, see our preprint at
-        <a href="https://www.biorxiv.org/content/10.1101/2025.06.19.660615v1.full" target="_blank" rel="noopener noreferrer">bioRxiv: 2025.06.19.660615v1</a>.
+        For more technical information on EVODEX, see our publication:
+        Conceicao, L. L.; Lin, H.; Tai, Y.-C.; Xue, G.; Zhang, H.; Zhang, C.; Anderson, J. C.
+        EVODEX: A Cheminformatics Framework for Mechanistic Abstraction and Prediction of Enzymatic Reactions.
+        <i>J. Chem. Inf. Model.</i> 2026, published online April 2.
+        <a href="https://doi.org/10.1021/acs.jcim.5c03163" target="_blank" rel="noopener noreferrer">https://doi.org/10.1021/acs.jcim.5c03163</a>.
+        PMID: 41925163.
       </p>
     </section>
 
@@ -176,7 +180,12 @@ function renderHome(app) {
         For more information, contact: <a href="mailto:jcanderson@berkeley.edu">jcanderson@berkeley.edu</a>
       </p>
       <p>
-        Please cite our work when using EVODEX. Citation info and DOI will be added here once the associated paper is published.
+        Please cite our work when using EVODEX:<br>
+        Conceicao, L. L.; Lin, H.; Tai, Y.-C.; Xue, G.; Zhang, H.; Zhang, C.; Anderson, J. C.
+        EVODEX: A Cheminformatics Framework for Mechanistic Abstraction and Prediction of Enzymatic Reactions.
+        <i>J. Chem. Inf. Model.</i> 2026, published online April 2.
+        <a href="https://doi.org/10.1021/acs.jcim.5c03163" target="_blank" rel="noopener noreferrer">https://doi.org/10.1021/acs.jcim.5c03163</a>.
+        PMID: 41925163.
       </p>
       <p>EVODEX was derived from the following resources:</p>
       <ul>
